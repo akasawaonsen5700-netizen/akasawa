@@ -52,12 +52,13 @@ copyFolderSync(path.join(__dirname, 'apps', 'akasawa-sns', 'public'), path.join(
 // 6. apps/akasawa.dp のビルドとコピー
 console.log('Building akasawa.dp React app...');
 const dpPath = path.join(__dirname, 'apps', 'akasawa.dp');
+const adminPath = path.join(dpPath, 'apps', 'admin');
 try {
-  console.log('Running npm install & build in apps/akasawa.dp...');
-  execSync('npm install', { cwd: dpPath, stdio: 'inherit' });
-  execSync('npm run build:admin', { cwd: dpPath, stdio: 'inherit' });
+  console.log('Running npm install & build directly in apps/akasawa.dp/apps/admin...');
+  execSync('npm install', { cwd: adminPath, stdio: 'inherit' });
+  execSync('npm run build', { cwd: adminPath, stdio: 'inherit' });
   console.log('Copying build files to dist/akasawa-dp...');
-  copyFolderSync(path.join(dpPath, 'apps', 'admin', 'dist'), path.join(distDir, 'akasawa-dp'));
+  copyFolderSync(path.join(adminPath, 'dist'), path.join(distDir, 'akasawa-dp'));
 } catch (err) {
   console.error('Failed to build akasawa.dp:', err.message);
   process.exit(1);
