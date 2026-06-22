@@ -162,7 +162,17 @@ const translations = {
     sightseeing_site17_title: "木の葉化石園",
     sightseeing_site17_desc: "塩原の地層から産出する貴重な木の葉や昆虫などの化石を多数展示。化石原石から化石を探し出す発掘体験も人気です。",
     sightseeing_site18_title: "天皇の間記念公園",
-    sightseeing_site18_desc: "明治大正昭和の三代にわたり、天皇陛下や皇族方が避暑地として利用された旧塩原御用邸。当時の格調高い木造建築と美しい庭園を見学できます。"
+    sightseeing_site18_desc: "明治大正昭和の三代にわたり、天皇陛下や皇族方が避暑地として利用された旧塩原御用邸。当時の格調高い木造建築と美しい庭園を見学できます。",
+    chat_button_hint: "AI音声コンシェルジュ",
+    chat_title: "AIコンシェルジュ にゃんこ先生",
+    chat_welcome: "こんにちはにゃん！赤沢温泉旅館のAI音声コンシェルジュだにゃん。客室のご案内や、宿泊予約のお手伝いをするにゃん。何でも聞いてにゃん！",
+    chat_placeholder: "メッセージを入力...",
+    chat_listening: "聞き取り中...",
+    chat_processing: "考え中...",
+    chat_voice_on: "音声オン",
+    chat_voice_off: "音声オフ",
+    chat_mic_start: "タップして話す",
+    chat_mic_stop: "タップして完了"
   },
   en: {
     // Page Titles
@@ -327,7 +337,17 @@ const translations = {
     sightseeing_site17_title: "Konoha Fossil Museum",
     sightseeing_site17_desc: "Exhibits a variety of plant and insect fossils discovered in Shiobara. Visitors can experience finding their own fossils from raw rocks.",
     sightseeing_site18_title: "Tenno-no-ma Memorial Park",
-    sightseeing_site18_desc: "The former Shiobara Imperial Villa used by emperors and the royal family during summers. Explore the elegant wooden palace and beautiful Japanese gardens."
+    sightseeing_site18_desc: "The former Shiobara Imperial Villa used by emperors and the royal family during summers. Explore the elegant wooden palace and beautiful Japanese gardens.",
+    chat_button_hint: "AI Voice Concierge",
+    chat_title: "AI Concierge Nyanko",
+    chat_welcome: "Hello! I'm Nyanko, your AI Voice Concierge. I can help with room guide or booking. What can I do for you?",
+    chat_placeholder: "Type a message...",
+    chat_listening: "Listening...",
+    chat_processing: "Thinking...",
+    chat_voice_on: "Voice On",
+    chat_voice_off: "Voice Off",
+    chat_mic_start: "Tap to talk",
+    chat_mic_stop: "Tap to stop"
   },
   zh: {
     // 页面标题
@@ -492,7 +512,17 @@ const translations = {
     sightseeing_site17_title: "树叶化石园",
     sightseeing_site17_desc: "展出大量从盐原地层中挖掘出的珍贵植物落叶和昆虫等化石。从原石中亲手挖掘化石的体验项目非常受欢迎。",
     sightseeing_site18_title: "天皇之间纪念公园",
-    sightseeing_site18_desc: "旧盐原御用邸，曾被明治、大正、昭和三代天皇及皇室成员用作避暑胜地。可以参观当时庄重典雅的木结构建筑及秀美的日式庭院。"
+    sightseeing_site18_desc: "旧盐原御用邸，曾被明治、大正、昭和三代天皇及皇室成员用作避暑胜地。可以参观当时庄重典雅的木结构建筑及秀美的日式庭院。",
+    chat_button_hint: "AI语音助手",
+    chat_title: "AI语音助手 猫咪老师",
+    chat_welcome: "你好喵！我是您的AI语音助手猫咪老师。我可以为您提供客房指南和住宿预订服务。有什么我可以帮您的喵？",
+    chat_placeholder: "输入消息...",
+    chat_listening: "正在听取...",
+    chat_processing: "思考中...",
+    chat_voice_on: "语音开启",
+    chat_voice_off: "语音关闭",
+    chat_mic_start: "轻触说话",
+    chat_mic_stop: "轻触结束"
   },
   ko: {
     // 페이지 타이틀
@@ -657,6 +687,16 @@ const translations = {
     sightseeing_site17_title: "코노하 화석원 (나뭇잎 화석원)",
     sightseeing_site17_desc: "시오바라 지층에서 발굴된 귀중한 나뭇잎과 곤충 등의 화석을 다수 전시. 화석 원석에서 직접 화석을 발굴해보는 체험도 인기가 많습니다.",
     sightseeing_site18_title: "텐노노마 기념공원 (황실 기념공원)",
-    sightseeing_site18_desc: "메이지, 다이쇼, 쇼와 3대에 걸쳐 천황과 황족들이 피서지로 이용했던 옛 시오바라 황실 별장. 당시의 격조 높은 목조 건축물과 아름다운 정원을 관람하실 수 있습니다."
+    sightseeing_site18_desc: "메이지, 다이쇼, 쇼와 3대에 걸쳐 천황과 황족들이 피서지로 이용했던 옛 시오바라 황실 별장. 당시의 격조 높은 목조 건축물과 아름다운 정원을 관람하실 수 있습니다.",
+    chat_button_hint: "AI음성 컨シェル주",
+    chat_title: "AI 냥코선생",
+    chat_welcome: "안녕냥! 저는 AI음성 컨シェル주 냥코선생이다냥. 객실 안내나 숙박 예약 도와드릴 수 있다냥. 무엇이든 물어봐냥!",
+    chat_placeholder: "메시지 입력...",
+    chat_listening: "듣고 있는 중...",
+    chat_processing: "생각 중...",
+    chat_voice_on: "음성 켜짐",
+    chat_voice_off: "음성 꺼짐",
+    chat_mic_start: "눌러서 말하기",
+    chat_mic_stop: "눌러서 완료"
   }
 };

@@ -139,7 +139,95 @@
     </section>
   </div>
 
+  <!-- AIチャットエージェント UI -->
+  <!-- フローティング起動ボタン -->
+  <div id="chat-agent-trigger" class="chat-trigger-btn" aria-label="AI Voice Concierge">
+    <div class="chat-trigger-icon">🐱</div>
+    <span class="chat-trigger-badge" data-i18n="chat_button_hint">AI音声コンシェルジュ</span>
+  </div>
+
+  <!-- チャットウィンドウ -->
+  <div id="chat-agent-window" class="chat-window-container hidden">
+    <!-- ヘッダー -->
+    <header class="chat-header">
+      <div class="chat-header-left">
+        <div class="chat-avatar">🐱</div>
+        <div>
+          <h3 class="chat-header-title" data-i18n="chat_title">AIコンシェルジュ にゃんこ先生</h3>
+          <span id="chat-voice-status" class="chat-status-text" data-i18n="chat_voice_on">音声オン</span>
+        </div>
+      </div>
+      <div class="chat-header-right">
+        <!-- 音声ON/OFF切り替えボタン -->
+        <button id="chat-voice-toggle" class="chat-header-btn" title="Toggle Voice">
+          <svg class="speaker-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path id="speaker-wave-path" d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+        </button>
+        <!-- 閉じるボタン -->
+        <button id="chat-close-btn" class="chat-header-btn" title="Close Chat">
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- メッセージ表示エリア -->
+    <div id="chat-messages" class="chat-messages-area">
+      <div class="chat-bubble bot">
+        <div class="bubble-content" data-i18n="chat_welcome">
+          こんにちはにゃん！赤沢温泉旅館のAI音声コンシェルジュだにゃん。客室のご案内や、宿泊予約のお手伝いをするにゃん。何でも聞いてにゃん！
+        </div>
+      </div>
+    </div>
+
+    <!-- 入力エリア -->
+    <div class="chat-input-area">
+      <!-- 音声認識中のインジケーター（波形アニメーション） -->
+      <div id="chat-wave-indicator" class="chat-wave-container hidden">
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <span class="wave-text" data-i18n="chat_listening">聞き取り中...</span>
+      </div>
+
+      <!-- コントロール群 -->
+      <div class="chat-input-row">
+        <!-- マイクボタン -->
+        <button id="chat-mic-btn" class="chat-mic-button" title="Start Voice Input">
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+        </button>
+
+        <!-- テキスト入力 -->
+        <form id="chat-text-form" class="chat-text-form-container">
+          <input id="chat-text-input" type="text" placeholder="メッセージを入力..." autocomplete="off" />
+          <button type="submit" class="chat-send-button" title="Send Message">
+            <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </form>
+      </div>
+
+      <div id="chat-footer-tip" class="chat-footer-tip" data-i18n="chat_mic_start">
+        タップして話す
+      </div>
+    </div>
+  </div>
+
   <script src="translations.js"></script>
   <script src="script.js"></script>
+  <script src="chat.js"></script>
 </body>
 </html>
