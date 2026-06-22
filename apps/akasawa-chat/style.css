@@ -159,7 +159,7 @@ h1, h2, h3, h4 {
    ========================================================================== */
 .main-header {
   position: relative;
-  padding: 56px 24px 32px;
+  padding: 56px 24px 24px;
   text-align: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   z-index: 3;
@@ -933,89 +933,30 @@ h1, h2, h3, h4 {
    AI Audio Concierge Agent Styles
    ========================================================================== */
 
-/* フローティング起動ボタン */
+/* フローティング起動ボタン（インライン表示のため非表示） */
 .chat-trigger-btn {
-  position: absolute;
-  bottom: 100px; /* 下部ナビゲーションの上 */
-  right: 20px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold) 0%, #ab8b54 100%);
-  box-shadow: 0 8px 30px rgba(209, 180, 124, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 100;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  animation: float-animation 3s ease-in-out infinite;
-  transform: translate3d(0, 0, 0);
+  display: none;
 }
 
-.chat-trigger-icon {
-  font-size: 1.8rem;
-  user-select: none;
-}
-
-.chat-trigger-badge {
-  position: absolute;
-  right: 70px;
-  white-space: nowrap;
-  background: rgba(20, 24, 22, 0.95);
-  border: 1px solid var(--gold);
-  color: var(--gold-bright);
-  font-size: 0.7rem;
-  font-family: var(--font-serif);
-  padding: 6px 14px;
-  border-radius: 20px;
-  box-shadow: var(--shadow-sm);
-  opacity: 0;
-  transform: translate3d(10px, 0, 0);
-  pointer-events: none;
-  transition: all 0.3s;
-}
-
-.chat-trigger-btn:hover .chat-trigger-badge {
-  opacity: 1;
-  transform: translate3d(0, 0, 0);
-}
-
-.chat-trigger-btn:hover {
-  transform: scale(1.08) rotate(5deg);
-  box-shadow: 0 12px 35px rgba(209, 180, 124, 0.6);
-}
-
-@keyframes float-animation {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-  100% { transform: translateY(0px); }
-}
-
-/* チャットウィンドウ */
+/* 旧チャットウィンドウ（インライン表示のため非表示） */
 .chat-window-container {
-  position: absolute;
-  bottom: 90px;
-  left: 16px;
-  right: 16px;
-  height: 500px;
-  max-height: calc(100% - 180px);
-  background: rgba(10, 14, 12, 0.96);
-  border: 1px solid var(--gold);
+  display: none;
+}
+
+/* インラインチャットコンテナ（常時表示用） */
+.inline-chat-wrapper {
+  position: relative;
+  width: 100%;
+  height: 420px;
+  background: rgba(10, 14, 12, 0.6);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-premium), 0 0 30px rgba(209, 180, 124, 0.15);
+  box-shadow: var(--shadow-sm), inset 0 0 15px rgba(209, 180, 124, 0.02);
   display: flex;
   flex-direction: column;
-  z-index: 120;
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  transform-origin: bottom right;
-}
-
-.chat-window-container.hidden {
-  opacity: 0;
-  transform: scale(0.85) translate3d(20px, 20px, 0);
-  pointer-events: none;
+  margin: 20px 0 0;
+  transition: var(--transition);
 }
 
 /* ヘッダー */

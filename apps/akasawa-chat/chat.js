@@ -407,6 +407,8 @@
 
   // --- メッセージ処理フロー ---
   function handleUserMessage(text) {
+    if (!text || !text.trim()) return;
+
     // ユーザー発言を画面に表示
     appendMessage(text, 'user');
     
@@ -418,11 +420,25 @@
       removeProcessingIndicator(processingId);
       appendMessage(reply, 'bot');
       speak(reply);
+    }).catch((err) => {
+      console.error('handleUserMessage error:', err);
+      removeProcessingIndicator(processingId);
+      const errMsg = getTranslatedText('chat_err_default');
+      appendMessage(errMsg, 'bot');
     });
   }
 
   // メッセージのDOM追加
   function appendMessage(text, sender) {
+    // messagesContainerが未取得の場合は再取得を試みる
+    if (!messagesContainer) {
+      messagesContainer = document.getElementById('chat-messages');
+    }
+    if (!messagesContainer) {
+      console.error('chat-messages element not found');
+      return;
+    }
+
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${sender}`;
     
@@ -443,6 +459,11 @@
 
   // 考え中インジケーターの追加
   function appendProcessingIndicator() {
+    if (!messagesContainer) {
+      messagesContainer = document.getElementById('chat-messages');
+    }
+    if (!messagesContainer) return 'none';
+
     const id = 'proc-' + Date.now();
     const bubble = document.createElement('div');
     bubble.className = 'chat-bubble bot processing';
