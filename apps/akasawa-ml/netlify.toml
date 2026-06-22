@@ -1,0 +1,19 @@
+[build]
+  base = "apps/akasawa-ml"
+  publish = "."
+  command = "npm run build"
+
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://generativelanguage.googleapis.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/voicevox"
+  to = "/.netlify/functions/voicevox"
+  status = 200
+  force = true

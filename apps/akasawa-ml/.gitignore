@@ -1,0 +1,14 @@
+# API keys and secrets
+.env
+
+# Dependencies
+node_modules/
+
+# Exclude raw PDF documents and diagnostic texts at root
+/*.pdf
+/*.txt
+!data/*.txt
+
+# Temporary local files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,19 @@
+{
+  "name": "akasawa-dynamic-pricing",
+  "private": true,
+  "workspaces": [
+    "apps/admin",
+    "functions"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "npm run build -w @akasawa/admin && npm run build -w @akasawa/functions",
+    "build:admin": "npm run build -w @akasawa/admin",
+    "build:functions": "npm run build -w @akasawa/functions",
+    "dev:admin": "npm run dev -w @akasawa/admin",
+    "deploy:functions": "firebase deploy --only functions,firestore:rules,firestore:indexes",
+    "deploy:admin": "netlify deploy --prod --dir=apps/admin/dist"
+  }
+}

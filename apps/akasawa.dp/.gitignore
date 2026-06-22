@@ -1,0 +1,9 @@
+node_modules
+.firebase
+.netlify
+apps/admin/dist
+functions/lib
+.env
+functions/.env.*
+apps/admin/.env.*
+.DS_Store

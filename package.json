@@ -1,0 +1,15 @@
+{
+  "name": "akasawa-integrated-system",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "install-all": "npm install",
+    "dev:sns": "npm run dev --workspace=apps/akasawa-sns",
+    "dev:dp": "npm run dev --workspace=apps/akasawa.dp",
+    "dev:crm": "npm run dev --workspace=apps/akasawa-ml",
+    "dev:chat": "npm run dev --workspace=apps/akasawa-chat"
+  }
+}

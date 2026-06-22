@@ -1,0 +1,17 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+
+export default defineConfig({
+  plugins: [react()],
+  base: "./",
+  envDir: path.resolve(__dirname, "../../"),
+  css: {
+    postcss: {
+      plugins: []
+    }
+  },
+  server: {
+    port: 5173
+  }
+});

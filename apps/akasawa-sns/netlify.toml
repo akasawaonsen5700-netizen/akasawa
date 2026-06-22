@@ -1,0 +1,17 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+  command = "npm run build"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["firebase-admin", "googleapis"]
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[scheduled.functions]]
+  name = "publish-approved"
+  cron = "*/15 * * * *"

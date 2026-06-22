@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>赤沢温泉旅館 SNS・GBP自動配信デモ</title>
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header>
+      <h1>赤沢温泉旅館 SNS・GBP自動配信デモ</h1>
+      <p>猫 × ぬる湯 × 渓流 × 静養 を軸に、アップロード → 下書き生成 → 承認 → 自動投稿までを一気通貫。</p>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="card">
+          <h2>今回のデモ構成</h2>
+          <p>
+            デモは <strong>Googleスプレッドシート＋Firebase＋Netlify Functions</strong> を中核にしています。
+            画像/動画はWeb画面から簡単に登録し、承認キューと投稿スケジュールはSheetでも追える設計です。
+          </p>
+          <div>
+            <span class="pill">ブランド統一</span>
+            <span class="pill">自動分類</span>
+            <span class="pill">AI下書き</span>
+            <span class="pill">レビュー待ち判定</span>
+            <span class="pill">SNS/GBP配信</span>
+          </div>
+          <div class="note" style="margin-top: 12px;">
+            公式ブランド表現は「塩原温泉の猫と源泉長湯にほどける、静養型ウェルネスの小宿 赤沢温泉旅館」を基準に固定しています。
+          </div>
+        </div>
+        <div class="card">
+          <h2>運用KPI</h2>
+          <div class="kpis">
+            <div class="kpi"><strong>週3</strong>Instagram推奨</div>
+            <div class="kpi"><strong>週1-2</strong>GBP推奨</div>
+            <div class="kpi"><strong>48h</strong>口コミ返信</div>
+            <div class="kpi"><strong>15分</strong>自動公開バッチ</div>
+          </div>
+          <p class="help">公開バッチは Netlify Scheduled Function で15分ごとに実行されます。</p>
+        </div>
+      </section>
+
+      <section class="grid-2">
+        <div class="card">
+          <h2>① オーナー投稿登録</h2>
+          <form id="uploadForm">
+            <div class="channel-selection-card">
+              <label class="form-label-bold">投稿先チャンネル（個別に画像/動画と日程を設定）</label>
+              <div class="channel-grid">
+                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="instagram" /> Instagram</label>
+                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="youtube" /> YouTube</label>
+                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="x" /> X</label>
+                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="gbp" /> GBP</label>
+              </div>
+            </div>
+
+            <!-- 各チャンネルの個別設定エリア -->
+            <div id="channelSettingsContainer" class="channel-settings-container">
+              <!-- JSによって動的に入力パネルが追加されます -->
+            </div>
+
+            <div style="margin-top: 16px;">
+              <label for="ownerComment">コメント / 投稿メモ</label>
+              <textarea id="ownerComment" placeholder="例：今朝の露天は38〜39度。川音が静かで、猫のハナも玄関でのんびりしていました。"></textarea>
+            </div>
+
+            <div class="grid-3" style="margin-top: 16px;">
+              <div>
+                <label for="shotDate">撮影日</label>
+                <input id="shotDate" type="date" />
+              </div>
+              <div>
+                <label for="location">撮影場所</label>
+                <input id="location" type="text" placeholder="露天風呂 / ロビー / 客室 など" />
+              </div>
+              <div>
+                <label for="catName">猫の名前</label>
+                <input id="catName" type="text" placeholder="任意" />
+              </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 16px;">
+              <div>
+                <label for="simpleTag">簡易タグ</label>
+                <select id="simpleTag">
+                  <option value="">自動判定に任せる</option>
+                  <option value="猫">猫</option>
+                  <option value="ぬる湯">ぬる湯</option>
+                  <option value="渓流">渓流</option>
+                  <option value="静養">静養</option>
+                  <option value="料理">料理</option>
+                  <option value="客室">客室</option>
+                  <option value="アクセス">アクセス</option>
+                </select>
+              </div>
+              <div>
+                <label for="visibility">公開方式</label>
+                <select id="visibility">
+                  <option value="review">承認後に投稿</option>
+                  <option value="auto_if_safe">安全判定なら自動承認</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top: 16px;">
+              <label for="ngMemo">公開NGメモ / 注意事項</label>
+              <textarea id="ngMemo" placeholder="例：人物の顔は使わない、湯船全景のみ、送迎情報を末尾に入れる"></textarea>
+            </div>
+
+            <div class="actions">
+              <button type="submit">Firebaseへ登録して下書き生成</button>
+              <a href="/review.html"><button type="button" class="secondary">承認キューを見る</button></a>
+            </div>
+            <p id="formMessage" class="help"></p>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>② Googleスプレッドシート連携</h2>
+          <p>
+            このデモは Web入力を基本にしつつ、<strong>Googleスプレッドシートを承認台帳・投稿予定表</strong>として使えるようにしています。
+            Sheetから直接登録したい場合は、同梱の Apps Script を貼り付けると、行追加 → Netlify Webhook送信 で同じキューに入ります。
+          </p>
+          <div class="note">
+            ファイルそのものは Firebase Storage に保存します。理由は、画像/動画の扱いがGoogle Sheets単体より安定し、Netlifyとの相性が良いからです。
+          </div>
+          <ul>
+            <li>Sheet列: mediaUrl / ownerComment / location / catName / simpleTag / publishAt / channels</li>
+            <li>Apps Scriptで「新規行をWebhook送信」</li>
+            <li>承認後は publish-approved 関数が各配信先WebhookへPOST</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Demo build for Akazawa Onsen Ryokan / Netlify + Firebase + Google Sheets.
+    </footer>
+
+    <script src="/runtime-config.js"></script>
+    <script type="module" src="/firebase-init.js"></script>
+    <script type="module" src="/index.js"></script>
+  </body>
+</html>
