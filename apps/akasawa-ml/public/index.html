@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>赤沢温泉旅館 メール・LINE自動配信デモ</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Akasawa Demo</p>
+      <h1>メール・LINE自動配信システム</h1>
+      <p class="sub">顧客リスト取込 → セグメント → 予約前後シナリオ配信を体験できるデモ</p>
+    </div>
+    <div class="hero-actions">
+      <button id="seedBtn" class="ghost">サンプル顧客投入</button>
+      <button id="clearBtn" class="danger ghost">全データ削除</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card span-2">
+      <div class="card-head">
+        <h2>接続イメージ</h2>
+        <span class="badge">デモ</span>
+      </div>
+      <div class="flow">
+        <div class="node">staysee / ねっぱん / CSV</div>
+        <div class="arrow">→</div>
+        <div class="node">顧客台帳</div>
+        <div class="arrow">→</div>
+        <div class="node">配信シナリオ</div>
+        <div class="arrow">→</div>
+        <div class="node">メール / LINE</div>
+      </div>
+      <p class="muted">本デモは、顧客台帳・テンプレート・配信履歴をブラウザ保存。Netlify Functions に環境変数を入れると実送信、未設定ならモック送信になります。</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>顧客リスト取込</h2></div>
+      <div class="stack">
+        <label class="filebox">
+          <span>CSVアップロード</span>
+          <input type="file" id="csvFile" accept=".csv" />
+        </label>
+        <p class="mini">推奨列: source,lastName,firstName,email,lineUserId,phone,language,tags,checkInDate,checkOutDate,reservationId,stayCount</p>
+        <button id="downloadSampleBtn" class="ghost">CSV見本を保存</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>顧客手入力</h2></div>
+      <form id="customerForm" class="stack">
+        <div class="cols-2">
+          <input name="source" placeholder="流入元 例: staysee / neppan / manual" value="manual" />
+          <input name="language" placeholder="言語 例: ja" value="ja" />
+        </div>
+        <div class="cols-2">
+          <input name="lastName" placeholder="姓" required />
+          <input name="firstName" placeholder="名" required />
+        </div>
+        <div class="cols-2">
+          <input name="email" placeholder="メール" />
+          <input name="lineUserId" placeholder="LINEユーザーID" />
+        </div>
+        <div class="cols-2">
+          <input name="phone" placeholder="電話番号" />
+          <input name="reservationId" placeholder="予約番号" />
+        </div>
+        <div class="cols-2">
+          <input name="checkInDate" type="date" />
+          <input name="checkOutDate" type="date" />
+        </div>
+        <div class="cols-2">
+          <input name="stayCount" type="number" min="0" value="1" placeholder="宿泊回数" />
+          <input name="tags" placeholder="タグ 例: 猫好き,長湯好き" />
+        </div>
+        <button type="submit">顧客を追加</button>
+      </form>
+    </section>
+
+    <section class="card span-2">
+      <div class="card-head">
+        <h2>配信シナリオ</h2>
+        <span class="badge success">4本実装</span>
+      </div>
+      <div class="cols-4">
+        <button class="scenario" data-scenario="reservation_confirm">予約直後</button>
+        <button class="scenario" data-scenario="pre_stay_3days">宿泊3日前</button>
+        <button class="scenario" data-scenario="post_stay_thanks">宿泊翌日</button>
+        <button class="scenario" data-scenario="repeat_offer">再訪促進</button>
+      </div>
+      <div class="cols-2 top-gap">
+        <div>
+          <label>配信チャネル</label>
+          <select id="channelSelect">
+            <option value="email">メール</option>
+            <option value="line">LINE</option>
+            <option value="both">両方</option>
+          </select>
+        </div>
+        <div>
+          <label>対象</label>
+          <select id="audienceSelect">
+            <option value="filtered">絞り込み結果</option>
+            <option value="all">全顧客</option>
+          </select>
+        </div>
+      </div>
+      <div class="top-gap">
+        <label>テンプレート追記</label>
+        <textarea id="customMessage" rows="4" placeholder="追加したい文面を入力"></textarea>
+      </div>
+      <div class="top-gap inline-actions">
+        <button id="previewBtn" class="ghost">プレビュー生成</button>
+        <button id="dispatchBtn">配信実行</button>
+      </div>
+      <div id="previewBox" class="preview hidden"></div>
+    </section>
+
+    <section class="card span-2">
+      <div class="card-head">
+        <h2>顧客一覧</h2>
+        <div class="filters">
+          <input id="searchInput" placeholder="検索: 名前 / メール / タグ" />
+          <select id="tagFilter">
+            <option value="">全タグ</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><input id="selectAll" type="checkbox" /></th>
+              <th>氏名</th>
+              <th>流入元</th>
+              <th>連絡先</th>
+              <th>宿泊日</th>
+              <th>タグ</th>
+              <th>回数</th>
+            </tr>
+          </thead>
+          <tbody id="customerTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card span-2">
+      <div class="card-head"><h2>配信履歴</h2></div>
+      <div id="logList" class="stack"></div>
+    </section>
+  </main>
+
+  <template id="logItemTemplate">
+    <article class="log-item">
+      <div class="log-head">
+        <strong class="log-title"></strong>
+        <span class="log-status"></span>
+      </div>
+      <p class="log-meta"></p>
+      <pre class="log-body"></pre>
+    </article>
+  </template>
+
+  <script src="./app.js"></script>
+</body>
+</html>

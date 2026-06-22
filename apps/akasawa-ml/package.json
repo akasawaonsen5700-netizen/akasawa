@@ -1,13 +1,17 @@
 {
-  "name": "akazawa-ai-copilot",
+  "name": "akasawa-mail-line-demo",
   "version": "1.0.0",
-  "description": "塩原温泉 赤沢温泉旅館 AI診断・自動運営ツール",
-  "main": "app.js",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "npx -y http-server -p 3000",
-    "build": "node -e \"const fs = require('fs'); fs.writeFileSync('key.txt', process.env.GEMINI_API_KEY || '');\""
+    "dev": "netlify dev",
+    "start": "netlify dev",
+    "build": "echo 'Static app build not required'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.36.1"
+  }
 }

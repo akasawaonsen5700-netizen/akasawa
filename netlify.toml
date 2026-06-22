@@ -1,12 +1,7 @@
 [build]
-  publish = "public"
+  publish = "dist"
+  command = "npm run build"
   functions = "netlify/functions"
-
-[dev]
-  publish = "public"
-  functions = "netlify/functions"
-  port = 8888
-  targetPort = 8888
 
 [[redirects]]
   from = "/api/*"
