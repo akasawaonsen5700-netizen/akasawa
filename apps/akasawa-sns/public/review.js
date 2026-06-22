@@ -5,7 +5,7 @@ import {
   orderBy,
   query
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-import { db, apiBase } from '/firebase-init.js';
+import { db, apiBase } from './firebase-init.js';
 
 const queueEl = document.getElementById('queue');
 const statusFilter = document.getElementById('statusFilter');

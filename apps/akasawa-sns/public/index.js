@@ -1,5 +1,5 @@
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
-import { storage, apiBase, defaults } from '/firebase-init.js';
+import { storage, apiBase, defaults } from './firebase-init.js';
 
 const form = document.getElementById('uploadForm');
 const message = document.getElementById('formMessage');

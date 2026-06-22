@@ -10,12 +10,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-color: #0b1a13; /* 深い和モダンなダークグリーン */
-      --card-bg: rgba(20, 38, 30, 0.6);
-      --border-color: rgba(212, 175, 55, 0.2); /* 控えめなゴールド */
-      --accent-color: #d4af37; /* 純金のようなゴールド */
+      --bg-color: #05120c; /* より深い和モダンなダークグリーン */
+      --card-bg: rgba(13, 31, 23, 0.7);
+      --border-color: rgba(212, 175, 55, 0.25);
+      --accent-color: #d4af37; /* ゴールド */
       --text-main: #f5f2eb;
-      --text-sub: #b2c0b8;
+      --text-sub: #a4b3ab;
+      --success: #52c41a;
     }
 
     * {
@@ -33,63 +34,114 @@
       flex-direction: column;
       justify-content: space-between;
       overflow-x: hidden;
-      background-image: radial-gradient(circle at 50% -20%, #1e3b2b 0%, var(--bg-color) 70%);
+      background-image: radial-gradient(circle at 50% -20%, #173625 0%, var(--bg-color) 75%);
     }
 
     header {
       text-align: center;
-      padding: 4rem 1rem 2rem;
+      padding: 5rem 1rem 3rem;
     }
 
     .brand-title {
       font-family: 'Cinzel', serif;
-      font-size: 1.5rem;
-      letter-spacing: 0.3em;
+      font-size: 1.6rem;
+      letter-spacing: 0.35em;
       color: var(--accent-color);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.8rem;
       text-transform: uppercase;
     }
 
     .main-title {
-      font-size: 2.2rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      margin-bottom: 1rem;
-      text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
     }
 
     .subtitle {
-      font-size: 1rem;
+      font-size: 1.1rem;
       color: var(--text-sub);
-      max-width: 600px;
+      max-width: 800px;
       margin: 0 auto;
-      line-height: 1.8;
+      line-height: 1.9;
       font-weight: 300;
     }
 
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 2rem;
+      padding: 0 2rem;
       width: 100%;
       flex-grow: 1;
       display: flex;
-      align-items: center;
-      justify-content: center;
+      flex-direction: column;
+      gap: 4rem;
     }
 
+    /* 連携ベネフィット セクション */
+    .benefit-section {
+      background: rgba(13, 31, 23, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 3rem;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    .section-title {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--accent-color);
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.8rem;
+      letter-spacing: 0.05em;
+    }
+
+    .benefit-lead {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      margin-bottom: 2rem;
+      font-weight: 400;
+    }
+
+    .benefit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+    }
+
+    .benefit-item h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .benefit-item p {
+      font-size: 0.95rem;
+      color: var(--text-sub);
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    /* アプリグリッド */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 2.5rem;
       width: 100%;
+      margin-bottom: 4rem;
     }
 
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 2.5rem 2rem;
+      border-radius: 18px;
+      padding: 3rem 2.2rem;
       text-decoration: none;
       color: var(--text-main);
       transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
@@ -99,7 +151,7 @@
       position: relative;
       overflow: hidden;
       backdrop-filter: blur(10px);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
     }
 
     .card::before {
@@ -111,13 +163,13 @@
       height: 4px;
       background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
       transform: translateX(-100%);
-      transition: transform 0.6s ease;
+      transition: transform 0.65s ease;
     }
 
     .card:hover {
-      transform: translateY(-8px);
-      border-color: rgba(212, 175, 55, 0.6);
-      box-shadow: 0 20px 40px rgba(212, 175, 55, 0.15);
+      transform: translateY(-10px);
+      border-color: rgba(212, 175, 55, 0.7);
+      box-shadow: 0 25px 50px rgba(212, 175, 55, 0.2);
     }
 
     .card:hover::before {
@@ -125,28 +177,40 @@
     }
 
     .card-icon {
-      font-size: 2.5rem;
-      margin-bottom: 1.5rem;
+      font-size: 2.8rem;
+      margin-bottom: 1.8rem;
       color: var(--accent-color);
     }
 
     .card-title {
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       font-weight: 600;
-      margin-bottom: 0.8rem;
+      margin-bottom: 1rem;
       letter-spacing: 0.05em;
     }
 
     .card-desc {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       color: var(--text-sub);
-      line-height: 1.6;
-      margin-bottom: 2rem;
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
       font-weight: 300;
     }
 
+    .card-benefit {
+      background: rgba(212, 175, 55, 0.08);
+      border-left: 3px solid var(--accent-color);
+      padding: 0.8rem 1rem;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: var(--text-main);
+      margin-bottom: 2rem;
+      font-weight: 400;
+    }
+
     .card-action {
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       color: var(--accent-color);
       font-weight: 600;
       letter-spacing: 0.1em;
@@ -158,25 +222,27 @@
     }
 
     .card:hover .card-action {
-      gap: 0.8rem;
+      gap: 0.9rem;
     }
 
     footer {
       text-align: center;
-      padding: 3rem 1rem;
+      padding: 4rem 1rem;
       color: var(--text-sub);
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       letter-spacing: 0.05em;
       border-top: 1px solid rgba(255, 255, 255, 0.05);
-      margin-top: 4rem;
     }
 
     @media (max-width: 768px) {
       .main-title {
-        font-size: 1.8rem;
+        font-size: 2rem;
+      }
+      .benefit-section {
+        padding: 1.8rem;
       }
       .container {
-        padding: 1rem;
+        padding: 0 1rem;
       }
     }
   </style>
@@ -186,49 +252,111 @@
   <header>
     <div class="brand-title">Akazawa Onsen Ryokan</div>
     <h1 class="main-title">統合AIシステムポータル</h1>
-    <p class="subtitle">塩原温泉 赤沢温泉旅館のAIソリューション。AIを活用したコンシェルジュ、連絡自動化、SNS連携、経営データ分析の各機能へアクセスします。</p>
+    <p class="subtitle">
+      AIとデータがシームレスに連動し、宿の運営・集客・リピート促進を完全自動化。
+      赤沢温泉旅館の経営価値を最大化する統合AIソリューション。
+    </p>
   </header>
 
   <main class="container">
+    
+    <!-- システム連携ベネフィット -->
+    <section class="benefit-section">
+      <h2 class="section-title">AIエージェントの連携による経営インパクト</h2>
+      <p class="benefit-lead">
+        4つのAIモジュールが共通の顧客・予約・マーケティングデータを介してリアルタイムに連動。
+        集客から滞在時のおもてなし、そしてリピート促進までの一連のプロセスを自律的に循環させ、
+        <strong>オーナーの手を煩わせることなく稼働率と売上（RevPAR）を最大化</strong>します。
+      </p>
+      <div class="benefit-grid">
+        <div class="benefit-item">
+          <h3><span>📈</span> 露出不足の自動検知とリカバリー</h3>
+          <p>
+            認知・露出が低下すると、AIが自律的にそれを察知してSNSやGBPの投稿案を即時生成し自動配信。集客の呼び水を24時間体制で絶やしません。
+          </p>
+        </div>
+        <div class="benefit-item">
+          <h3><span>🏨</span> 予約の最大化と空室のピンポイント解消</h3>
+          <p>
+            カレンダーと連動し、予約の薄い平日の空室を埋めるための専用プランをAIが自動作成。ターゲット顧客へメールやLINEで最適なタイミングで配信します。
+          </p>
+        </div>
+        <div class="benefit-item">
+          <h3><span>📊</span> RevPAR（経営指標）の自律的向上</h3>
+          <p>
+            集客と客室稼働のデータはすべてダッシュボードで一元監視され、最適な販売価格（ダイナミックプライシング）と販促シナリオへリアルタイムに還元されます。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 各システムカード -->
     <div class="grid">
-      <!-- 1. AIチャットボット -->
+      <!-- 1. AIチャットコンシェルジュ -->
       <a href="/akasawa-chat/index.html" class="card">
         <div>
           <div class="card-icon">💬</div>
           <h2 class="card-title">AI チャットコンシェルジュ</h2>
-          <p class="card-desc">多言語に対応し、お客様の観光案内や温泉紹介などを自動で行うAIにゃんこチャットシステム。</p>
+          <p class="card-desc">
+            客室内の専用QRコードからの案内（館内設備・貸切風呂状況・看板猫情報など）と、
+            公式ホームページ上の「AI予約エージェント」を同時にカバーする多言語AIコンシェルジュ。
+          </p>
+          <div class="card-benefit">
+            <strong>ベネフィット:</strong><br>
+            宿泊検討期の予約獲得から滞在中の細やかなお問い合わせまで24時間自動対応し、取りこぼしゼロとスタッフの負担軽減を両立。
+          </div>
         </div>
-        <div class="card-action">アプリを開く ➔</div>
+        <div class="card-action">システムを起動する ➔</div>
       </a>
 
       <!-- 2. Mail & LINE 連携デモ -->
       <a href="/akasawa-ml/index.html" class="card">
         <div>
           <div class="card-icon">✉️</div>
-          <h2 class="card-title">Mail & LINE 連携デモ</h2>
-          <p class="card-desc">Mail の着信や LINE アカウントからのメッセージをトリガーにした自動連携デモシステム。</p>
+          <h2 class="card-title">メール・LINE自動連携配信</h2>
+          <p class="card-desc">
+            宿泊予約システムやCSVデータと連動し、宿泊前後のフォローシナリオ配信および、
+            リピーター獲得や直近の空室を埋めるためのメッセージ配信を自動で行う配信システム。
+          </p>
+          <div class="card-benefit">
+            <strong>ベネフィット:</strong><br>
+            宿泊客をファン化してリピート率を高めつつ、カレンダーと同期して平日の突発的な空室へターゲット限定クーポン等を自律的に届けて即座に埋めます。
+          </div>
         </div>
-        <div class="card-action">アプリを開く ➔</div>
+        <div class="card-action">システムを起動する ➔</div>
       </a>
 
-      <!-- 3. SNS自動化ツール -->
+      <!-- 3. SNS・GBP自動配信システム -->
       <a href="/akasawa-sns/index.html" class="card">
         <div>
           <div class="card-icon">📲</div>
-          <h2 class="card-title">SNS 情報配信自動化</h2>
-          <p class="card-desc">スプレッドシートやブログ、LINE公式アカウントと連動した宿泊情報および販促活動の自動発信。</p>
+          <h2 class="card-title">SNS・GBP自律配信エージェント</h2>
+          <p class="card-desc">
+            写真やメモからSNS・GBP投稿を自動作成・配信する機能に加え、
+            閲覧数（インプレッション）が目標の10,000件を下回った際、AIが自動で「改善アクション（追加投稿案の作成・特定ターゲット向け広告配信）」を提案・実行します。
+          </p>
+          <div class="card-benefit">
+            <strong>ベネフィット:</strong><br>
+            集客の露出不足をAIが自律的に検知してカバーするため、オーナーの作業時間をゼロにしながら、旅館の魅力を絶え間なくネット上に広め続けます。
+          </div>
         </div>
-        <div class="card-action">アプリを開く ➔</div>
+        <div class="card-action">システムを起動する ➔</div>
       </a>
 
       <!-- 4. データ統合ダッシュボード -->
       <a href="/akasawa-dp/" class="card">
         <div>
           <div class="card-icon">📊</div>
-          <h2 class="card-title">データ統合ダッシュボード</h2>
-          <p class="card-desc">予約情報や売上推移などの館内データ分析をビジュアル化し、経営判断を支えるダッシュボード。</p>
+          <h2 class="card-title">RevPAR統合監視ダッシュボード</h2>
+          <p class="card-desc">
+            ホテル経営の最重要指標である <strong>RevPAR</strong>（Revenue Per Available Room: 販売可能客室1室あたりの売上）を徹底的に監視し、向上させるための統合分析画面。
+          </p>
+          <div class="card-benefit">
+            <strong>ベネフィット:</strong><br>
+            客室平均単価（ADR）と客室稼働率（OCC）の掛け合わせである RevPAR を最大化するため、需要予測に基づく最適な販売価格と販促プランの意思決定をAIが支援します。
+          </div>
         </div>
-        <div class="card-action">アプリを開く ➔</div>
+        <div class="card-action">システムを起動する ➔</div>
       </a>
     </div>
   </main>
