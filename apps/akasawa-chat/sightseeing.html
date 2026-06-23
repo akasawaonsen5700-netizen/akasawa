@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>周辺案内・体験 | 赤沢温泉旅館</title>
+  <meta name="description" content="赤沢温泉旅館の周辺観光と体験アクティビティのご案内。塩原温泉の散策スポットや、おすすめの立ち寄り観光地。">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container fade-in">
+    <!-- 和紙テクスチャオーバーレイ -->
+    <div class="washi-overlay"></div>
+
+    <!-- ヘッダー -->
+    <header class="main-header">
+      <!-- 言語選択セレクター -->
+      <div class="lang-selector">
+        <button class="lang-selector-btn" aria-label="Select Language">
+          <svg class="globe-icon" viewBox="0 0 24 24" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span class="current-lang">日本語</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" stroke="currentColor">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="lang-dropdown">
+          <button data-lang="ja">日本語</button>
+          <button data-lang="en">English</button>
+          <button data-lang="zh">简体中文</button>
+          <button data-lang="ko">한국어</button>
+        </div>
+      </div>
+
+      <div class="logo-area">
+        <h1 class="logo-text gold-text-gradient" style="font-size: 1.3rem;" data-i18n="sightseeing_title">周辺案内・体験</h1>
+        <span class="logo-sub" data-i18n="sightseeing_main_sub">塩原の自然と旅の思い出</span>
+      </div>
+      <div class="en-title">Sightseeing & Activities</div>
+    </header>
+
+    <!-- メインビジュアル画像枠 -->
+    <div style="padding: 24px 24px 0 24px;">
+      <div class="image-placeholder" id="sightseeing-hero">
+        <svg class="placeholder-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <span class="placeholder-text">塩原渓谷や箒川の散策道写真</span>
+      </div>
+    </div>
+
+    <!-- コンテンツエリア -->
+    <main class="detail-content">
+      <!-- 三島を満喫する -->
+      <section class="detail-section">
+        <h2 class="section-title" data-i18n="sightseeing_section_nature">塩原の自然とお散歩</h2>
+        <div class="text-block">
+          <p data-i18n="sightseeing_nature_1">赤沢温泉旅館のまわりには、塩原らしい豊かな自然、おだやかなお散歩時間、そして旅の思い出になる体験がそろっています。</p>
+          <p data-i18n-html="sightseeing_nature_2"><strong>箒川（ほうきがわ）沿いの散策</strong>では、四季ごとに表情を変える美しい渓谷美を楽しめます。朝の澄んだ空気のなかを歩くのも、夕方にゆったりと湯上がり散歩をするのもおすすめです。</p>
+          <p data-i18n-html="sightseeing_nature_3">また、徒歩圏内には<strong>セブンイレブン（徒歩約10分）</strong>があり、ちょっとしたお買い物にも便利です。</p>
+        </div>
+
+        <!-- 当館おすすめの体験 -->
+        <div class="item-card">
+          <div class="item-title">
+            <span data-i18n="sightseeing_card_title">当館オリジナルの体験</span>
+            <span class="item-price" data-i18n="sightseeing_card_pride">お気軽にお声がけを</span>
+          </div>
+          <div class="image-placeholder" style="aspect-ratio: 21 / 9; margin-bottom: 12px;">
+            <svg class="placeholder-icon" style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            <span class="placeholder-text" style="font-size: 0.7rem;">ワンコとお散歩またはツアーの写真</span>
+          </div>
+          <p class="text-block" style="font-size: 0.85rem; margin-bottom: 0;" data-i18n-html="sightseeing_card_desc">当館では、<strong>ワンコとお散歩（レンタルドッグ）</strong>や、宿主催の<strong>「あかさわツアー」</strong>など、この土地ならではのユニークな楽しみ方もご案内しています。ご希望のお客様は、フロントまでお気軽にお尋ねください。</p>
+        </div>
+      </section>
+
+      <div class="section-divider">
+        <div class="divider-diamond"></div>
+      </div>
+
+      <!-- 観光・散策に役立つ公式サイト -->
+      <section class="detail-section">
+        <h2 class="section-title" data-i18n="sightseeing_section_site">観光に役立つ公式サイト</h2>
+        
+        <h3 style="font-size: 0.95rem; margin: 20px 0 10px 0; color: var(--gold-bright);" data-i18n="sightseeing_group_general">塩原温泉の総合案内</h3>
+        <ul class="link-list">
+          <li class="link-item">
+            <a href="https://www.siobara.or.jp/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site1_title">塩原温泉郷公式サイト「ShiobaLove」</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site1_desc">温泉街の見どころ、散策情報、季節の楽しみ方をチェックできます。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="https://www.nasushiobara-kanko.jp/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site2_title">なすしおばら観光NAVI</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site2_desc">那須塩原市観光局公式。那須塩原全体の観光、グルメ、温泉、体験情報をまとめて確認できます。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="http://www.nishinasuno-kankou.org/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site3_title">西那須野観光協会 公式サイト</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site3_desc">西那須野エリアの観光、食、体験、街歩き情報はこちら。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="https://nasushiobara-kanko.jp/special/shiobaraonsen/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site13_title">塩原温泉郷 OFFICIAL TRAVEL GUIDE</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site13_desc">塩原温泉郷の公式トラベルガイド。四季折々の魅力や詳細な観光スポット・イベント情報を網羅。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="tel:0287-32-2801" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site16_title">塩原自動車（塩原営業所）</span>
+                <span class="external-icon">📞</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site16_desc">電話：0287-32-2801。観光や駅から宿への移動に便利なタクシー会社です。タップすると発信できます（所在地：栃木県那須塩原市塩原608-1）。</p>
+            </a>
+          </li>
+        </ul>
+
+        <h3 style="font-size: 0.95rem; margin: 24px 0 10px 0; color: var(--gold-bright);" data-i18n="sightseeing_group_walk">お散歩・自然を楽しむ</h3>
+        <ul class="link-list">
+          <li class="link-item">
+            <a href="https://www.siobara.or.jp/vc/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site4_title">塩原温泉ビジターセンター</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site4_desc">遊歩道の散策情報、豊かな自然観察、ハイキングの情報収集におすすめです。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="http://www.takahara-shinrin.or.jp/mori-no-eki/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site5_title">もみじ谷大吊橋・森林の駅</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site5_desc">素晴らしい渓谷美を楽しめる全長320メートルの大吊橋。施設案内や営業情報の確認に便利です。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="https://shiobara-monogatari.com/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site6_title">塩原もの語り館</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site6_desc">塩原の文学と歴史を紹介する資料館。散策途中の立ち寄りやお土産探しにもおすすめです。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="https://agripal-shiobara.com/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site7_title">アグリパル塩原（道の駅）</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site7_desc">道の駅「湯の香しおばら」。地元新鮮野菜、お土産、軽食、ドライブの休憩スポットとして便利です。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="https://yupponosato.com/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site12_title">塩原温泉 湯っ歩の里</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site12_desc">日本最大級の足湯回廊を持つ温泉公園。豊かな自然に囲まれ、源泉かけ流しの足湯をのんびり楽しめます。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="https://maps.google.com/?q=ファミリーマート+塩原温泉店" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site15_title">ファミリーマート 塩原温泉店</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site15_desc">宿からお車で約2分。塩原温泉郷で唯一の24時間営業のコンビニエンスストアです（住所：栃木県那須塩原市中塩原字マギノ4-10）。</p>
+            </a>
+          </li>
+        </ul>
+
+        <h3 style="font-size: 0.95rem; margin: 24px 0 10px 0; color: var(--gold-bright);" data-i18n="sightseeing_group_leisure">体験・レジャー・立ち寄りスポット</h3>
+        <ul class="link-list">
+          <li class="link-item">
+            <a href="https://www.senbonmatsu.com/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site8_title">那須千本松牧場</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site8_desc">西那須野塩原ICからすぐ。動物とのふれあい、絶品牧場グルメ、大自然でのアクティビティが楽しめます。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="https://www.park-tochigi.com/nasunogahara/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site9_title">那須野が原公園</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site9_desc">広々とした緑あふれるファミリー向けの公園。アスレチックやのんびり散策にもおすすめです。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="https://www.hunter.co.jp/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site10_title">ハンターマウンテン塩原</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site10_desc">冬はスキー・スノーボード、夏〜秋はゆり園や紅葉ゴンドラなど、季節に応じた高原レジャーが魅力です。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="https://www.nasu-gardenoutlet.com/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site11_title">那須ガーデンアウトレット</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site11_desc">リゾート型のショッピングモール。お買い物やドライブ途中の立ち寄り先として人気です。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="https://genzankutsu.com/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site14_title">史跡 鍾乳洞 源三窟</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site14_desc">源平合戦の歴史を伝える鍾乳洞。洞内には甲冑姿の武者人形が配され、不思議な歴史空間を体験できます。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="http://www.konohaisi.jp/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site17_title">木の葉化石園</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site17_desc">塩原の地層から産出する貴重な木の葉や昆虫などの化石を多数展示。化石原石から化石を探し出す発掘体験も人気です。</p>
+            </a>
+          </li>
+          <li class="link-item">
+            <a href="https://ivmp.jp/" class="link-anchor">
+              <div class="link-header">
+                <span class="link-title" data-i18n="sightseeing_site18_title">天皇の間記念公園</span>
+                <span class="external-icon">🡥</span>
+              </div>
+              <p class="link-desc" data-i18n="sightseeing_site18_desc">明治大正昭和の三代にわたり、天皇陛下や皇族方が避暑地として利用された旧塩原御用邸。当時の格調高い木造建築と美しい庭園を見学できます。</p>
+            </a>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <!-- 下部固定戻るボタン -->
+    <nav class="footer-nav">
+      <a href="index.html" class="back-btn">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        <span data-i18n="back_to_index">目次に戻る</span>
+      </a>
+    </nav>
+  </div>
+
+  <script src="translations.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

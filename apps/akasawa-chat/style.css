@@ -1,0 +1,1266 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;600;700&family=Outfit:wght@200;300;400;500&display=swap');
+
+/* ==========================================================================
+   Design Tokens & Root Variables
+   「ラグジュアリー・ダークスパ ＆ 和ウェルネス」 (スクロールパフォーマンス最適化版)
+   ========================================================================== */
+:root {
+  /* Colors - 深みのある階層化された色彩 */
+  --bg-base: #0a0e0c;          
+  --bg-gradient: linear-gradient(135deg, #0a0f0c 0%, #080d11 50%, #120e0a 100%);
+  
+  --text-light: #f5f3ef;       
+  --text-muted: #9fa6a0;       
+  
+  /* メイン：渓流のきらめき、深淵な翠 */
+  --primary: #476b58;          
+  --primary-glow: rgba(71, 107, 88, 0.2);
+  
+  /* サブ：ぬる湯と神秘的な水面を表現する「翡翠・浅葱（あさぎ）」 */
+  --accent-cyan: #5fa89f;      
+  --accent-blue: #5b879c;      
+  
+  /* 行灯・金箔の温もりを灯す「琥珀・真鍮ゴールド」 */
+  --gold: #d1b47c;             
+  --gold-glow: rgba(209, 180, 124, 0.2);
+  --gold-bright: #ebd2a4;
+  
+  /* パフォーマンス重視の背景色設定 (backdrop-filterなしでも高級感が出る不透明度調整) */
+  --glass-bg: rgba(255, 255, 255, 0.025);
+  --glass-bg-hover: rgba(255, 255, 255, 0.055);
+  --glass-border: rgba(209, 180, 124, 0.12);
+  --glass-border-hover: rgba(209, 180, 124, 0.35);
+
+  /* Fonts */
+  --font-serif: 'Noto Serif JP', serif;
+  --font-sans: 'Outfit', sans-serif;
+
+  /* Shadows & Glows */
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-premium: 0 20px 45px rgba(0, 0, 0, 0.45);
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 18px;
+  --radius-lg: 28px;
+
+  /* Transition - プロパティを限定してスクロールや操作時のレンダリング負荷を大幅に削減 */
+  --transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s, border-color 0.4s, box-shadow 0.4s, color 0.4s;
+}
+
+/* ==========================================================================
+   Reset & Base Styles
+   ========================================================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-color: #060807;
+  color: var(--text-light);
+  font-family: var(--font-serif);
+  font-weight: 300;
+  line-height: 1.9;
+  letter-spacing: 0.08em;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* モバイルデバイス幅に固定するコンテナ */
+.app-container {
+  max-width: 540px;
+  min-height: 100%;
+  margin: 0 auto;
+  background: var(--bg-gradient);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.7);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 100px;
+}
+
+/* 背景の環境効果 - filter: blurはモバイルで超高負荷のため削除し、グラデーションの自然なフェードで再現 */
+.app-container::before {
+  content: "";
+  position: absolute;
+  top: -5%;
+  left: -10%;
+  width: 120%;
+  height: 50%;
+  background: radial-gradient(circle, rgba(95, 168, 159, 0.035) 0%, rgba(95, 168, 159, 0.01) 40%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.app-container::after {
+  content: "";
+  position: absolute;
+  bottom: -5%;
+  right: -10%;
+  width: 120%;
+  height: 50%;
+  background: radial-gradient(circle, rgba(209, 180, 124, 0.025) 0%, rgba(209, 180, 124, 0.005) 40%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 和紙風テクスチャ - モバイルパフォーマンスのためにopacityを極めて薄くしGPU負荷を低減 */
+.washi-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.005) 1.5px, transparent 0);
+  background-size: 16px 16px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ==========================================================================
+   Typography
+   ========================================================================== */
+h1, h2, h3, h4 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  color: var(--text-light);
+}
+
+.gold-text-gradient {
+  background: linear-gradient(135deg, var(--gold-bright) 0%, var(--gold) 50%, #ab8b54 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.en-title {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  color: var(--gold);
+  opacity: 0.8;
+  text-shadow: 0 2px 10px rgba(209, 180, 124, 0.1);
+}
+
+/* ==========================================================================
+   Header Component
+   ========================================================================== */
+.main-header {
+  position: relative;
+  padding: 32px 24px 24px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  z-index: 3;
+}
+
+.logo-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.logo-symbol {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(209, 180, 124, 0.3);
+  transform: rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  background: rgba(209, 180, 124, 0.02);
+  box-shadow: inset 0 0 10px rgba(209, 180, 124, 0.05);
+  transition: var(--transition);
+}
+
+.logo-symbol::before {
+  content: "";
+  width: 28px;
+  height: 28px;
+  border: 1px dashed var(--gold);
+  background: radial-gradient(circle, rgba(209, 180, 124, 0.15) 0%, transparent 80%);
+}
+
+.main-header:hover .logo-symbol {
+  transform: rotate(225deg);
+  border-color: var(--gold);
+}
+
+.logo-text {
+  font-size: 1.6rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  margin-bottom: 6px;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+}
+
+.logo-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 0.2em;
+}
+
+/* ==========================================================================
+   Concept Area
+   ========================================================================== */
+.concept-container {
+  padding: 48px 32px;
+  text-align: center;
+  z-index: 3;
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.concept-bg-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(209, 180, 124, 0.06) 0%, transparent 75%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.concept-wrapper {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.concept-horizontal {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  margin: 16px auto;
+  line-height: 2.0;
+  transition: var(--transition);
+  text-shadow: 0 0 15px rgba(209, 180, 124, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.concept-horizontal span {
+  display: inline-block;
+  background: linear-gradient(135deg, #ffffff 0%, var(--gold-bright) 60%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.concept-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.9;
+  max-width: 340px;
+  margin: 16px auto 0;
+  text-align: center;
+  letter-spacing: 0.06em;
+}
+
+/* ==========================================================================
+   Image Placeholders - モバイル負荷軽減のためbackdrop-filterを排除しGPU描画を最適化
+   ========================================================================== */
+.image-placeholder {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.01) 0%, rgba(255, 255, 255, 0.025) 100%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+  z-index: 3;
+  /* スクロール時のモバイル高負荷要因であるbackdrop-filterを排除 */
+  transition: var(--transition);
+  /* GPUハードウェアアクセラレーションを有効化してスクロールを安定化 */
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.image-placeholder::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  pointer-events: none;
+  transition: var(--transition);
+}
+
+.image-placeholder:hover {
+  transform: translate3d(0, -3px, 0);
+  border-color: rgba(209, 180, 124, 0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.placeholder-icon {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 10px;
+  opacity: 0.4;
+  color: var(--gold);
+  transition: var(--transition);
+}
+
+.image-placeholder:hover .placeholder-icon {
+  opacity: 0.8;
+  color: var(--gold-bright);
+}
+
+.placeholder-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: var(--font-serif);
+  letter-spacing: 0.08em;
+}
+
+/* ==========================================================================
+   Main Portal (Index) Layout - パフォーマンス重視のガラス風カード
+   ========================================================================== */
+.portal-menu {
+  padding: 16px 24px 32px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  z-index: 3;
+}
+
+.menu-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 24px 22px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  /* スクロール安定化のためのGPU支援設定 */
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.menu-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 3px;
+  background: linear-gradient(180deg, var(--gold) 0%, var(--accent-cyan) 100%);
+  transform: scaleY(0);
+  transition: var(--transition);
+  transform-origin: bottom;
+}
+
+.menu-card-content {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.menu-card-num {
+  font-family: var(--font-sans);
+  font-weight: 200;
+  font-size: 1.4rem;
+  color: var(--gold);
+  border-bottom: 1px solid rgba(209, 180, 124, 0.15);
+  padding-bottom: 2px;
+  transition: var(--transition);
+}
+
+.menu-card-title {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text-light);
+  letter-spacing: 0.08em;
+  transition: var(--transition);
+}
+
+.menu-card-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+  line-height: 1.7;
+}
+
+.menu-card-arrow {
+  color: var(--gold);
+  opacity: 0.5;
+  transition: var(--transition);
+}
+
+/* Hover / Active Effects - スマホ操作時にスムーズに反応 */
+.menu-card:hover, .menu-card:active {
+  transform: translate3d(4px, -2px, 0);
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+.menu-card:hover::before, .menu-card:active::before {
+  transform: scaleY(1);
+}
+
+.menu-card:hover .menu-card-title, .menu-card:active .menu-card-title {
+  color: var(--gold-bright);
+}
+
+.menu-card:hover .menu-card-arrow, .menu-card:active .menu-card-arrow {
+  transform: translate3d(4px, 0, 0);
+  color: var(--gold-bright);
+  opacity: 1;
+}
+
+/* Quick Info Widget - 行灯風発光デザイン (スクロール負荷軽減版) */
+.quick-info-widget {
+  margin: 12px 24px 32px;
+  padding: 24px;
+  background: rgba(209, 180, 124, 0.015);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(209, 180, 124, 0.18);
+  box-shadow: inset 0 0 15px rgba(209, 180, 124, 0.02), 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 3;
+  transform: translate3d(0, 0, 0);
+}
+
+.widget-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  color: var(--gold-bright);
+  letter-spacing: 0.12em;
+}
+
+.widget-title::after {
+  content: "";
+  flex-grow: 1;
+  height: 1px;
+  background: linear-gradient(to right, rgba(209, 180, 124, 0.25), transparent);
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(209, 180, 124, 0.08);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.info-label {
+  color: var(--text-muted);
+}
+
+.info-value {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  color: var(--gold-bright);
+  letter-spacing: 0.08em;
+}
+
+.info-value-ja {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  color: var(--text-light);
+}
+
+/* ==========================================================================
+   Detail Page Layout
+   ========================================================================== */
+.detail-content {
+  padding: 24px;
+  z-index: 3;
+}
+
+.page-title-area {
+  margin-bottom: 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  padding-bottom: 20px;
+}
+
+.page-title {
+  font-size: 1.45rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  margin-top: 4px;
+  position: relative;
+  display: inline-block;
+}
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 48px 0;
+  color: var(--gold);
+  opacity: 0.4;
+}
+
+.section-divider::before,
+.section-divider::after {
+  content: "";
+  flex-grow: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(209, 180, 124, 0.2), transparent);
+}
+
+.divider-diamond {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--gold);
+  transform: rotate(45deg);
+  margin: 0 16px;
+}
+
+.detail-section {
+  margin-bottom: 48px;
+}
+
+.section-title {
+  font-size: 1.15rem;
+  font-weight: 500;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--gold-bright);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding-bottom: 10px;
+}
+
+.section-title::before {
+  content: "";
+  width: 3px;
+  height: 15px;
+  background: linear-gradient(180deg, var(--gold) 0%, var(--accent-cyan) 100%);
+  display: inline-block;
+  border-radius: 2px;
+}
+
+.text-block {
+  font-size: 0.88rem;
+  color: #e3e6e4;
+  line-height: 1.95;
+  margin-bottom: 20px;
+  text-align: justify;
+}
+
+.text-block p {
+  margin-bottom: 14px;
+}
+
+.text-block p:last-child {
+  margin-bottom: 0;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  background-color: var(--primary);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  margin-right: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.02em;
+}
+
+.important-badge {
+  background-color: var(--accent-blue);
+}
+
+.alert-box {
+  background-color: rgba(95, 168, 159, 0.02);
+  border-left: 3px solid var(--accent-cyan);
+  border-top: 1px solid rgba(95, 168, 159, 0.04);
+  border-right: 1px solid rgba(95, 168, 159, 0.04);
+  border-bottom: 1px solid rgba(95, 168, 159, 0.04);
+  padding: 20px;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  margin: 28px 0;
+  font-size: 0.82rem;
+  color: #e0e6e3;
+  line-height: 1.85;
+}
+
+.alert-title {
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--accent-cyan);
+  letter-spacing: 0.05em;
+}
+
+/* ==========================================================================
+   List & Links (Sightseeing & Details)
+   ========================================================================== */
+.link-list {
+  list-style: none;
+  display: grid;
+  gap: 14px;
+}
+
+.link-item {
+  background-color: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+  transform: translate3d(0, 0, 0);
+}
+
+.link-item:hover, .link-item:active {
+  border-color: var(--glass-border-hover);
+  background-color: rgba(255, 255, 255, 0.03);
+  transform: translate3d(0, -2px, 0);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+}
+
+.link-anchor {
+  display: block;
+  padding: 18px 22px;
+  text-decoration: none;
+  color: var(--text-light);
+}
+
+.link-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.link-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gold-bright);
+}
+
+.link-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.external-icon {
+  font-size: 0.75rem;
+  color: var(--gold);
+  opacity: 0.7;
+}
+
+/* ==========================================================================
+   Sub-Items and Cards
+   ========================================================================== */
+.item-card {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-md);
+  padding: 24px 22px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+  transform: translate3d(0, 0, 0);
+}
+
+.item-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 14px;
+  color: var(--text-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  padding-bottom: 10px;
+}
+
+.item-price {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--gold-bright);
+  font-weight: 400;
+}
+
+/* ==========================================================================
+   Navigation (Footer & Back Button) - スクロール固定のため最小限のblurを適用
+   ========================================================================== */
+.footer-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 540px;
+  /* 固定されていてスクロールしない要素のため、blurによる再計算負荷が低く、効果的にガラス感を残せる */
+  background-color: rgba(10, 14, 12, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  display: flex;
+  justify-content: center;
+  padding: 18px 24px 24px;
+  z-index: 100;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.55);
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--primary) 0%, #35503e 100%);
+  color: var(--text-light);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow: 0 4px 15px rgba(71, 107, 88, 0.15);
+  letter-spacing: 0.15em;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.back-btn:hover, .back-btn:active {
+  background: var(--primary-hover);
+  box-shadow: 0 8px 22px rgba(71, 107, 88, 0.35);
+  color: #fff;
+  transform: translate3d(0, -2px, 0);
+}
+
+/* ==========================================================================
+   Page Fade Transition - 滑らかかつ短時間に最適化して体験向上
+   ========================================================================== */
+.fade-in {
+  animation: fadeInEffect 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+@keyframes fadeInEffect {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Simple list decorations */
+.bullet-list {
+  list-style: none;
+  padding-left: 4px;
+  margin-bottom: 16px;
+}
+
+.bullet-list li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 0.82rem;
+  margin-bottom: 10px;
+  color: #d1d6d3;
+}
+
+.bullet-list li::before {
+  content: "■";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--accent-cyan);
+  font-size: 0.6rem;
+}
+
+/* ==========================================================================
+   Interactive UI Feedbacks
+   ========================================================================== */
+.info-row {
+  transition: var(--transition);
+}
+
+.info-row:hover, .info-row:active {
+  background-color: rgba(209, 180, 124, 0.05);
+  padding-left: 10px;
+  padding-right: 10px;
+  border-radius: var(--radius-sm);
+  color: var(--gold-bright);
+}
+
+/* ==========================================================================
+   Language Selector Styles (ラグジュアリー・ダークスパ & 和ウェルネスに最適化)
+   ========================================================================== */
+.lang-selector {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 150;
+}
+
+.lang-selector-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 6px 12px;
+  color: var(--text-light);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+  outline: none;
+}
+
+.lang-selector-btn:hover, .lang-selector-btn:active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--gold);
+}
+
+.globe-icon {
+  width: 14px;
+  height: 14px;
+  stroke: var(--gold);
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.chevron-icon {
+  width: 10px;
+  height: 10px;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  fill: none;
+  transition: transform 0.3s;
+}
+
+.lang-selector.active .chevron-icon {
+  transform: rotate(180deg);
+}
+
+.lang-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: rgba(20, 24, 22, 0.98);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-premium);
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  overflow: hidden;
+}
+
+.lang-selector.active .lang-dropdown {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.lang-dropdown button {
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  color: var(--text-muted);
+  text-align: left;
+  font-size: 0.78rem;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  width: 100%;
+  outline: none;
+}
+
+.lang-dropdown button:hover {
+  background: rgba(209, 180, 124, 0.08);
+  color: var(--gold-bright);
+}
+
+.lang-dropdown button.active {
+  color: var(--gold-bright);
+  font-weight: 500;
+  background: rgba(209, 180, 124, 0.05);
+  border-left: 2px solid var(--gold);
+  padding-left: 14px;
+}
+
+/* ==========================================================================
+   AI Audio Concierge Agent Styles
+   ========================================================================== */
+
+/* フローティング起動ボタン（インライン表示のため非表示） */
+.chat-trigger-btn {
+  display: none;
+}
+
+/* 旧チャットウィンドウ（インライン表示のため非表示） */
+.chat-window-container {
+  display: none;
+}
+
+/* インラインチャットコンテナ（常時表示用） */
+.inline-chat-wrapper {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background: rgba(10, 14, 12, 0.6);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm), inset 0 0 15px rgba(209, 180, 124, 0.02);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 16px 0 0;
+  transition: var(--transition);
+}
+
+/* ヘッダー */
+.chat-header {
+  padding: 16px 20px;
+  background: linear-gradient(90deg, rgba(209, 180, 124, 0.1) 0%, rgba(71, 107, 88, 0.1) 100%);
+  border-bottom: 1px solid rgba(209, 180, 124, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-avatar {
+  font-size: 1.6rem;
+  width: 36px;
+  height: 36px;
+  background: rgba(209, 180, 124, 0.15);
+  border: 1px solid rgba(209, 180, 124, 0.4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-header-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gold-bright);
+}
+
+.chat-status-text {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+}
+
+.chat-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-header-btn {
+  background: none;
+  border: none;
+  width: 30px;
+  height: 30px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+
+.chat-header-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--gold-bright);
+}
+
+.chat-header-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* メッセージエリア */
+.chat-messages-area {
+  flex-grow: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.005) 0%, transparent 80%);
+}
+
+/* チャットバルーン */
+.chat-bubble {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+  animation: messageSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-bubble.bot {
+  align-self: flex-start;
+}
+
+.chat-bubble.user {
+  align-self: flex-end;
+}
+
+.bubble-content {
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  white-space: pre-wrap;
+}
+
+.chat-bubble.bot .bubble-content {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(209, 180, 124, 0.15);
+  color: #ebd2a4;
+  border-top-left-radius: 2px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.chat-bubble.user .bubble-content {
+  background: linear-gradient(135deg, var(--primary) 0%, #35503e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border-top-right-radius: 2px;
+  box-shadow: 0 4px 15px rgba(71, 107, 88, 0.2);
+}
+
+/* 入力エリア */
+.chat-input-area {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(8, 12, 10, 0.99);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 音声ウェーブアニメーション */
+.chat-wave-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  background: rgba(71, 107, 88, 0.1);
+  border: 1px dashed rgba(71, 107, 88, 0.4);
+  border-radius: 18px;
+  animation: wavePulse 2s infinite ease-in-out;
+}
+
+.chat-wave-container.hidden {
+  display: none;
+}
+
+@keyframes wavePulse {
+  0% { border-color: rgba(71, 107, 88, 0.3); background: rgba(71, 107, 88, 0.08); }
+  50% { border-color: rgba(95, 168, 159, 0.6); background: rgba(95, 168, 159, 0.15); }
+  100% { border-color: rgba(71, 107, 88, 0.3); background: rgba(71, 107, 88, 0.08); }
+}
+
+.wave-bar {
+  width: 3px;
+  height: 12px;
+  background-color: var(--accent-cyan);
+  border-radius: 2px;
+  animation: soundWave 1.2s infinite ease-in-out;
+}
+
+.wave-bar:nth-child(1) { animation-delay: 0.1s; }
+.wave-bar:nth-child(2) { animation-delay: 0.3s; }
+.wave-bar:nth-child(3) { animation-delay: 0.5s; height: 18px; }
+.wave-bar:nth-child(4) { animation-delay: 0.2s; }
+.wave-bar:nth-child(5) { animation-delay: 0.4s; }
+
+@keyframes soundWave {
+  0%, 100% { transform: scaleY(0.6); }
+  50% { transform: scaleY(1.8); }
+}
+
+.wave-text {
+  font-size: 0.72rem;
+  color: var(--accent-cyan);
+  margin-left: 8px;
+  letter-spacing: 0.05em;
+}
+
+/* 入力行 */
+.chat-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* マイクボタン */
+.chat-mic-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  color: var(--gold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  flex-shrink: 0;
+  outline: none;
+}
+
+.chat-mic-button:hover {
+  background: rgba(209, 180, 124, 0.1);
+  border-color: var(--gold);
+  color: var(--gold-bright);
+}
+
+.chat-mic-button.recording {
+  background: rgba(95, 168, 159, 0.2);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(95, 168, 159, 0.4);
+  animation: micPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes micPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.chat-mic-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* テキストフォーム */
+.chat-text-form-container {
+  flex-grow: 1;
+  display: flex;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  padding: 4px 6px 4px 16px;
+  align-items: center;
+  transition: all 0.3s;
+}
+
+.chat-text-form-container:focus-within {
+  border-color: var(--gold);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.chat-text-form-container input {
+  flex-grow: 1;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 0.8rem;
+  font-family: var(--font-serif);
+  height: 34px;
+  outline: none;
+}
+
+.chat-text-form-container input::placeholder {
+  color: var(--text-muted);
+}
+
+.chat-send-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: none;
+  border: none;
+  color: var(--gold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  outline: none;
+}
+
+.chat-send-button:hover {
+  background: rgba(209, 180, 124, 0.1);
+  color: var(--gold-bright);
+}
+
+.chat-send-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.chat-footer-tip {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
