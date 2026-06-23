@@ -1,0 +1,65 @@
+const { z } = require('zod');
+const { getDb, admin } = require('./_lib/firebase-admin');
+const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib/helpers');
+const { buildDraftPackage } = require('./_lib/ai');
+
+const schema = z.object({
+  ownerComment: z.string().optional().default(''),
+  shotDate: z.string().nullable().optional(),
+  location: z.string().optional().default(''),
+  catName: z.string().optional().default(''),
+  simpleTag: z.string().nullable().optional(),
+  publishAt: z.string().nullable().optional(),
+  visibility: z.enum(['review', 'auto_if_safe']).default('review'),
+  ngMemo: z.string().optional().default(''),
+  channels: z.array(z.string()).min(1),
+  assets: z.array(z.object({
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+    storagePath: z.string(),
+    url: z.string().url()
+  })).optional(),
+  channelSettings: z.record(z.object({
+    assets: z.array(z.object({
+      name: z.string(),
+      type: z.string(),
+      size: z.number(),
+      storagePath: z.string(),
+      url: z.string().url()
+    })).optional(),
+    publishAt: z.string().nullable().optional()
+  })).optional(),
+  brandSnapshot: z.object({
+    hotelName: z.string().optional(),
+    officialSite: z.string().optional(),
+    phone: z.string().optional(),
+    brandCopy: z.string().optional()
+  }).optional()
+});
+
+exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') return ok({ ok: true });
+  if (event.httpMethod !== 'POST') return methodNotAllowed();
+
+  try {
+    const payload = schema.parse(parseBody(event));
+    const draftPackage = await buildDraftPackage(payload);
+    const db = getDb();
+    const ref = db.collection('submissions').doc();
+    const data = {
+      ...payload,
+      ...draftPackage,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    await ref.set(data);
+    return ok({ id: ref.id, status: draftPackage.status, publishAt: draftPackage.publishAt });
+  } catch (error) {
+    console.error(error);
+    if (error.name === 'ZodError') {
+      return badRequest(error.issues.map(issue => issue.message).join(', '));
+    }
+    return json(500, { error: error.message || 'Internal error' });
+  }
+};

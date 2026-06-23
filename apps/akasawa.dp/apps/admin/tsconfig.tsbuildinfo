@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/firebase.ts","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/firebase.ts","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/components/calendartab.tsx","./src/components/connectiontab.tsx","./src/components/csvtab.tsx","./src/components/dashboardtab.tsx","./src/components/historytab.tsx","./src/components/proposalstab.tsx","./src/components/settingstab.tsx","./src/components/sidebar.tsx"],"version":"5.9.3"}
