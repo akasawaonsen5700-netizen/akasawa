@@ -10,7 +10,8 @@
     "install-all": "npm install",
     "dev:sns": "npm run dev --workspace=apps/akasawa-sns",
     "dev:dp": "npm run dev --workspace=apps/akasawa.dp",
-    "dev:crm": "npm run dev --workspace=apps/akasawa-ml"
+    "dev:crm": "npm run dev --workspace=apps/akasawa-ml",
+    "dev:chat": "npm run dev --workspace=apps/akasawa-chat"
   },
   "dependencies": {
     "dayjs": "^1.11.13",

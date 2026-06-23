@@ -37,6 +37,10 @@ function copyFolderSync(from, to) {
 console.log('Copying portal index.html...');
 fs.copyFileSync(path.join(__dirname, 'index.html'), path.join(distDir, 'index.html'));
 
+// 3. apps/akasawa-chat のコピー (静的)
+console.log('Copying akasawa-chat...');
+copyFolderSync(path.join(__dirname, 'apps', 'akasawa-chat'), path.join(distDir, 'akasawa-chat'));
+
 // 4. apps/akasawa-ml のコピー (静的)
 console.log('Copying akasawa-ml...');
 copyFolderSync(path.join(__dirname, 'apps', 'akasawa-ml', 'public'), path.join(distDir, 'akasawa-ml'));

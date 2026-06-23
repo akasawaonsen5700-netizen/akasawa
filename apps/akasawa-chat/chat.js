@@ -4,10 +4,6 @@
 (function() {
   // --- 設定とグローバル状態 ---
   let geminiApiKey = '';
-  let isVoiceEnabled = true;
-  let recognition = null;
-  let isRecording = false;
-  let isSpeaking = false;
   let chatHistory = [];
   
   // 予約ヒアリングの状態管理
@@ -35,7 +31,6 @@
     initDOMElements();
     loadApiKey();
     setupEventListeners();
-    initSpeechRecognition();
     
     // 初期の言語設定に合わせてUIテキストの適用（少し待って翻訳が反映されてから）
     setTimeout(() => {
@@ -46,13 +41,8 @@
   // DOM要素のバインド
   function initDOMElements() {
     messagesContainer = document.getElementById('chat-messages');
-    voiceToggleBtn = document.getElementById('chat-voice-toggle');
-    micBtn = document.getElementById('chat-mic-btn');
     textForm = document.getElementById('chat-text-form');
     textInput = document.getElementById('chat-text-input');
-    waveIndicator = document.getElementById('chat-wave-indicator');
-    footerTip = document.getElementById('chat-footer-tip');
-    voiceStatus = document.getElementById('chat-voice-status');
   }
 
   // APIキーの読み込み (/akasawa-ml/key.txt)
@@ -74,41 +64,6 @@
 
   // イベントリスナーの設定
   function setupEventListeners() {
-    // 音声オンオフ切り替え
-    if (voiceToggleBtn) {
-      voiceToggleBtn.addEventListener('click', () => {
-        isVoiceEnabled = !isVoiceEnabled;
-        const wavePath = document.getElementById('speaker-wave-path');
-        
-        if (isVoiceEnabled) {
-          if (voiceStatus) {
-            voiceStatus.setAttribute('data-i18n', 'chat_voice_on');
-            voiceStatus.textContent = getTranslatedText('chat_voice_on');
-          }
-          if (wavePath) wavePath.style.display = 'block';
-          showToastMessage(getTranslatedText('chat_voice_on'));
-        } else {
-          if (voiceStatus) {
-            voiceStatus.setAttribute('data-i18n', 'chat_voice_off');
-            voiceStatus.textContent = getTranslatedText('chat_voice_off');
-          }
-          if (wavePath) wavePath.style.display = 'none';
-          stopSpeaking();
-          showToastMessage(getTranslatedText('chat_voice_off'));
-        }
-      });
-    }
-
-    // マイクボタンクリック (音声入力)
-    if (micBtn) {
-      micBtn.addEventListener('click', () => {
-        if (isRecording) {
-          stopRecording();
-        } else {
-          startRecording();
-        }
-      });
-    }
 
     // テキスト送信
     if (textForm) {
@@ -144,10 +99,6 @@
     if (!textInput) return;
     const placeholder = getTranslatedText('chat_placeholder');
     textInput.placeholder = placeholder;
-
-    if (footerTip) {
-      footerTip.textContent = getTranslatedText(isRecording ? 'chat_mic_stop' : 'chat_mic_start');
-    }
   }
 
   // 翻訳テキストの取得
@@ -241,169 +192,7 @@
     
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = config.code;
-    
-    // ブラウザの女性音声リストを取得して設定
-    const voices = window.speechSynthesis.getVoices();
-    let selectedVoice = null;
 
-    if (voices.length > 0) {
-      // 1. その言語のボイスをフィルタリング
-      const langVoices = voices.filter(v => v.lang.replace('_', '-').toLowerCase().startsWith(currentLang));
-      
-      // 2. 女性らしき名前のキーワードを優先検索
-      for (const keyword of config.voiceKeyword) {
-        selectedVoice = langVoices.find(v => v.name.toLowerCase().includes(keyword.toLowerCase()));
-        if (selectedVoice) break;
-      }
-      
-      // 3. なければ単に「female」という文字列を含むものを検索
-      if (!selectedVoice) {
-        selectedVoice = langVoices.find(v => v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('woman') || v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('kyoko') || v.name.toLowerCase().includes('siri'));
-      }
-      
-      // 4. それでもなければその言語の最初のボイス
-      if (!selectedVoice && langVoices.length > 0) {
-        selectedVoice = langVoices[0];
-      }
-    }
-
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-      console.log(`TTS Voice selected: ${selectedVoice.name} (${selectedVoice.lang})`);
-    }
-
-    utterance.onend = () => {
-      isSpeaking = false;
-      // 話し終わった後にマイクがオンだった場合は再開
-      if (wasRecording) {
-        startRecording();
-      }
-    };
-
-    utterance.onerror = (e) => {
-      console.error('SpeechSynthesis error:', e);
-      isSpeaking = false;
-      // 自動再生ポリシーなどの影響による再生失敗時にユーザーへ通知
-      if (e.error === 'not-allowed') {
-        showToastMessage(getTranslatedText('chat_err_tts'));
-      }
-      if (wasRecording) {
-        startRecording();
-      }
-    };
-
-    window.speechSynthesis.speak(utterance);
-  }
-
-  function stopSpeaking() {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    isSpeaking = false;
-  }
-
-  // --- 音声認識 (STT) ---
-  function initSpeechRecognition() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.warn('Web Speech API (SpeechRecognition) is not supported in this browser.');
-      // 音声認識非対応の場合、マイククリック時に警告を出すようにする
-      if (micBtn) {
-        micBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          showToastMessage(getTranslatedText('chat_err_not_allowed'));
-        });
-      }
-      return;
-    }
-
-    recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onstart = () => {
-      isRecording = true;
-      if (micBtn) micBtn.classList.add('recording');
-      if (waveIndicator) {
-        waveIndicator.classList.remove('hidden');
-        const listenText = waveIndicator.querySelector('.wave-text');
-        if (listenText) {
-          listenText.textContent = getTranslatedText('chat_listening');
-        }
-      }
-      if (footerTip) {
-        footerTip.textContent = getTranslatedText('chat_mic_stop');
-      }
-    };
-
-    recognition.onresult = (event) => {
-      const resultText = event.results[0][0].transcript;
-      if (resultText) {
-        handleUserMessage(resultText);
-      }
-    };
-
-    recognition.onerror = (event) => {
-      console.error('SpeechRecognition error:', event.error);
-      stopRecording();
-      
-      // エラータイプに応じたユーザー通知
-      if (event.error === 'not-allowed') {
-        showToastMessage(getTranslatedText('chat_err_not_allowed'));
-      } else if (event.error === 'no-speech') {
-        showToastMessage(getTranslatedText('chat_err_no_speech'));
-      } else if (event.error === 'network') {
-        showToastMessage(getTranslatedText('chat_err_network'));
-      } else {
-        showToastMessage(getTranslatedText('chat_err_default'));
-      }
-    };
-
-    recognition.onend = () => {
-      isRecording = false;
-      if (micBtn) micBtn.classList.remove('recording');
-      if (waveIndicator) waveIndicator.classList.add('hidden');
-      if (footerTip) {
-        footerTip.textContent = getTranslatedText('chat_mic_start');
-      }
-    };
-  }
-
-  function startRecording() {
-    // 非セキュアかつlocalhost以外の場合は、API呼び出し前にエラー通知を行う
-    const isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (!isSecure) {
-      showToastMessage(getTranslatedText('chat_err_not_allowed'));
-      return;
-    }
-
-    if (!recognition) {
-      showToastMessage(getTranslatedText('chat_err_not_allowed'));
-      return;
-    }
-    stopSpeaking(); // 発話中なら止める
-    
-    const currentLang = document.documentElement.lang || 'ja';
-    const config = langConfig[currentLang] || langConfig.ja;
-    recognition.lang = config.code;
-
-    try {
-      recognition.start();
-    } catch (e) {
-      console.error('Failed to start recognition:', e);
-      showToastMessage(getTranslatedText('chat_err_default'));
-    }
-  }
-
-  function stopRecording() {
-    if (!recognition || !isRecording) return;
-    try {
-      recognition.stop();
-    } catch (e) {
-      console.error('Failed to stop recognition:', e);
-    }
-  }
 
   // --- メッセージ処理フロー ---
   function handleUserMessage(text) {
@@ -419,7 +208,6 @@
     getAIResponse(text).then((reply) => {
       removeProcessingIndicator(processingId);
       appendMessage(reply, 'bot');
-      speak(reply);
     }).catch((err) => {
       console.error('handleUserMessage error:', err);
       removeProcessingIndicator(processingId);

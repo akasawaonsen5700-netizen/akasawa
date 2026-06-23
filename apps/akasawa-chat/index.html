@@ -47,16 +47,7 @@
         <div class="chat-header">
           <div class="chat-header-left">
             <span class="chat-avatar">👩</span>
-            <span class="chat-header-title" data-i18n="chat_title">AI音声コンシェルジュ</span>
-          </div>
-          <div class="chat-header-right">
-            <span id="chat-voice-status" class="chat-status-text" data-i18n="chat_voice_on">音声オン</span>
-            <button id="chat-voice-toggle" class="chat-header-btn" title="Toggle Voice">
-              <svg class="speaker-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                <path id="speaker-wave-path" d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-              </svg>
-            </button>
+            <span class="chat-header-title" data-i18n="chat_title">AIコンシェルジュ</span>
           </div>
         </div>
 
@@ -71,27 +62,7 @@
 
         <!-- 入力エリア -->
         <div class="chat-input-area">
-          <!-- 音声認識中のインジケーター（波形アニメーション） -->
-          <div id="chat-wave-indicator" class="chat-wave-container hidden">
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-            <span class="wave-text" data-i18n="chat_listening">聞き取り中...</span>
-          </div>
-
-          <!-- コントロール群 -->
           <div class="chat-input-row">
-            <!-- マイクボタン -->
-            <button id="chat-mic-btn" class="chat-mic-button" title="Start Voice Input">
-              <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                <line x1="12" y1="19" x2="12" y2="23"></line>
-                <line x1="8" y1="23" x2="16" y2="23"></line>
-              </svg>
-            </button>
 
             <!-- テキスト入力 -->
             <form id="chat-text-form" class="chat-text-form-container">
@@ -103,10 +74,6 @@
                 </svg>
               </button>
             </form>
-          </div>
-
-          <div id="chat-footer-tip" class="chat-footer-tip" data-i18n="chat_mic_start">
-            タップして話す
           </div>
         </div>
       </div>
