@@ -12,5 +12,14 @@
     "dev:dp": "npm run dev --workspace=apps/akasawa.dp",
     "dev:crm": "npm run dev --workspace=apps/akasawa-ml",
     "dev:chat": "npm run dev --workspace=apps/akasawa-chat"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.13",
+    "firebase": "^11.10.0",
+    "firebase-admin": "^12.6.0",
+    "formidable": "^3.5.1",
+    "googleapis": "^144.0.0",
+    "node-fetch": "^3.3.2",
+    "zod": "^3.23.8"
   }
 }
