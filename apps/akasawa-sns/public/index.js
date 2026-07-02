@@ -4,7 +4,8 @@ import { storage, apiBase, defaults } from './firebase-init.js';
 const form = document.getElementById('uploadForm');
 const message = document.getElementById('formMessage');
 const channelCbs = document.querySelectorAll('input[name="channelSelect"]');
-const channelSettingsContainer = document.getElementById('channelSettingsContainer');
+const mediaFiles = document.getElementById('mediaFiles');
+const publishAtInput = document.getElementById('publishAt');
 const ownerComment = document.getElementById('ownerComment');
 const shotDate = document.getElementById('shotDate');
 const locationInput = document.getElementById('location');
@@ -17,39 +18,6 @@ const setMessage = (text, isError = false) => {
   message.textContent = text;
   message.style.color = isError ? '#b91c1c' : '#166534';
 };
-
-// チャンネル選択時の動的パネル生成
-channelCbs.forEach(cb => {
-  cb.addEventListener('change', () => {
-    const channel = cb.value;
-    if (cb.checked) {
-      // パネルを追加
-      const panel = document.createElement('div');
-      panel.className = 'channel-panel';
-      panel.id = `panel-${channel}`;
-      panel.innerHTML = `
-        <h3>${channel.toUpperCase()} 個別設定</h3>
-        <div class="grid-2">
-          <div>
-            <label for="files-${channel}">画像・動画</label>
-            <input id="files-${channel}" type="file" accept="image/*,video/*" multiple required />
-            <div class="help">${channel.toUpperCase()}用のファイルをアップロード（必須）</div>
-          </div>
-          <div>
-            <label for="publishAt-${channel}">希望公開日時</label>
-            <input id="publishAt-${channel}" type="datetime-local" />
-            <div class="help">未指定時はAIの自動提案スケジュールが適用されます</div>
-          </div>
-        </div>
-      `;
-      channelSettingsContainer.appendChild(panel);
-    } else {
-      // パネルを削除
-      const panel = document.getElementById(`panel-${channel}`);
-      if (panel) panel.remove();
-    }
-  });
-});
 
 async function uploadFiles(files, channel) {
   const results = [];
@@ -78,28 +46,19 @@ form.addEventListener('submit', async (event) => {
     return;
   }
 
-  try {
-    setMessage('Firebase Storage へ各チャンネルのアセットをアップロード中…');
-    
-    const channelSettings = {};
-    for (const channel of selectedChannels) {
-      const fileInput = document.getElementById(`files-${channel}`);
-      const files = fileInput ? [...fileInput.files] : [];
-      if (!files.length) {
-        throw new Error(`${channel.toUpperCase()}の画像・動画ファイルを選択してください。`);
-      }
+  const files = mediaFiles ? [...mediaFiles.files] : [];
+  if (!files.length) {
+    setMessage('画像・動画ファイルを選択してください。', true);
+    return;
+  }
 
-      setMessage(`${channel.toUpperCase()} のアセットをアップロード中…`);
-      const assets = await uploadFiles(files, channel);
-      
-      const publishAtInput = document.getElementById(`publishAt-${channel}`);
-      const publishAtVal = publishAtInput?.value ? new Date(publishAtInput.value).toISOString() : null;
-      
-      channelSettings[channel] = {
-        assets,
-        publishAt: publishAtVal
-      };
-    }
+  try {
+    setMessage('Firebase Storage へアセットをアップロード中…');
+    
+    // 共通アセットとしてアップロード
+    const assets = await uploadFiles(files, 'common');
+    
+    const publishAtVal = publishAtInput?.value ? new Date(publishAtInput.value).toISOString() : null;
 
     setMessage('下書き生成を開始しています…');
     
@@ -112,8 +71,8 @@ form.addEventListener('submit', async (event) => {
       visibility: visibility.value,
       ngMemo: ngMemo.value.trim(),
       channels: selectedChannels,
-      channelSettings,
-      assets: Object.values(channelSettings)[0].assets, // 後方互換性のためのフォールバック
+      assets, // 共通アセット
+      publishAt: publishAtVal, // 共通の公開希望日時
       brandSnapshot: {
         hotelName: defaults.hotelName,
         officialSite: defaults.officialSite,
@@ -135,7 +94,6 @@ form.addEventListener('submit', async (event) => {
 
     setMessage(`登録完了: ${data.id} / ステータス: ${data.status}`);
     form.reset();
-    channelSettingsContainer.innerHTML = '';
   } catch (error) {
     console.error(error);
     setMessage(error.message || 'エラーが発生しました。', true);

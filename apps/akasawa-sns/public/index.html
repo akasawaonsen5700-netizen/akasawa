@@ -45,21 +45,26 @@
 
       <section class="grid-2">
         <div class="card">
-          <h2>① オーナー投稿登録</h2>
+          <h2>① 赤沢温泉旅館投稿登録</h2>
           <form id="uploadForm">
             <div class="channel-selection-card">
-              <label class="form-label-bold">投稿先チャンネル（個別に画像/動画と日程を設定）</label>
+              <label class="form-label-bold">投稿先チャンネル</label>
               <div class="channel-grid">
-                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="instagram" /> Instagram</label>
-                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="youtube" /> YouTube</label>
-                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="x" /> X</label>
-                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="gbp" /> GBP</label>
+                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="instagram" checked /> Instagram</label>
+                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="gbp" checked /> GBP</label>
               </div>
             </div>
 
-            <!-- 各チャンネルの個別設定エリア -->
-            <div id="channelSettingsContainer" class="channel-settings-container">
-              <!-- JSによって動的に入力パネルが追加されます -->
+            <div style="margin-top: 16px;">
+              <label for="mediaFiles">画像・動画</label>
+              <input id="mediaFiles" type="file" accept="image/*,video/*" multiple required />
+              <div class="help">投稿するファイルをアップロード（複数選択可）</div>
+            </div>
+
+            <div style="margin-top: 16px;">
+              <label for="publishAt">希望公開日時</label>
+              <input id="publishAt" type="datetime-local" />
+              <div class="help">未指定時はAIの自動提案スケジュールが適用されます</div>
             </div>
 
             <div style="margin-top: 16px;">

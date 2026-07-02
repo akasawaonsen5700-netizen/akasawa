@@ -41,6 +41,20 @@ fs.copyFileSync(path.join(__dirname, 'index.html'), path.join(distDir, 'index.ht
 console.log('Copying akasawa-chat...');
 copyFolderSync(path.join(__dirname, 'apps', 'akasawa-chat'), path.join(distDir, 'akasawa-chat'));
 
+// 3.5. apps/endo-sns のコピーとAPIパス修正 (衝突回避)
+console.log('Copying and preparing endo-sns...');
+const endoSnsDest = path.join(distDir, 'endo-sns');
+copyFolderSync(path.join(__dirname, 'apps', 'endo-sns', 'public'), endoSnsDest);
+const endoJsFiles = ['index.js', 'review.js'];
+endoJsFiles.forEach(file => {
+  const filePath = path.join(endoSnsDest, file);
+  if (fs.existsSync(filePath)) {
+    let content = fs.readFileSync(filePath, 'utf8');
+    content = content.replace(/\/api\//g, '/api/endo-');
+    fs.writeFileSync(filePath, content, 'utf8');
+  }
+});
+
 // 4. apps/akasawa-ml のコピー (静的)
 console.log('Copying akasawa-ml...');
 copyFolderSync(path.join(__dirname, 'apps', 'akasawa-ml', 'public'), path.join(distDir, 'akasawa-ml'));
@@ -92,6 +106,31 @@ if (fs.existsSync(snsFuncs)) {
     });
   };
   copySNSFuncs(snsFuncs, functionsDir);
+}
+
+// endo-sns functions (置換マージで衝突回避)
+const endoFuncsSrc = path.join(__dirname, 'apps', 'endo-sns', 'netlify', 'functions');
+if (fs.existsSync(endoFuncsSrc)) {
+  // _lib を _lib-endo としてコピー
+  const libSrc = path.join(endoFuncsSrc, '_lib');
+  const libDest = path.join(functionsDir, '_lib-endo');
+  if (fs.existsSync(libSrc)) {
+    fs.mkdirSync(libDest, { recursive: true });
+    fs.readdirSync(libSrc).forEach(file => {
+      fs.copyFileSync(path.join(libSrc, file), path.join(libDest, file));
+    });
+  }
+  
+  // 各関数ファイルを endo- プレフィックス付きでコピーし、require パスを置換
+  fs.readdirSync(endoFuncsSrc).forEach(file => {
+    const filePath = path.join(endoFuncsSrc, file);
+    if (fs.lstatSync(filePath).isFile()) {
+      const destPath = path.join(functionsDir, `endo-${file}`);
+      let content = fs.readFileSync(filePath, 'utf8');
+      content = content.replace(/\.\/_lib\//g, './_lib-endo/');
+      fs.writeFileSync(destPath, content, 'utf8');
+    }
+  });
 }
 
 // 8. APIキーの書き出し (akasawa-ml用)

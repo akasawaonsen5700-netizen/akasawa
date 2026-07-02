@@ -1,6 +1,8 @@
 const dayjs = require('dayjs');
 const { BRAND } = require('./brand');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const fs = require('fs');
+const path = require('path');
 
 // 投稿テーマのキーワードマップ（ルールベース分類用）
 const THEME_KEYWORDS = {
@@ -133,6 +135,18 @@ function draftForChannelFallback(channel, tone, classification, input) {
   return { text: input.ownerComment || '' };
 }
 
+// RAG検索ロジック (構造化されたビジョン・ミッション・戦略JSONを丸ごとGeminiに流し込み)
+function retrieveStrategySegments(input) {
+  try {
+    const dbPath = path.join(__dirname, 'strategy_rag_db.json');
+    if (!fs.existsSync(dbPath)) return '';
+    return fs.readFileSync(dbPath, 'utf8');
+  } catch (error) {
+    console.error('RAG retrieval failed:', error);
+    return '';
+  }
+}
+
 // Gemini APIを使った高度な下書き生成
 async function generateDraftWithGemini(input, classification) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -141,18 +155,23 @@ async function generateDraftWithGemini(input, classification) {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const ragContext = retrieveStrategySegments(input);
 
     const systemPrompt = `
-あなたは赤沢温泉旅館のオーナー「遠藤正俊」氏の個人SNSアカウント（InstagramおよびX）の発信をサポートする専属AIです。
-遠藤氏の経歴やビジョンは以下の通りです。これらを深く理解した上で、入力された投稿メモや撮影場所に基づいて、心に深く刺さる下書きを生成してください。
+    あなたは赤沢温泉旅館のオーナー「遠藤正俊」氏の個人SNSアカウント（InstagramおよびX）の発信をサポートする専属AIです。
+    遠藤氏の経歴やビジョンは以下の通りです。これらを深く理解した上で、入力された投稿メモや撮影場所に基づいて、心に深く刺さる下書きを生成してください。
 
-■ 遠藤正俊のプロフィール・ブランドアイデンティティ
-- 肩書: 世界を植林してきた元博士 / 赤沢温泉旅館オーナー
-- 全体コンセプト: 「${BRAND.concept}」
-- Instagram発信テーマ: 「${BRAND.instagramTheme}」
-  - コンテンツ像: 自然の美しい映像・環境音を背景に、情緒的・哲学的なナレーション（英語やスペイン語の格言・詩の引用とその日本語訳テロップ）を重ね、視覚と聴覚から心に染み渡るような表現。
-- X発信テーマ: 「${BRAND.xTheme}」
-  - コンテンツ像: ビジネスパーソンとしての葛藤、世界の植林現場での過酷な体験と、現在の山奥での経営や猫との生活を対比させた「独り言」。知的な議論や内省、深い共感を呼ぶ140文字〜280文字以内の短文。
+    ■ RAGによる『遠藤正俊個人SNS戦略提案書』からの関連情報（コンテキスト）
+    以下の戦略提案書の内容に必ず合致するトーン、テーマ、およびインサイトを用いて投稿文を生成してください：
+    ${ragContext}
+
+    ■ 遠藤正俊のプロフィール・ブランドアイデンティティ
+    - 肩書: 世界を植林してきた元博士 / 赤沢温泉旅館オーナー
+    - 全体コンセプト: 「${BRAND.concept}」
+    - Instagram発信テーマ: 「${BRAND.instagramTheme}」
+      - コンテンツ像: 自然の美しい映像・環境音を背景に、情緒的・哲学的なナレーション（英語やスペイン語の格言・詩の引用とその日本語訳テロップ）を重ね、視覚と聴覚から心に染み渡るような表現。
+    - X発信テーマ: 「${BRAND.xTheme}」
+      - コンテンツ像: ビジネスパーソンとしての葛藤、世界の植林現場での過酷な体験と、現在の山奥での経営や猫との生活を対比させた「独り言」。知的な議論や内省、深い共感を呼ぶ140文字〜280文字以内の短文。
 
 ■ 今回の投稿情報
 - 指定テーマ: ${classification.primary} ${classification.secondary.length ? `(副テーマ: ${classification.secondary.join(', ')})` : ''}
