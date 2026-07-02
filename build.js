@@ -57,11 +57,8 @@ try {
   console.log('Running npm install in apps/akasawa.dp (monorepo root)...');
   execSync('npm install', { cwd: dpPath, stdio: 'inherit' });
   console.log('Building apps/akasawa.dp/apps/admin...');
-  // tsc 型チェックはスキップ（Vite が esbuild で TS を処理するため不要）
-  const searchPaths = [adminPath, dpPath, __dirname];
-  const viteScript = require.resolve('vite/bin/vite.js', { paths: searchPaths });
-  console.log(`Running vite build from: ${viteScript}`);
-  execSync(`node "${viteScript}" build`, { cwd: adminPath, stdio: 'inherit' });
+  // npx が node_modules 階層を辿って正しい vite を見つけて実行する
+  execSync('npx vite build', { cwd: adminPath, stdio: 'inherit' });
   console.log('Copying build files to dist/akasawa-dp...');
   copyFolderSync(path.join(adminPath, 'dist'), path.join(distDir, 'akasawa-dp'));
 } catch (err) {
