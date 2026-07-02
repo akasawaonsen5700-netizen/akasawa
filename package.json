@@ -9,6 +9,7 @@
     "build": "node build.js",
     "install-all": "npm install",
     "dev:sns": "npm run dev --workspace=apps/akasawa-sns",
+    "dev:endo": "npm run dev --workspace=apps/endo-sns",
     "dev:dp": "npm run dev --workspace=apps/akasawa.dp",
     "dev:crm": "npm run dev --workspace=apps/akasawa-ml",
     "dev:chat": "npm run dev --workspace=apps/akasawa-chat"

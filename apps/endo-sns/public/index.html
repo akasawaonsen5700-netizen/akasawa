@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>遠藤正俊 個人SNS配信ツール (X / Instagram)</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <header>
+      <h1>遠藤正俊 個人SNS配信ツール (X / Instagram)</h1>
+      <p>「地球を緑にしてきた男の独り言 (X)」×「世界を旅した博士が、日本の影に癒やされる理由 (Instagram)」</p>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="card">
+          <h2>個人SNS配信コンセプト</h2>
+          <p>
+            本ツールは、<strong>『遠藤正俊個人SNS戦略』</strong>に基づき、現代日本人の「モヤモヤ」を解消する強烈なインサイトをAIによって下書き生成します。
+          </p>
+          <div>
+            <span class="pill">コンセプト特化</span>
+            <span class="pill">Gemini AI下書き</span>
+            <span class="pill">Gemini音声合成</span>
+            <span class="pill">Remotion縦型動画</span>
+            <span class="pill">X & Instagram</span>
+          </div>
+          <div class="note" style="margin-top: 12px;">
+            全体コンセプト：「世界を植林してきた博士が、日本の『枯れ葉』に見た、失われた魂の救済」
+          </div>
+        </div>
+        <div class="card">
+          <h2>運用方針 (戦略PDFより)</h2>
+          <div class="kpis">
+            <div class="kpi"><strong>毎日1-2回</strong>X（旧Twitter）推奨</div>
+            <div class="kpi"><strong>週2-3回</strong>Instagram推奨</div>
+            <div class="kpi"><strong>顔出しなし</strong>自然背景＋音声テロップ</div>
+            <div class="kpi"><strong>Gemini音声</strong>日本人65歳渋い声</div>
+          </div>
+          <p class="help">ナレーション音声は Google AI Studio (Gemini API) の音声出力機能を使用します。</p>
+        </div>
+      </section>
+
+      <section class="grid-2">
+        <div class="card">
+          <h2>① 投稿原案の作成</h2>
+          <form id="uploadForm">
+            <div class="channel-selection-card">
+              <label class="form-label-bold">投稿先チャネル</label>
+              <div class="channel-grid">
+                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="instagram" checked /> Instagram</label>
+                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="x" checked /> X (旧Twitter)</label>
+              </div>
+            </div>
+
+            <!-- 各チャンネルの個別設定エリア -->
+            <div id="channelSettingsContainer" class="channel-settings-container">
+              <!-- JSによって動的に入力パネルが追加されます -->
+            </div>
+
+            <div style="margin-top: 16px;">
+              <label for="ownerComment">オーナーの投稿メモ / 日常の気づき</label>
+              <textarea id="ownerComment" placeholder="例：今朝、箒川の川霧を眺めながら、昔海外の荒野で植林していた頃を思い出していた。数字ばかりを追う日々に疲れ果てた現代人に必要なのは、こうした何もしない時間、すなわち『沈黙』ではないだろうか。"></textarea>
+            </div>
+
+            <div class="grid-3" style="margin-top: 16px;">
+              <div>
+                <label for="shotDate">撮影日</label>
+                <input id="shotDate" type="date" />
+              </div>
+              <div>
+                <label for="location">撮影場所 (背景素材)</label>
+                <input id="location" type="text" placeholder="箒川のせせらぎ / 奥会津の森 / 露天風呂 など" />
+              </div>
+              <div>
+                <label for="catName">猫の名前</label>
+                <input id="catName" type="text" placeholder="ハナ など (任意)" />
+              </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 16px;">
+              <div>
+                <label for="simpleTag">投稿テーマ (戦略PDF分類)</label>
+                <select id="simpleTag">
+                  <option value="">AIに自動判定させる</option>
+                  <option value="無駄の美学">無駄の美学</option>
+                  <option value="完璧という呪縛">完璧という呪縛</option>
+                  <option value="失われた日本の魂">失われた日本の魂</option>
+                  <option value="自然との距離">自然との距離</option>
+                  <option value="成功の定義">成功の定義</option>
+                  <option value="情報過多の疲弊">情報過多の疲弊</option>
+                  <option value="日本の未来への不安">日本の未来への不安</option>
+                  <option value="自己肯定感の低さ">自己肯定感の低さ</option>
+                </select>
+              </div>
+              <div>
+                <label for="visibility">公開方式</label>
+                <select id="visibility">
+                  <option value="review">承認後に投稿</option>
+                  <option value="auto_if_safe">安全判定なら自動承認</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top: 16px;">
+              <label for="ngMemo">公開NGメモ / 注意事項</label>
+              <textarea id="ngMemo" placeholder="例：人物の顔は使用不可、過剰な宣伝表現は避ける。"></textarea>
+            </div>
+
+            <div class="actions">
+              <button type="submit">Firebaseへ登録して下書き生成</button>
+              <a href="review.html"><button type="button" class="secondary">承認キューを見る</button></a>
+            </div>
+            <p id="formMessage" class="help"></p>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>② 配信フローとシステム連携</h2>
+          <p>
+            Web画面からの登録を契機に、<strong>Gemini API (Google AI Studio)</strong> を使った「情緒的なInstagramキャプション/音声用ナレーション」および「X用の思考を促す短文」の下書きが自動生成されます。
+          </p>
+          <div class="note">
+            画像・映像アセットは Firebase Storage にアップロードされ、承認後に Netlify 経由でSNSへ自動配信されます。
+          </div>
+          <ul>
+            <li><strong>AI下書き生成</strong>: 遠藤氏のコンセプトを学習したプロンプトでGeminiが自動起稿</li>
+            <li><strong>AI音声生成</strong>: Gemini 2.0 Flash音声機能による「日本人65歳の渋いナレーション」の合成</li>
+            <li><strong>動画プレビュー</strong>: 登録された映像と音声が同期された動画をRemotionプレビュー可能</li>
+            <li><strong>公開バッチ</strong>: 承認済みの投稿はスケジュール時刻に自動投稿（Webhook POST）</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      遠藤正俊 個人SNS配信用ツール - Powered by Netlify + Firebase + Gemini API + Remotion.
+    </footer>
+
+    <script src="runtime-config.js"></script>
+    <script type="module" src="firebase-init.js"></script>
+    <script type="module" src="index.js"></script>
+  </body>
+</html>
