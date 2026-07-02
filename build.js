@@ -57,16 +57,17 @@ try {
   console.log('Running npm install in apps/akasawa.dp (monorepo root)...');
   execSync('npm install', { cwd: dpPath, stdio: 'inherit' });
   console.log('Building apps/akasawa.dp/apps/admin...');
-  // .bin シンボリックリンクに依存せず、node で直接 JS ファイルを実行する
-  const tscScript = path.join(dpPath, 'node_modules', 'typescript', 'lib', 'tsc.js');
-  const viteScript = path.join(dpPath, 'node_modules', 'vite', 'bin', 'vite.js');
-  if (fs.existsSync(tscScript)) {
-    console.log('Running tsc type check...');
+  // require.resolve で node_modules のどの階層にあっても正しくパスを解決する
+  const searchPaths = [adminPath, dpPath, __dirname];
+  try {
+    const tscScript = require.resolve('typescript/lib/tsc.js', { paths: searchPaths });
+    console.log(`Running tsc from: ${tscScript}`);
     execSync(`node "${tscScript}" -b`, { cwd: adminPath, stdio: 'inherit' });
-  } else {
-    console.log('tsc not found at expected path, skipping type check...');
+  } catch (resolveErr) {
+    console.log('typescript not found, skipping type check...');
   }
-  console.log('Running vite build...');
+  const viteScript = require.resolve('vite/bin/vite.js', { paths: searchPaths });
+  console.log(`Running vite from: ${viteScript}`);
   execSync(`node "${viteScript}" build`, { cwd: adminPath, stdio: 'inherit' });
   console.log('Copying build files to dist/akasawa-dp...');
   copyFolderSync(path.join(adminPath, 'dist'), path.join(distDir, 'akasawa-dp'));
