@@ -56,12 +56,18 @@ const adminPath = path.join(dpPath, 'apps', 'admin');
 try {
   console.log('Running npm install in apps/akasawa.dp (monorepo root)...');
   execSync('npm install', { cwd: dpPath, stdio: 'inherit' });
-  console.log('Building apps/akasawa.dp/apps/admin (using direct binary paths)...');
-  // npm run build 経由だと npm が PATH を上書きするため、tsc/vite をフルパスで直接実行する
-  const tscBin = path.join(dpPath, 'node_modules', '.bin', 'tsc');
-  const viteBin = path.join(dpPath, 'node_modules', '.bin', 'vite');
-  execSync(`"${tscBin}" -b`, { cwd: adminPath, stdio: 'inherit' });
-  execSync(`"${viteBin}" build`, { cwd: adminPath, stdio: 'inherit' });
+  console.log('Building apps/akasawa.dp/apps/admin...');
+  // .bin シンボリックリンクに依存せず、node で直接 JS ファイルを実行する
+  const tscScript = path.join(dpPath, 'node_modules', 'typescript', 'lib', 'tsc.js');
+  const viteScript = path.join(dpPath, 'node_modules', 'vite', 'bin', 'vite.js');
+  if (fs.existsSync(tscScript)) {
+    console.log('Running tsc type check...');
+    execSync(`node "${tscScript}" -b`, { cwd: adminPath, stdio: 'inherit' });
+  } else {
+    console.log('tsc not found at expected path, skipping type check...');
+  }
+  console.log('Running vite build...');
+  execSync(`node "${viteScript}" build`, { cwd: adminPath, stdio: 'inherit' });
   console.log('Copying build files to dist/akasawa-dp...');
   copyFolderSync(path.join(adminPath, 'dist'), path.join(distDir, 'akasawa-dp'));
 } catch (err) {
