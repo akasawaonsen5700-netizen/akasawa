@@ -56,15 +56,12 @@ const adminPath = path.join(dpPath, 'apps', 'admin');
 try {
   console.log('Running npm install in apps/akasawa.dp (monorepo root)...');
   execSync('npm install', { cwd: dpPath, stdio: 'inherit' });
-  console.log('Building apps/akasawa.dp/apps/admin with hoisted node_modules...');
-  const env = { ...process.env };
-  const parentBin = path.join(dpPath, 'node_modules', '.bin');
-  if (process.platform === 'win32') {
-    env.Path = `${parentBin};${env.Path || env.PATH || ''}`;
-  } else {
-    env.PATH = `${parentBin}:${env.PATH || ''}`;
-  }
-  execSync('npm run build', { cwd: adminPath, env, stdio: 'inherit' });
+  console.log('Building apps/akasawa.dp/apps/admin (using direct binary paths)...');
+  // npm run build 経由だと npm が PATH を上書きするため、tsc/vite をフルパスで直接実行する
+  const tscBin = path.join(dpPath, 'node_modules', '.bin', 'tsc');
+  const viteBin = path.join(dpPath, 'node_modules', '.bin', 'vite');
+  execSync(`"${tscBin}" -b`, { cwd: adminPath, stdio: 'inherit' });
+  execSync(`"${viteBin}" build`, { cwd: adminPath, stdio: 'inherit' });
   console.log('Copying build files to dist/akasawa-dp...');
   copyFolderSync(path.join(adminPath, 'dist'), path.join(distDir, 'akasawa-dp'));
 } catch (err) {
