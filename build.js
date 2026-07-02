@@ -54,8 +54,9 @@ console.log('Building akasawa.dp React app...');
 const dpPath = path.join(__dirname, 'apps', 'akasawa.dp');
 const adminPath = path.join(dpPath, 'apps', 'admin');
 try {
-  console.log('Running npm install & build directly in apps/akasawa.dp/apps/admin...');
-  execSync('npm install', { cwd: adminPath, stdio: 'inherit' });
+  console.log('Running npm install in apps/akasawa.dp (monorepo root)...');
+  execSync('npm install', { cwd: dpPath, stdio: 'inherit' });
+  console.log('Building apps/akasawa.dp/apps/admin...');
   execSync('npm run build', { cwd: adminPath, stdio: 'inherit' });
   console.log('Copying build files to dist/akasawa-dp...');
   copyFolderSync(path.join(adminPath, 'dist'), path.join(distDir, 'akasawa-dp'));
