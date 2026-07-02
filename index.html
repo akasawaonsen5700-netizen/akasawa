@@ -10,10 +10,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-color: #05120c; /* より深い和モダンなダークグリーン */
+      --bg-color: #05120c; /* Deep modern wa-modern dark green */
       --card-bg: rgba(13, 31, 23, 0.7);
       --border-color: rgba(212, 175, 55, 0.25);
-      --accent-color: #d4af37; /* ゴールド */
+      --accent-color: #d4af37; /* Gold */
       --text-main: #f5f2eb;
       --text-sub: #a4b3ab;
       --success: #52c41a;
@@ -79,7 +79,7 @@
       gap: 4rem;
     }
 
-    /* 連携ベネフィット セクション */
+    /* Integration Benefits Section */
     .benefit-section {
       background: rgba(13, 31, 23, 0.4);
       border: 1px solid var(--border-color);
@@ -94,8 +94,8 @@
       font-weight: 600;
       color: var(--accent-color);
       margin-bottom: 1.5rem;
-      border-bottom: 1px solid var(--border-color);
       padding-bottom: 0.8rem;
+      border-bottom: 1px solid var(--border-color);
       letter-spacing: 0.05em;
     }
 
@@ -128,7 +128,7 @@
       font-weight: 300;
     }
 
-    /* アプリグリッド */
+    /* App Grid */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
@@ -179,7 +179,6 @@
     .card-icon {
       font-size: 2.8rem;
       margin-bottom: 1.8rem;
-      color: var(--accent-color);
     }
 
     .card-title {
@@ -204,21 +203,19 @@
       border-radius: 0 8px 8px 0;
       font-size: 0.9rem;
       line-height: 1.6;
-      color: var(--text-main);
-      margin-bottom: 2rem;
       font-weight: 400;
     }
 
     .card-action {
+      margin-top: auto;
       font-size: 0.9rem;
       color: var(--accent-color);
       font-weight: 600;
-      letter-spacing: 0.1em;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      margin-top: auto;
       transition: gap 0.3s ease;
+      letter-spacing: 0.1em;
     }
 
     .card:hover .card-action {
@@ -229,43 +226,29 @@
       text-align: center;
       padding: 4rem 1rem;
       color: var(--text-sub);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
       font-size: 0.85rem;
       letter-spacing: 0.05em;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    @media (max-width: 768px) {
-      .main-title {
-        font-size: 2rem;
-      }
-      .benefit-section {
-        padding: 1.8rem;
-      }
-      .container {
-        padding: 0 1rem;
-      }
     }
   </style>
 </head>
 <body>
-
   <header>
     <div class="brand-title">Akasawa Onsen Ryokan</div>
     <h1 class="main-title">統合AIシステムポータル</h1>
     <p class="subtitle">
-      AIとデータがシームレスに連動し、宿の運営・集客・リピート促進を完全自動化。
+      AIとデータがシームレスに連動し、宿の運営・集客・リピート促進を完全自動化。<br>
       赤沢温泉旅館の経営価値を最大化する統合AIソリューション。
     </p>
   </header>
 
   <main class="container">
-    
     <!-- システム連携ベネフィット -->
     <section class="benefit-section">
       <h2 class="section-title">AIエージェントの連携による経営インパクト</h2>
       <p class="benefit-lead">
-        4つのAIモジュールが共通の顧客・予約・マーケティングデータを介してリアルタイムに連動。
-        集客から滞在時のおもてなし、そしてリピート促進までの一連のプロセスを自律的に循環させ、
+        4つのAIモジュールが共通の顧客・予約・マーケティングデータを介してリアルタイムに連動。<br>
+        集客から滞在時のおもてなし、そしてリピート促進までの一連のプロセスを自律的に循環させ、<br>
         <strong>オーナーの手を煩わせることなく稼働率と売上（RevPAR）を最大化</strong>します。
       </p>
       <div class="benefit-grid">
@@ -284,7 +267,7 @@
         <div class="benefit-item">
           <h3><span>📊</span> RevPAR（経営指標）の自律的向上</h3>
           <p>
-            集客と客室稼働のデータはすべてダッシュボードで一元監視され、最適な販売価格（ダイナミックプライシング）と販促シナリオへリアルタイムに還元されます。
+            集客と客室稼働のデータはすべてダッシュボードで一元監視され、最適な販売価格（ダイナミックプライシング）と販促プランへリアルタイムに還元されます。
           </p>
         </div>
       </div>
@@ -298,7 +281,7 @@
           <div class="card-icon">💬</div>
           <h2 class="card-title">AI チャットコンシェルジュ</h2>
           <p class="card-desc">
-            客室内の専用QRコードからの案内（館内設備・貸切風呂状況・看板猫情報など）と、
+            客室内の専用QRコードからの案内（館内設備・貸切風呂状況・看板猫情報など）と、<br>
             公式ホームページ上の「AI予約エージェント」を同時にカバーする多言語AIコンシェルジュ。
           </p>
           <div class="card-benefit">
@@ -309,13 +292,13 @@
         <div class="card-action">システムを起動する ➔</div>
       </a>
 
-      <!-- 2. Mail & LINE 連携デモ -->
+      <!-- 2. メール・LINE自動連携配信 -->
       <a href="/akasawa-ml/index.html" class="card">
         <div>
           <div class="card-icon">✉️</div>
           <h2 class="card-title">メール・LINE自動連携配信</h2>
           <p class="card-desc">
-            宿泊予約システムやCSVデータと連動し、宿泊前後のフォローシナリオ配信および、
+            宿泊予約システムやCSVデータと連動し、宿泊前後のフォローシナリオ配信および、<br>
             リピーター獲得や直近の空室を埋めるためのメッセージ配信を自動で行う配信システム。
           </p>
           <div class="card-benefit">
@@ -326,24 +309,57 @@
         <div class="card-action">システムを起動する ➔</div>
       </a>
 
-      <!-- 3. SNS・GBP自動配信システム -->
-      <a href="/akasawa-sns/index.html" class="card">
+      <!-- 3. ① オーナー投稿登録 -->
+      <a href="/endo-sns/index.html" class="card">
         <div>
           <div class="card-icon">📲</div>
-          <h2 class="card-title">SNS・GBP自動配信エージェント</h2>
+          <h2 class="card-title">① オーナー投稿登録</h2>
           <p class="card-desc">
-            写真やメモからSNS・GBP投稿を自動作成・配信する機能に加え、
-            閲覧数（インプレッション）が目標の10,000件を下回った際、AIが自動で「改善アクション（追加投稿案の作成・特定ターゲット向け広告配信）」を提案・実行します。
+            『遠藤正俊個人SNS戦略.pdf』のRAGを搭載した個人SNS配信ツール。<br>
+            現代日本人のモヤモヤを解消するインサイト投稿の自動生成、Remotionによる縦型動画生成、Geminiによる65歳男性の渋いナレーション音声を合成します。
           </p>
           <div class="card-benefit">
             <strong>ベネフィット:</strong><br>
-            集客の露出不足をAIが自律的に検知してカバーするため、オーナーの作業時間をゼロにしながら、旅館の魅力を絶え間なくネット上に広め続けます。
+            オーナー独自の強烈なインサイト発信をAIが自動で情緒的なリール動画や投稿文に落とし込み、個人の発信力を最大化します。
           </div>
         </div>
         <div class="card-action">システムを起動する ➔</div>
       </a>
 
-      <!-- 4. データ統合ダッシュボード -->
+      <!-- 4. ② 赤沢温泉旅館投稿登録 -->
+      <a href="/akasawa-sns/index.html" class="card">
+        <div>
+          <div class="card-icon">📷</div>
+          <h2 class="card-title">② 赤沢温泉旅館投稿登録</h2>
+          <p class="card-desc">
+            赤沢温泉旅館の全データ（猫・ぬる湯・渓流・静養など）のRAGを搭載した公式SNS・GBP投稿システム。<br>
+            写真や動画をアップロードするだけで、旅館の魅力を引き出す最適な下書き投稿を自動生成します。
+          </p>
+          <div class="card-benefit">
+            <strong>ベネフィット:</strong><br>
+            集客の露出不足をAIが自律的に検知・カバーし、旅館の魅力を絶え間なくネット上に広め続けます。
+          </div>
+        </div>
+        <div class="card-action">システムを起動する ➔</div>
+      </a>
+
+      <!-- 5. ③ 赤沢温泉旅館投稿 Firebase Storage -->
+      <div class="card" style="cursor: default;">
+        <div>
+          <div class="card-icon">🗂️</div>
+          <h2 class="card-title">③ 赤沢温泉旅館投稿 Firebase Storage</h2>
+          <p class="card-desc">
+            大容量の画像・動画アセットを安全・高速に保存・配信するためのクラウドストレージ。<br>
+            Googleスプレッドシート単体での管理に比べ、リール動画などの大容量メディアも安定して各SNS配信先へ自動連携できます。
+          </p>
+          <div class="card-benefit">
+            <strong>ベネフィット:</strong><br>
+            Firebase Storage に直接アセットを保存し、セキュアな一時URLを発行して Netlify 経由でのSNS自動投稿を円滑に行います。
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. ダイナミックプライシング統合監視ダッシュボード -->
       <a href="/akasawa-dp/" class="card">
         <div>
           <div class="card-icon">📊</div>
@@ -362,8 +378,7 @@
   </main>
 
   <footer>
-    <p>&copy; 2026 Akasawa Onsen Ryokan Integrated AI Solutions. All Rights Reserved.</p>
+    <p>&copy; 2026 赤沢温泉旅館 統合AIシステムポータル. All rights reserved.</p>
   </footer>
-
 </body>
 </html>
