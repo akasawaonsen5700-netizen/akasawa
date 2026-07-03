@@ -107,32 +107,29 @@ function buildFallbackHashtags(classification, channel) {
 }
 
 function draftForChannelFallback(channel, tone, classification, input) {
+  const userText = input.ownerComment || '';
   if (channel === 'instagram') {
     const lines = [
       `【${BRAND.instagramTheme}】`,
-      tone.scene,
-      tone.detail,
+      userText || tone.scene,
+      userText ? '' : tone.detail,
       '',
       tone.instagramQuote,
-      '',
-      `▼コラム：「${classification.primary}」`,
-      input.ownerComment || '',
       '',
       BRAND.profileInstagram
     ].filter(Boolean);
     return {
       text: `${lines.join('\n')}\n\n${buildFallbackHashtags(classification, 'instagram').join(' ')}`,
-      narration: `${tone.scene}。${tone.detail}。${input.ownerComment || ''}`
+      narration: userText || `${tone.scene}。${tone.detail}`
     };
   } else if (channel === 'x') {
-    const customText = input.ownerComment ? `${input.ownerComment} ` : '';
-    const mainText = `${tone.xText}\n\n${customText}${BRAND.site}`;
+    const mainText = userText || `${tone.xText}\n\n${BRAND.site}`;
     return {
       text: mainText.slice(0, 280),
-      narration: tone.xText
+      narration: userText || tone.xText
     };
   }
-  return { text: input.ownerComment || '' };
+  return { text: userText };
 }
 
 // RAG検索ロジック (構造化されたビジョン・ミッション・戦略JSONを丸ごとGeminiに流し込み)
@@ -195,11 +192,14 @@ async function generateDraftWithGemini(input, classification) {
 }
 `;
 
-    const result = await model.generateContent(systemPrompt);
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+      generationConfig: {
+        responseMimeType: 'application/json'
+      }
+    });
     const responseText = result.response.text();
-    // JSONのクリーンアップ（もし ```json のようにマークダウンされていた場合に対応）
-    const cleanJson = responseText.replace(/```json/i, '').replace(/```/g, '').trim();
-    const data = JSON.parse(cleanJson);
+    const data = JSON.parse(responseText.trim());
     if (data.instagram && data.x) {
       return data;
     }

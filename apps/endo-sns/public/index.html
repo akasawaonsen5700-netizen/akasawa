@@ -125,16 +125,18 @@
         <div class="card">
           <h2>② 配信フローとシステム連携</h2>
           <p>
-            Web画面からの登録を契機に、<strong>Gemini API (Google AI Studio)</strong> を使った「情緒的なInstagramキャプション/音声用ナレーション」および「X用の思考を促す短文」の下書きが自動生成されます。
+            Web画面からの登録を契機に、<strong>Gemini API</strong> を用いた「情緒的なInstagramキャプション/ナレーション台本」および「X用の思考を促す短文」の下書きが自動生成されます。
           </p>
-          <div class="note">
-            画像・映像アセットは Firebase Storage にアップロードされ、承認後に Netlify 経由でSNSへ自動配信されます。
+          <div class="note" style="border-left-color: #10b981; background: #f0fdf4; color: #14532d;">
+            <strong>Cartesia.ai API ＆ Remotion 自動レンダリング連携中</strong><br>
+            登録と同時にバックグラウンドで自動的に遠藤正俊氏のクローン音声が生成され、テロップとBGMが一体となった本物の縦型動画（MP4）が自動で書き出されます。
           </div>
           <ul>
-            <li><strong>AI下書き生成</strong>: 遠藤氏のコンセプトを学習したプロンプトでGeminiが自動起稿</li>
-            <li><strong>AI音声生成</strong>: Gemini 2.0 Flash音声機能による「日本人65歳の渋いナレーション」の合成</li>
-            <li><strong>動画プレビュー</strong>: 登録された映像と音声が同期された動画をRemotionプレビュー可能</li>
-            <li><strong>公開バッチ</strong>: 承認済みの投稿はスケジュール時刻に自動投稿（Webhook POST）</li>
+            <li><strong>AI下書き生成</strong>: 遠藤氏の戦略PDFを学習したプロンプトでGeminiが自律的に起稿</li>
+            <li><strong>クローン音声合成</strong>: Cartesia.aiのボイスクローニングAPIと連携し、遠藤正俊氏本人の声で台本を朗読する音声を自動生成</li>
+            <li><strong>自動ビデオ書き出し</strong>: 登録直後に裏で Remotion レンダリングを起動し、テロップ・BGM・クローン音声を合体させたMP4動画を自動生成</li>
+            <li><strong>プレビュー＆直接承認</strong>: 承認キューで完成したMP4動画をプレビューし、モーダル内からワンクリックで直接承認可能</li>
+            <li><strong>自律スケジュール配信</strong>: 承認済みの投稿はスケジュールされた日時に自動で各SNS（Instagram / X）へWebhook配信</li>
           </ul>
         </div>
       </section>
