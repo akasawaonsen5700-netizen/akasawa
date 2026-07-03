@@ -138,6 +138,13 @@ if (fs.existsSync(endoFuncsSrc)) {
       let content = fs.readFileSync(filePath, 'utf8');
       content = content.replace(/\.\/_lib\//g, './_lib-endo/');
       fs.writeFileSync(destPath, content, 'utf8');
+
+      // ローカル開発時の互換性のため、他アプリと名前が衝突しない関数は
+      // プレフィックスなしのコピーも作成する
+      const nonPrefixedPath = path.join(functionsDir, file);
+      if (!fs.existsSync(nonPrefixedPath)) {
+        fs.writeFileSync(nonPrefixedPath, content, 'utf8');
+      }
     }
   });
 }
