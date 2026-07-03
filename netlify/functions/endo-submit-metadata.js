@@ -1,8 +1,8 @@
 const { z } = require('zod');
-const { getDb, admin } = require('./_lib/firebase-admin');
-const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib/helpers');
-const { buildDraftPackage } = require('./_lib/ai');
-const { generateVoiceFromCartesia } = require('./_lib/cartesia-tts');
+const { getDb, admin } = require('./_lib-endo/firebase-admin');
+const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib-endo/helpers');
+const { buildDraftPackage } = require('./_lib-endo/ai');
+const { generateVoiceFromCartesia } = require('./_lib-endo/cartesia-tts');
 
 const schema = z.object({
   ownerComment: z.string().optional().default(''),

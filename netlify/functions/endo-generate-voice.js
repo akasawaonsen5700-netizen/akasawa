@@ -1,7 +1,7 @@
-const { generateVoiceFromText } = require('./_lib/gemini-tts');
-const { generateVoiceFromCartesia } = require('./_lib/cartesia-tts');
-const { getDb } = require('./_lib/firebase-admin');
-const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib/helpers');
+const { generateVoiceFromText } = require('./_lib-endo/gemini-tts');
+const { generateVoiceFromCartesia } = require('./_lib-endo/cartesia-tts');
+const { getDb } = require('./_lib-endo/firebase-admin');
+const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib-endo/helpers');
 const { z } = require('zod');
 
 const schema = z.object({

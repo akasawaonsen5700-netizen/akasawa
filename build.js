@@ -45,6 +45,15 @@ copyFolderSync(path.join(__dirname, 'apps', 'akasawa-chat'), path.join(distDir, 
 console.log('Copying and preparing endo-sns...');
 const endoSnsDest = path.join(distDir, 'endo-sns');
 copyFolderSync(path.join(__dirname, 'apps', 'endo-sns', 'public'), endoSnsDest);
+
+// endo.mp3 をコピー (ローカル開発/Remotionプレビューおよびデプロイビルドで利用するため)
+const endoMp3Src = path.join(__dirname, 'endo.mp3');
+if (fs.existsSync(endoMp3Src)) {
+  fs.copyFileSync(endoMp3Src, path.join(__dirname, 'apps', 'endo-sns', 'public', 'endo.mp3'));
+  fs.copyFileSync(endoMp3Src, path.join(endoSnsDest, 'endo.mp3'));
+  console.log('Copied endo.mp3 to public and dist folders.');
+}
+
 const endoJsFiles = ['index.js', 'review.js'];
 endoJsFiles.forEach(file => {
   const filePath = path.join(endoSnsDest, file);

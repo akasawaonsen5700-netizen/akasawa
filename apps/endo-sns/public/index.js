@@ -12,6 +12,7 @@ const catName = document.getElementById('catName');
 const simpleTag = document.getElementById('simpleTag');
 const visibility = document.getElementById('visibility');
 const ngMemo = document.getElementById('ngMemo');
+const voiceFileInput = document.getElementById('voiceFile');
 
 const setMessage = (text, isError = false) => {
   message.textContent = text;
@@ -87,6 +88,16 @@ form.addEventListener('submit', async (event) => {
   }
 
   try {
+    let uploadedVoiceUrl = null;
+    if (voiceFileInput && voiceFileInput.files.length > 0) {
+      const file = voiceFileInput.files[0];
+      setMessage('音声ファイルをアップロード中…');
+      const path = `submissions/voices/${Date.now()}-${crypto.randomUUID()}-${file.name}`;
+      const fileRef = ref(storage, path);
+      await uploadBytes(fileRef, file, { contentType: file.type });
+      uploadedVoiceUrl = await getDownloadURL(fileRef);
+    }
+
     setMessage('Firebase Storage へ各チャンネルのアセットをアップロード中…');
     
     const channelSettings = {};
@@ -122,6 +133,7 @@ form.addEventListener('submit', async (event) => {
       channels: selectedChannels,
       channelSettings,
       assets: Object.values(channelSettings)[0].assets, // 後方互換性のためのフォールバック
+      voiceUrl: uploadedVoiceUrl,
       brandSnapshot: {
         ownerName: defaults.ownerName,
         hotelName: defaults.hotelName,

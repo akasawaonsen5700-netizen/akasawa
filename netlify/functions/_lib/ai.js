@@ -1,5 +1,7 @@
 const dayjs = require('dayjs');
 const { BRAND } = require('./brand');
+const fs = require('fs');
+const path = require('path');
 
 const KEYWORDS = {
   猫: ['猫', 'ねこ', 'ネコ', 'cat', 'resident cat'],
@@ -133,14 +135,31 @@ function draftForChannel(channel, tone, classification, input) {
   return { text: lines.join('\n') };
 }
 
-async function maybeUseAntigravity(input, fallback) {
+// RAG検索ロジック (構造化されたビジョン・ミッション・ルーツJSONを丸ごと流し込み)
+function retrieveRyokanSegments(input) {
+  try {
+    const dbPath = path.join(__dirname, 'ryokan_rag_db.json');
+    if (!fs.existsSync(dbPath)) return '';
+    return fs.readFileSync(dbPath, 'utf8');
+  } catch (error) {
+    console.error('Ryokan RAG retrieval failed:', error);
+    return '';
+  }
+}
+
+async function maybeUseAntigravity(input, fallback, ragContext) {
   const url = process.env.ANTIGRAVITY_WEBHOOK_URL;
   if (!url) return fallback;
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system: 'Akazawa Onsen brand-safe social draft generation', input, fallback })
+      body: JSON.stringify({ 
+        system: 'Akazawa Onsen brand-safe social draft generation', 
+        input, 
+        fallback,
+        ragContext // RAGコンテキストをWebhook送信データに載せる
+      })
     });
     if (!response.ok) throw new Error('antigravity webhook failed');
     const data = await response.json();
@@ -166,6 +185,7 @@ async function buildDraftPackage(input) {
   const tone = buildTone(input, classification);
   const channels = input.channels?.length ? input.channels : ['instagram', 'gbp'];
   const drafts = Object.fromEntries(channels.map(channel => [channel, draftForChannel(channel, tone, classification, input)]));
+  const ragContext = retrieveRyokanSegments(input); // RAGコンテキストを取得
   
   // Normalize channelSettings for all selected channels
   const channelSettings = { ...(input.channelSettings || {}) };
@@ -194,9 +214,10 @@ async function buildDraftPackage(input) {
     altText: buildAltText(classification, input),
     channelSettings,
     channelStatuses,
-    status: initialStatus
+    status: initialStatus,
+    ragContext // フォールバックオブジェクトにも含める
   };
-  return maybeUseAntigravity(input, fallback);
+  return maybeUseAntigravity(input, fallback, ragContext);
 }
 
 module.exports = { buildDraftPackage };
