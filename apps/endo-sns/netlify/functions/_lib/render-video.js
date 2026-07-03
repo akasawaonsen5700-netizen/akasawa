@@ -24,19 +24,28 @@ async function renderVideo(submissionId, props) {
       fs.mkdirSync(rendersDir, { recursive: true });
     }
 
-    // propsをJSON文字列にしてエスケープ (Windowsコマンドラインに対応)
-    // ダブルクォートをエスケープして渡します
-    const escapedProps = JSON.stringify(props).replace(/"/g, '\\"');
+    // propsを一時的にJSONファイルとして保存 (Windowsコマンドのエスケープ問題を完全回避するため)
+    const propsFilename = `props_${submissionId}.json`;
+    const propsPath = path.join(cwd, 'public', 'renders', propsFilename);
+    fs.writeFileSync(propsPath, JSON.stringify(props));
     
-    // Remotion レンダリングコマンドの構築
-    const command = `npx remotion render src/remotion/index.tsx EndoInstagramReel public/renders/${outputFilename} --props="${escapedProps}"`;
+    // Remotion レンダリングコマンドの構築 (相対パスでJSONファイルを指定)
+    const command = `npx remotion render src/remotion/index.tsx EndoInstagramReel public/renders/${outputFilename} --props=public/renders/${propsFilename}`;
 
     console.log(`Starting Remotion rendering in cwd: ${cwd}`);
     console.log(`Command: ${command}`);
 
     exec(command, { cwd }, async (error, stdout, stderr) => {
+      // 一時JSONファイルをクリーンアップ
+      if (fs.existsSync(propsPath)) {
+        fs.unlinkSync(propsPath);
+      }
+
       if (error) {
         console.error('Remotion render CLI error:', stderr || error.message);
+        if (fs.existsSync(outputPath)) {
+          fs.unlinkSync(outputPath);
+        }
         return reject(error);
       }
       console.log('Remotion render CLI success:\n', stdout);
@@ -72,6 +81,9 @@ async function renderVideo(submissionId, props) {
         }
       } catch (uploadErr) {
         console.error('Failed to upload rendered video:', uploadErr);
+        if (fs.existsSync(outputPath)) {
+          fs.unlinkSync(outputPath);
+        }
         reject(uploadErr);
       }
     });
