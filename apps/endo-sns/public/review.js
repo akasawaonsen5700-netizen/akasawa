@@ -23,6 +23,7 @@ const reelTextOverlay = document.getElementById('reelTextOverlay');
 const playBtn = document.getElementById('playBtn');
 const pauseBtn = document.getElementById('pauseBtn');
 const modalApproveBtn = document.getElementById('modalApproveBtn');
+const modalPublishNowBtn = document.getElementById('modalPublishNowBtn');
 const reelTimer = document.getElementById('reelTimer');
 const narrationAudio = document.getElementById('narrationAudio');
 const bgmAudio = document.getElementById('bgmAudio');
@@ -57,20 +58,32 @@ function renderChannelSettings(row) {
   return channels.map(channel => {
     const setting = settings[channel] || {};
     const status = statuses[channel] || row.status || 'draft';
-    const publishAt = setting.publishAt || row.publishAt || '自動提案';
     const assets = setting.assets || [];
     const draftText = row.drafts?.[channel]?.text || '下書きなし';
     const narrationText = row.drafts?.[channel]?.narration || '';
 
+    // 日程値のパース（ローカル時間用のYYYY-MM-DDTHH:mm形式へ変換）
+    let dateVal = '';
+    if (setting.publishAt) {
+      try {
+        const d = new Date(setting.publishAt);
+        const tzoffset = d.getTimezoneOffset() * 60000;
+        const localISOTime = (new Date(d.getTime() - tzoffset)).toISOString().slice(0, 16);
+        dateVal = localISOTime;
+      } catch (e) {}
+    }
+
+    const isPublished = status === 'published';
+
     let extraButtonsHtml = '';
-    // Instagramかつ、下書きにナレーション原稿がある場合
     if (channel === 'instagram' && narrationText) {
       const hasVoice = !!row.voiceUrl;
       extraButtonsHtml = `
         <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
           <button class="voice-btn ${hasVoice ? 'has-voice' : ''}" 
                   data-id="${row.id}" 
-                  data-text="${escapeHtml(narrationText)}">
+                  data-text="${escapeHtml(narrationText)}"
+                  ${isPublished ? 'disabled' : ''}>
             ${hasVoice ? '🎙️ AI音声再生成' : '🎙️ Gemini AI音声生成'}
           </button>
           ${hasVoice ? `
@@ -99,7 +112,24 @@ function renderChannelSettings(row) {
           <strong style="color: var(--brand); font-size: 15px;">${escapeHtml(channel.toUpperCase())}</strong>
           <span class="status ${escapeHtml(status)}" style="font-size: 13px;">${escapeHtml(status)}</span>
         </div>
-        <p style="margin: 4px 0; font-size: 13px;"><strong>公開予定日時:</strong> ${escapeHtml(publishAt)}</p>
+        
+        <div style="margin: 8px 0; padding: 10px; background: #f3f4f6; border-radius: 8px;">
+          <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #374151;">公開予定日時 (日程設定):</label>
+          <input type="datetime-local" class="publish-date-input" data-id="${row.id}" data-channel="${channel}" value="${dateVal}" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;" ${isPublished ? 'disabled' : ''} />
+        </div>
+
+        <div style="margin: 8px 0; display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="good ch-approve-btn" data-id="${row.id}" data-channel="${channel}" style="padding: 6px 12px; font-size: 12px;" ${isPublished ? 'disabled' : ''}>
+            このチャンネルを承認・日程保存
+          </button>
+          <button class="good ch-publish-btn" data-id="${row.id}" data-channel="${channel}" style="padding: 6px 12px; font-size: 12px; background-color: #0284c7; border-color: #0284c7;" ${isPublished ? 'disabled' : ''}>
+            📲 今すぐ投稿
+          </button>
+          <button class="danger ch-reject-btn" data-id="${row.id}" data-channel="${channel}" style="padding: 6px 12px; font-size: 12px;" ${isPublished ? 'disabled' : ''}>
+            却下
+          </button>
+        </div>
+
         <div class="asset-grid" style="margin: 8px 0;">
           ${assets.map(renderAsset).join('')}
         </div>
@@ -322,12 +352,27 @@ async function loadQueue() {
           <p><strong>自動カテゴリ:</strong> ${escapeHtml(row.classification?.primary || '未分類')} / ${escapeHtml((row.classification?.secondary || []).join(', '))}</p>
           <p><strong>リスク判定:</strong> ${renderRisk(row.risk)}</p>
           
+          ${row.videoUrl ? `
+            <div class="completed-video-container" style="margin: 14px 0; padding: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px;">
+              <strong style="color: #166534; font-size: 14px; display: block; margin-bottom: 8px;">🟢 自動生成された完成動画 (MP4):</strong>
+              <video src="${escapeHtml(row.videoUrl)}" controls style="width: 100%; max-width: 360px; height: auto; border-radius: 8px; border: 1px solid #dcfce7; background: #000;"></video>
+              <div style="margin-top: 10px;">
+                <a href="${escapeHtml(row.videoUrl)}" target="_blank" download="${row.id}.mp4" style="display: inline-block; background: #16a34a; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold; text-align: center; border: 1px solid #16a34a;">📥 動画ファイルをダウンロード</a>
+              </div>
+            </div>
+          ` : `
+            <div style="margin: 14px 0; padding: 10px; background: #fafaf9; border: 1px dashed var(--line); border-radius: 8px; font-size: 13px; color: #6b7280;">
+              ⏳ 動画は現在バックグラウンドで自動生成（レンダリング）中です。数分後に画面をリロードしてください。
+            </div>
+          `}
+
           <div style="margin-top: 16px;">
             <h4 style="margin: 0 0 8px; font-size: 15px; color: var(--brand);">チャンネル別配信設定</h4>
             ${renderChannelSettings(row)}
           </div>
 
           <div class="actions" style="margin-top: 18px;">
+            <button class="good" data-action="publish_now" data-id="${row.id}" style="background-color: #0284c7; border-color: #0284c7;">📲 今すぐ投稿</button>
             <button class="good" data-action="approve" data-id="${row.id}">承認</button>
             <button class="warn" data-action="regenerate" data-id="${row.id}">下書き再生成</button>
             <button class="danger" data-action="reject" data-id="${row.id}">却下</button>
@@ -391,6 +436,89 @@ async function loadQueue() {
       openPreview(d.id, d.text, d.voice, d.media, d.mediaType, d.video);
     });
   });
+
+  // チャンネル別承認・日程保存イベント
+  [...queueEl.querySelectorAll('.ch-approve-btn')].forEach(button => {
+    button.addEventListener('click', async () => {
+      const { id, channel } = button.dataset;
+      const input = queueEl.querySelector(`.publish-date-input[data-id="${id}"][data-channel="${channel}"]`);
+      const publishAtVal = input?.value ? new Date(input.value).toISOString() : null;
+      
+      try {
+        button.disabled = true;
+        button.textContent = '保存中...';
+        const response = await fetch(`${apiBase}/approve-post`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, action: 'approve', channel, publishAt: publishAtVal })
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || '承認・日程保存に失敗しました');
+        }
+        alert(`${channel.toUpperCase()}を承認し、公開日程を保存しました。`);
+        await loadQueue();
+      } catch (error) {
+        alert(error.message);
+        button.disabled = false;
+        button.textContent = 'このチャンネルを承認・日程保存';
+      }
+    });
+  });
+
+  // チャンネル別即時投稿イベント
+  [...queueEl.querySelectorAll('.ch-publish-btn')].forEach(button => {
+    button.addEventListener('click', async () => {
+      const { id, channel } = button.dataset;
+      if (!confirm(`${channel.toUpperCase()}へ今すぐ直接投稿します。よろしいですか？`)) return;
+      
+      try {
+        button.disabled = true;
+        button.textContent = '投稿中...';
+        const response = await fetch(`${apiBase}/approve-post`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, action: 'publish_now', channel })
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || '即時投稿に失敗しました');
+        }
+        alert(`${channel.toUpperCase()}へ直接投稿を完了しました！`);
+        await loadQueue();
+      } catch (error) {
+        alert(error.message);
+        button.disabled = false;
+        button.textContent = '📲 今すぐ投稿';
+      }
+    });
+  });
+
+  // チャンネル別却下イベント
+  [...queueEl.querySelectorAll('.ch-reject-btn')].forEach(button => {
+    button.addEventListener('click', async () => {
+      const { id, channel } = button.dataset;
+      try {
+        button.disabled = true;
+        button.textContent = '却下中...';
+        const response = await fetch(`${apiBase}/approve-post`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, action: 'reject', channel })
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || '却下処理に失敗しました');
+        }
+        alert(`${channel.toUpperCase()}の下書きを却下しました。`);
+        await loadQueue();
+      } catch (error) {
+        alert(error.message);
+        button.disabled = false;
+        button.textContent = '却下';
+      }
+    });
+  });
 }
 
 // プレビューコントローラ動作
@@ -406,8 +534,18 @@ modalApproveBtn.addEventListener('click', async () => {
   try {
     modalApproveBtn.disabled = true;
     modalApproveBtn.textContent = '承認中...';
-    await updateStatus(currentPreviewId, 'approve');
-    alert('投稿を承認しました。');
+    
+    const response = await fetch(`${apiBase}/approve-post`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: currentPreviewId, action: 'approve', channel: 'instagram' })
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || '動画承認失敗');
+    }
+    
+    alert('動画(Instagram)を承認しました。');
     closePreviewModal();
     await loadQueue();
   } catch (error) {
@@ -415,6 +553,33 @@ modalApproveBtn.addEventListener('click', async () => {
   } finally {
     modalApproveBtn.disabled = false;
     modalApproveBtn.textContent = 'この動画を承認';
+  }
+});
+
+modalPublishNowBtn.addEventListener('click', async () => {
+  if (!currentPreviewId) return;
+  try {
+    modalPublishNowBtn.disabled = true;
+    modalPublishNowBtn.textContent = '投稿中...';
+    
+    const response = await fetch(`${apiBase}/approve-post`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: currentPreviewId, action: 'publish_now', channel: 'instagram' })
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || '動画投稿失敗');
+    }
+    
+    alert('動画(Instagram)を即時投稿しました！');
+    closePreviewModal();
+    await loadQueue();
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    modalPublishNowBtn.disabled = false;
+    modalPublishNowBtn.textContent = '📲 今すぐ投稿';
   }
 });
 

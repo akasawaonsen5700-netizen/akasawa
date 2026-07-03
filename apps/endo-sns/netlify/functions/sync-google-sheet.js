@@ -2,6 +2,7 @@ const { google } = require('googleapis');
 const { getDb, admin } = require('./_lib/firebase-admin');
 const { ok, json } = require('./_lib/helpers');
 const { buildDraftPackage } = require('./_lib/ai');
+const { triggerAutoRenderFlow } = require('./_lib/auto-render-flow');
 
 function auth() {
   const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '{}');
@@ -48,13 +49,18 @@ exports.handler = async () => {
         }]
       };
       const draftPackage = await buildDraftPackage(normalized);
-      await db.collection('submissions').add({
+      const data = {
         ...normalized,
         ...draftPackage,
         source: 'google-sheet-sync',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
+      };
+      const docRef = await db.collection('submissions').add(data);
+
+      // 自動音声合成＆自動動画レンダリングを非同期で開始
+      await triggerAutoRenderFlow(db, docRef, data, item.voiceUrl || null);
+
       imported += 1;
     }
 

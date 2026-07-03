@@ -3,6 +3,7 @@ const { getDb, admin } = require('./_lib-endo/firebase-admin');
 const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib-endo/helpers');
 const { buildDraftPackage } = require('./_lib-endo/ai');
 const { generateVoiceFromCartesia } = require('./_lib-endo/cartesia-tts');
+const { renderVideo } = require('./_lib-endo/render-video');
 
 const schema = z.object({
   ownerComment: z.string().optional().default(''),
@@ -87,6 +88,33 @@ exports.handler = async (event) => {
     }
 
     await ref.set(data);
+
+    // 自動動画レンダリング (非同期・バックグラウンドで実行)
+    if (finalVoiceUrl) {
+      const instagramAssets = data.channelSettings?.instagram?.assets || [];
+      const backgroundUrl = instagramAssets[0]?.url || 'https://assets.mixkit.co/posts/music/preview/mixkit-forest-river-in-morning-1335-large.mp4';
+      
+      const props = {
+        text: data.drafts?.instagram?.narration || payload.ownerComment || '無題',
+        voiceUrl: finalVoiceUrl,
+        bgmUrl: 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav',
+        backgroundUrl: backgroundUrl
+      };
+
+      console.log(`Triggering background video render for submission: ${ref.id}`);
+      renderVideo(ref.id, props).then(async (videoUrl) => {
+        const db = getDb();
+        await db.collection('submissions').doc(ref.id).update({
+          videoUrl: videoUrl,
+          'channelSettings.instagram.videoUrl': videoUrl,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        console.log(`Successfully auto-rendered and saved video for submission: ${ref.id}`);
+      }).catch(err => {
+        console.error(`Auto video rendering failed for submission ${ref.id}:`, err);
+      });
+    }
+
     return ok({ id: ref.id, status: draftPackage.status, publishAt: draftPackage.publishAt });
   } catch (error) {
     console.error(error);
