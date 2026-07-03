@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "netlify dev",
+    "dev": "netlify dev --functionsPort=4999",
     "build": "echo \"Static build complete\"",
     "build-video": "remotion render src/remotion/index.tsx EndoInstagramReel public/out.mp4"
   },
