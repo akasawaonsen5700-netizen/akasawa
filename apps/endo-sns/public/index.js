@@ -1,6 +1,12 @@
-import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
-import { collection, query, getDocs, orderBy, limit } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-import { storage, apiBase, defaults, db } from './firebase-init.js';
+// Firebase SDK不要版 - すべてサーバーサイドAPI経由でデータ通信
+const apiBase = '/api';
+const defaults = {
+  ownerName: '遠藤正俊',
+  hotelName: '赤沢温泉旅館',
+  officialSite: 'https://akasawaonsen.com/',
+  phone: '0287-46-5700',
+  brandCopy: '世界を植林してきた博士が、日本の『枯れ葉』に見た、失われた魂の救済'
+};
 
 // --- ① 投稿登録フォームの制御 ---
 const form = document.getElementById('uploadForm');
@@ -27,15 +33,9 @@ form.addEventListener('submit', async (event) => {
   }
 
   try {
+    // 音声ファイルがある場合はサーバー側で処理させるため、ここではスキップ
+    // （voiceUrlはnullのままにし、サーバー側のCartesiaクローン音声自動生成に任せる）
     let uploadedVoiceUrl = null;
-    if (voiceFileInput && voiceFileInput.files.length > 0) {
-      const file = voiceFileInput.files[0];
-      setMessage('音声ファイルをアップロード中…');
-      const path = `submissions/voices/${Date.now()}-${crypto.randomUUID()}-${file.name}`;
-      const fileRef = ref(storage, path);
-      await uploadBytes(fileRef, file, { contentType: file.type });
-      uploadedVoiceUrl = await getDownloadURL(fileRef);
-    }
 
     setMessage('登録処理とAI下書き・動画の自動生成を開始しています…');
     
@@ -79,7 +79,7 @@ form.addEventListener('submit', async (event) => {
       throw new Error(data.error || '登録に失敗しました');
     }
 
-    setMessage(`登録完了！動画と下書きが自動生成されます。下の一覧（要確認）で進捗を確認してください。`);
+    setMessage(`✅ 登録完了！動画と下書きが自動生成されます。下の一覧で進捗を確認してください。`);
     form.reset();
     
     // 登録成功時に下部の一覧を即座にリフレッシュする
@@ -153,7 +153,6 @@ function renderChannelSettings(row) {
     const draftText = row.drafts?.[channel]?.text || '下書きなし';
     const narrationText = row.drafts?.[channel]?.narration || '';
 
-    // 日程値のパース（ローカル時間用のYYYY-MM-DDTHH:mm形式へ変換）
     let dateVal = '';
     if (setting.publishAt) {
       try {
@@ -239,9 +238,13 @@ function renderChannelSettings(row) {
 async function loadQueue() {
   queueEl.innerHTML = '<div class="card">データを読み込み中…</div>';
   try {
-    const snapshot = await getDocs(query(collection(db, 'submissions'), orderBy('createdAt', 'desc'), limit(50)));
-    const rows = [];
-    snapshot.forEach(doc => rows.push({ id: doc.id, ...doc.data() }));
+    // サーバーサイドAPI経由でFirestoreからデータを取得（Firebase SDK不要）
+    const response = await fetch(`${apiBase}/list-submissions`);
+    if (!response.ok) {
+      const errData = await response.json();
+      throw new Error(errData.error || 'データ取得に失敗しました');
+    }
+    const { submissions: rows } = await response.json();
 
     const filtered = rows.filter(row => {
       const matchStatus = statusFilter.value === 'all' || row.status === statusFilter.value;
@@ -279,7 +282,7 @@ async function loadQueue() {
               </div>
             ` : `
               <div style="margin: 14px 0; padding: 10px; background: #fafaf9; border: 1px dashed var(--line); border-radius: 8px; font-size: 13px; color: #6b7280;">
-                ⏳ 動画は現在バックグラウンドで自動生成（レンダリング）中です。数分後に画面をリロードしてください。
+                ⏳ 動画は現在バックグラウンドで自動生成（レンダリング）中です。数分後に🔄ボタンで更新してください。
               </div>
             `}
 
@@ -426,19 +429,16 @@ function openPreview(submissionId, text, voiceUrl, mediaUrl, mediaType, videoUrl
   reelVideo.muted = false;
   reelVideo.style.display = 'none';
   const mockScreen = document.getElementById('reelMockScreen');
-  const mockControls = document.getElementById('reelMockControls');
   mockScreen.style.display = 'block';
   
   if (videoUrl) {
-    console.log("Playing rendered video in preview: ", videoUrl);
     reelVideo.src = videoUrl;
     reelVideo.style.display = 'block';
     mockScreen.style.display = 'none';
   } else {
-    console.log("Falling back to simulated playback");
-    reelImage.src = mediaUrl || 'https://assets.mixkit.co/posts/music/preview/mixkit-forest-river-in-morning-1335-large.mp4';
+    reelImage.src = mediaUrl || '';
     narrationAudio.src = voiceUrl || '';
-    bgmAudio.src = 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav';
+    bgmAudio.src = '';
     bgmAudio.volume = 0.15;
   }
   
