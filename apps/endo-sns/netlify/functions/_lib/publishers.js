@@ -15,12 +15,15 @@ async function postWebhook(url, payload) {
 
 async function publishToChannel(channel, submission) {
   const chSetting = submission.channelSettings?.[channel] || {};
+  const videoUrl = submission.videoUrl || chSetting.videoUrl || '';
+
   const payload = {
     ownerName: BRAND.ownerName,
     hotelName: BRAND.hotelName,
     submissionId: submission.id,
     text: submission.drafts?.[channel]?.text || '',
     assets: chSetting.assets || submission.assets || [],
+    videoUrl: videoUrl, // 合成された動画URLを追加
     altText: submission.altText,
     hashtags: submission.hashtags || [],
     officialSite: BRAND.site
@@ -32,11 +35,23 @@ async function publishToChannel(channel, submission) {
   };
 
   if (!envMap[channel]) {
-    return { channel, mode: 'mock', publishedAt: new Date().toISOString(), message: `${channel} webhook is not configured` };
+    return { 
+      channel, 
+      mode: 'mock', 
+      publishedAt: new Date().toISOString(), 
+      message: `${channel} webhook is not configured`,
+      sentPayload: payload
+    };
   }
 
   const result = await postWebhook(envMap[channel], payload);
-  return { channel, mode: 'live', publishedAt: new Date().toISOString(), result };
+  return { 
+    channel, 
+    mode: 'live', 
+    publishedAt: new Date().toISOString(), 
+    result,
+    sentPayload: payload
+  };
 }
 
 module.exports = { publishToChannel };

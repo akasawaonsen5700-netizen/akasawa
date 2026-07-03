@@ -22,13 +22,17 @@ const reelImage = document.getElementById('reelImage');
 const reelTextOverlay = document.getElementById('reelTextOverlay');
 const playBtn = document.getElementById('playBtn');
 const pauseBtn = document.getElementById('pauseBtn');
+const modalApproveBtn = document.getElementById('modalApproveBtn');
 const reelTimer = document.getElementById('reelTimer');
 const narrationAudio = document.getElementById('narrationAudio');
 const bgmAudio = document.getElementById('bgmAudio');
 
+let currentPreviewId = null;
+
 let previewTimerInterval = null;
 let currentPreviewText = '';
 let textAnimationTimeout = null;
+let isPlayingRealVideo = false;
 
 function escapeHtml(value = '') {
   return value
@@ -75,8 +79,9 @@ function renderChannelSettings(row) {
                     data-text="${escapeHtml(narrationText)}"
                     data-voice="${escapeHtml(row.voiceUrl)}"
                     data-media="${escapeHtml(assets[0]?.url || '')}"
-                    data-media-type="${escapeHtml(assets[0]?.type || '')}">
-              🎬 動画プレビュー
+                    data-media-type="${escapeHtml(assets[0]?.type || '')}"
+                    data-video="${escapeHtml(row.videoUrl || '')}">
+              🎬 動画プレビュー ${row.videoUrl ? '⚡' : ''}
             </button>
           ` : ''}
         </div>
@@ -131,22 +136,38 @@ async function updateStatus(id, action) {
 }
 
 // プレビュー表示ロジック
-function openPreview(text, voiceUrl, mediaUrl, mediaType) {
+function openPreview(submissionId, text, voiceUrl, mediaUrl, mediaType, videoUrl) {
+  currentPreviewId = submissionId;
   currentPreviewText = text;
   
-  // メディアの設定
-  if (mediaType.startsWith('video/')) {
-    reelVideo.src = mediaUrl;
+  // 初期化としてビデオをミュートにしておく
+  reelVideo.muted = true;
+
+  if (videoUrl) {
+    isPlayingRealVideo = true;
+    reelVideo.src = videoUrl;
     reelVideo.style.display = 'block';
     reelImage.style.display = 'none';
+    
+    narrationAudio.removeAttribute('src');
+    reelTextOverlay.innerHTML = '<div class="vertical-reel-text" style="font-size: 24px; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px;">自動レンダリング動画再生中</div>';
   } else {
-    reelImage.src = mediaUrl || 'https://assets.mixkit.co/posts/music/preview/mixkit-forest-river-in-morning-1335-large.mp4';
-    reelImage.style.display = 'block';
-    reelVideo.style.display = 'none';
-  }
+    isPlayingRealVideo = false;
+    // メディアの設定
+    if (mediaType.startsWith('video/')) {
+      reelVideo.src = mediaUrl;
+      reelVideo.style.display = 'block';
+      reelImage.style.display = 'none';
+    } else {
+      reelImage.src = mediaUrl || 'https://assets.mixkit.co/posts/music/preview/mixkit-forest-river-in-morning-1335-large.mp4';
+      reelImage.style.display = 'block';
+      reelVideo.style.display = 'none';
+    }
 
-  // オーディオの設定
-  narrationAudio.src = voiceUrl;
+    // オーディオの設定
+    narrationAudio.src = voiceUrl;
+    reelTextOverlay.innerHTML = '';
+  }
   
   // モーダル表示
   previewModal.style.display = 'flex';
@@ -155,7 +176,6 @@ function openPreview(text, voiceUrl, mediaUrl, mediaType) {
   playBtn.disabled = false;
   pauseBtn.disabled = true;
   reelTimer.textContent = '0.0s / 0.0s';
-  reelTextOverlay.innerHTML = '';
 }
 
 function closePreviewModal() {
@@ -166,6 +186,24 @@ function closePreviewModal() {
 function startPreview() {
   playBtn.disabled = true;
   pauseBtn.disabled = false;
+
+  if (isPlayingRealVideo) {
+    reelVideo.muted = false; // 音声を有効化
+    reelVideo.volume = 1.0;
+    reelVideo.play().catch(e => console.warn(e));
+    
+    // タイマー更新
+    previewTimerInterval = setInterval(() => {
+      const cur = reelVideo.currentTime;
+      const dur = reelVideo.duration || 60;
+      reelTimer.textContent = `${cur.toFixed(1)}s / ${dur.toFixed(1)}s`;
+      
+      if (reelVideo.ended) {
+        stopPreview();
+      }
+    }, 100);
+    return;
+  }
 
   // BGMとナレーションを同時再生
   bgmAudio.volume = 0.08;
@@ -239,6 +277,12 @@ function stopPreview() {
   clearInterval(previewTimerInterval);
   clearTimeout(textAnimationTimeout);
   
+  if (isPlayingRealVideo) {
+    reelVideo.pause();
+    reelVideo.muted = true;
+    return;
+  }
+
   narrationAudio.pause();
   bgmAudio.pause();
   reelVideo.pause();
@@ -344,7 +388,7 @@ async function loadQueue() {
   [...queueEl.querySelectorAll('.preview-btn')].forEach(button => {
     button.addEventListener('click', () => {
       const d = button.dataset;
-      openPreview(d.text, d.voice, d.media, d.mediaType);
+      openPreview(d.id, d.text, d.voice, d.media, d.mediaType, d.video);
     });
   });
 }
@@ -355,6 +399,23 @@ pauseBtn.addEventListener('click', stopPreview);
 closeBtn.addEventListener('click', closePreviewModal);
 window.addEventListener('click', (e) => {
   if (e.target === previewModal) closePreviewModal();
+});
+
+modalApproveBtn.addEventListener('click', async () => {
+  if (!currentPreviewId) return;
+  try {
+    modalApproveBtn.disabled = true;
+    modalApproveBtn.textContent = '承認中...';
+    await updateStatus(currentPreviewId, 'approve');
+    alert('投稿を承認しました。');
+    closePreviewModal();
+    await loadQueue();
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    modalApproveBtn.disabled = false;
+    modalApproveBtn.textContent = 'この動画を承認';
+  }
 });
 
 refreshBtn.addEventListener('click', loadQueue);
