@@ -1,6 +1,7 @@
 const { getDb, admin } = require('./_lib-endo/firebase-admin');
 const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib-endo/helpers');
 const { buildDraftPackage } = require('./_lib-endo/ai');
+const { triggerAutoRenderFlow } = require('./_lib-endo/auto-render-flow');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return ok({ ok: true });
@@ -37,13 +38,17 @@ exports.handler = async (event) => {
     const draftPackage = await buildDraftPackage(normalized);
     const db = getDb();
     const ref = db.collection('submissions').doc();
-    await ref.set({
+    const data = {
       ...normalized,
       ...draftPackage,
       source: 'google-sheet',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+    };
+    await ref.set(data);
+
+    // 自動音声合成＆自動動画レンダリングを非同期で開始
+    await triggerAutoRenderFlow(db, ref, data, payload.voiceUrl || null);
 
     return ok({ id: ref.id, status: draftPackage.status });
   } catch (error) {
