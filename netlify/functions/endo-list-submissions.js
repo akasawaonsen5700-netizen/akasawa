@@ -67,6 +67,10 @@ exports.handler = async (event) => {
     const rows = [];
     snapshot.forEach(doc => {
       const data = doc.data();
+      // 遠藤正俊のアカウント用データのみを抽出
+      if (!data.brandSnapshot || data.brandSnapshot.ownerName !== '遠藤正俊') {
+        return;
+      }
       // Firestore Timestamp を ISO文字列に変換
       if (data.createdAt && data.createdAt.toDate) {
         data.createdAt = data.createdAt.toDate().toISOString();

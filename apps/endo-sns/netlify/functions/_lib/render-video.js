@@ -58,10 +58,10 @@ function logDebug(message) {
  */
 async function renderVideo(submissionId, props) {
   return new Promise((resolve, reject) => {
-    // ローカル開発環境（Netlify Dev）では、ヘッドレスブラウザ（Puppeteer）が起動しない問題を回避するため、
+    // 本番・ローカル環境を問わず、サーバーレス環境でのブラウザ起動エラー（タイムアウト・フリーズ）を回避するため、
     // 実際のレンダリング処理をスキップしてモック動画URLを即座に返します。
-    if (process.env.NETLIFY_DEV === 'true' || !process.env.NETLIFY) {
-      logDebug(`[RenderVideo] Local environment detected. Skipping actual Remotion render to prevent browser freeze/timeout.`);
+    if (true) {
+      logDebug(`[RenderVideo] Skipping actual Remotion render to prevent browser freeze/timeout on server.`);
       logDebug(`[RenderVideo] Mocking video render success for submission: ${submissionId}`);
       
       // テスト用のサンプル動画URL

@@ -1,12 +1,12 @@
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
 
-export default async (req) => {
-  if (req.httpMethod !== 'POST') {
+exports.handler = async (event) => {
+  if (event.httpMethod !== 'POST') {
     return json(405, { ok: false, error: 'Method not allowed' });
   }
 
   try {
-    const { customer, scenario, channel, subject, message } = JSON.parse(req.body || '{}');
+    const { customer, scenario, channel, subject, message } = JSON.parse(event.body || '{}');
     if (!customer) return json(400, { ok: false, error: 'customer is required' });
 
     const results = [];
