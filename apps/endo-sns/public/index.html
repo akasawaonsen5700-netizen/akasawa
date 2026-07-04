@@ -238,6 +238,12 @@
             </div>
 
             <div style="margin-top: 16px;">
+              <label for="mediaFiles">背景画像・動画 (任意)</label>
+              <input id="mediaFiles" type="file" accept="image/*,video/*" multiple />
+              <div class="help">動画の背景として使用する画像や動画を選択してください。未選択の場合はデフォルト背景画像が使用されます。</div>
+            </div>
+
+            <div style="margin-top: 16px;">
               <label for="voiceFile">自身の録音音声ファイル (任意)</label>
               <input id="voiceFile" type="file" accept="audio/*" />
               <div class="help">遠藤正俊氏自身の録音音声（endo.mp3など）を直接使用したい場合は選択してください。未選択の場合は、Cartesia.ai APIを用いて本人のクローン音声が自動合成されます。</div>
@@ -370,6 +376,6 @@
       遠藤正俊 個人SNS配信用ツール - Powered by Netlify + Firebase + Cartesia.ai + Remotion.
     </footer>
 
-    <script src="index.js"></script>
+    <script type="module" src="index.js"></script>
   </body>
 </html>

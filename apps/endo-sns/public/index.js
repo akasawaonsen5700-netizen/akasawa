@@ -1,5 +1,11 @@
+import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
+import { storage } from './firebase-init.js';
+
 // Firebase SDK不要版 - すべてサーバーサイドAPI経由でデータ通信
-const apiBase = '/api';
+function getApiUrl(endpoint) {
+  const isEndoSns = window.location.pathname.includes('endo-sns') || window.location.pathname.includes('endo');
+  return isEndoSns ? `/api/endo-${endpoint}` : `/api/${endpoint}`;
+}
 
 // スピナーアニメーション用スタイルの追加
 const style = document.createElement('style');
@@ -22,7 +28,14 @@ const defaults = {
   brandCopy: '世界を植林してきた博士が、日本の『枯れ葉』に見た、失われた魂の救済'
 };
 
-// --- ① 投稿登録フォームの制御 ---
+function renderAsset(asset) {
+  if ((asset.type || '').startsWith('video/')) {
+    return `<video controls src="${asset.url}" style="max-width: 100px; max-height: 100px; border-radius: 6px; border: 1px solid #e5e7eb;"></video>`;
+  }
+  return `<img src="${asset.url}" alt="uploaded asset" style="max-width: 100px; max-height: 100px; border-radius: 6px; border: 1px solid #e5e7eb; object-fit: cover;" />`;
+}
+
+// --- ① 投稿登録フォーム of 制御 ---
 const form = document.getElementById('uploadForm');
 const message = document.getElementById('formMessage');
 const channelCbs = document.querySelectorAll('input[name="channelSelect"]');
@@ -30,12 +43,32 @@ const ownerComment = document.getElementById('ownerComment');
 const simpleTag = document.getElementById('simpleTag');
 const visibility = document.getElementById('visibility');
 const ngMemo = document.getElementById('ngMemo');
+const mediaFilesInput = document.getElementById('mediaFiles');
 const voiceFileInput = document.getElementById('voiceFile');
 
 const setMessage = (text, isError = false) => {
   message.textContent = text;
   message.style.color = isError ? '#ef4444' : '#10b981';
 };
+
+// ファイルアップロードヘルパー
+async function uploadFiles(files, channel) {
+  const results = [];
+  for (const file of files) {
+    const path = `submissions/${channel}/${Date.now()}-${crypto.randomUUID()}-${file.name}`;
+    const fileRef = ref(storage, path);
+    await uploadBytes(fileRef, file, { contentType: file.type });
+    const url = await getDownloadURL(fileRef);
+    results.push({
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      storagePath: path,
+      url
+    });
+  }
+  return results;
+}
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -50,12 +83,29 @@ form.addEventListener('submit', async (event) => {
   let pollCount = 0;
 
   try {
+    let assets = [];
+    const mediaFiles = mediaFilesInput ? [...mediaFilesInput.files] : [];
+    if (mediaFiles.length > 0) {
+      setMessage('Firebase Storage へ背景アセットをアップロード中…');
+      assets = await uploadFiles(mediaFiles, 'common');
+    }
+
+    let voiceUrl = null;
+    const voiceFiles = voiceFileInput ? [...voiceFileInput.files] : [];
+    if (voiceFiles.length > 0) {
+      setMessage('Firebase Storage へ音声アセットをアップロード中…');
+      const uploadedVoice = await uploadFiles(voiceFiles, 'voices');
+      if (uploadedVoice.length > 0) {
+        voiceUrl = uploadedVoice[0].url;
+      }
+    }
+
     setMessage('登録処理を開始しています…');
     
     const channelSettings = {};
     for (const channel of selectedChannels) {
       channelSettings[channel] = {
-        assets: [],
+        assets: assets,
         publishAt: null
       };
     }
@@ -70,8 +120,8 @@ form.addEventListener('submit', async (event) => {
       ngMemo: ngMemo.value.trim(),
       channels: selectedChannels,
       channelSettings,
-      assets: [],
-      voiceUrl: null,
+      assets: assets,
+      voiceUrl: voiceUrl,
       brandSnapshot: {
         ownerName: defaults.ownerName,
         hotelName: defaults.hotelName,
@@ -81,7 +131,7 @@ form.addEventListener('submit', async (event) => {
       }
     };
 
-    const response = await fetch(`${apiBase}/submit-metadata`, {
+    const response = await fetch(getApiUrl('submit-metadata'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -101,7 +151,7 @@ form.addEventListener('submit', async (event) => {
     pollInterval = setInterval(async () => {
       pollCount++;
       try {
-        const res = await fetch(`${apiBase}/list-submissions`);
+        const res = await fetch(getApiUrl('list-submissions'));
         if (!res.ok) return;
         const listData = await res.json();
         const target = listData.submissions?.find(s => s.id === submissionId);
@@ -291,7 +341,7 @@ async function loadQueue() {
   queueEl.innerHTML = '<div class="card">データを読み込み中…</div>';
   try {
     // サーバーサイドAPI経由でFirestoreからデータを取得（Firebase SDK不要）
-    const response = await fetch(`${apiBase}/list-submissions`);
+    const response = await fetch(getApiUrl('list-submissions'));
     if (!response.ok) {
       const errData = await response.json();
       throw new Error(errData.error || 'データ取得に失敗しました');
@@ -335,6 +385,14 @@ async function loadQueue() {
             <p><strong>台本テキスト:</strong> ${escapeHtml(row.ownerComment || 'なし')}</p>
             <p><strong>自動カテゴリ:</strong> ${escapeHtml(row.classification?.primary || '未分類')} / ${escapeHtml((row.classification?.secondary || []).join(', '))}</p>
             <p><strong>リスク判定:</strong> ${renderRisk(row.risk)}</p>
+            ${row.assets && row.assets.length > 0 ? `
+              <div style="margin: 10px 0; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;">
+                <strong style="font-size: 13px; color: #4b5563;">📷 登録された背景画像・動画:</strong>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+                  ${row.assets.map(renderAsset).join('')}
+                </div>
+              </div>
+            ` : ''}
             
             ${row.videoUrl ? `
               <div class="completed-video-container" style="margin: 14px 0; padding: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px;">
@@ -409,7 +467,7 @@ function attachEvents() {
       try {
         button.disabled = true;
         button.textContent = '音声再生成中...';
-        const response = await fetch(`${apiBase}/generate-voice`, {
+        const response = await fetch(getApiUrl('generate-voice'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id, text })
@@ -446,7 +504,7 @@ function attachEvents() {
       try {
         button.disabled = true;
         button.textContent = '保存中...';
-        const response = await fetch(`${apiBase}/approve-post`, {
+        const response = await fetch(getApiUrl('approve-post'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id, action: 'approve', channel, publishAt: publishAtVal })
@@ -474,7 +532,7 @@ function attachEvents() {
       try {
         button.disabled = true;
         button.textContent = '投稿中...';
-        const response = await fetch(`${apiBase}/approve-post`, {
+        const response = await fetch(getApiUrl('approve-post'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id, action: 'publish_now', channel })
@@ -500,7 +558,7 @@ function attachEvents() {
       try {
         button.disabled = true;
         button.textContent = '却下中...';
-        const response = await fetch(`${apiBase}/approve-post`, {
+        const response = await fetch(getApiUrl('approve-post'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id, action: 'reject', channel })
@@ -528,7 +586,7 @@ function attachEvents() {
       try {
         button.disabled = true;
         button.textContent = '削除中...';
-        const response = await fetch(`${apiBase}/delete-submission`, {
+        const response = await fetch(getApiUrl('delete-submission'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id })
@@ -753,7 +811,7 @@ modalApproveBtn.addEventListener('click', async () => {
     modalApproveBtn.disabled = true;
     modalApproveBtn.textContent = '承認中...';
     
-    const response = await fetch(`${apiBase}/approve-post`, {
+    const response = await fetch(getApiUrl('approve-post'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: currentPreviewId, action: 'approve', channel: 'instagram' })
@@ -780,7 +838,7 @@ modalPublishNowBtn.addEventListener('click', async () => {
     modalPublishNowBtn.disabled = true;
     modalPublishNowBtn.textContent = '投稿中...';
     
-    const response = await fetch(`${apiBase}/approve-post`, {
+    const response = await fetch(getApiUrl('approve-post'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: currentPreviewId, action: 'publish_now', channel: 'instagram' })
