@@ -1,5 +1,19 @@
 // Firebase SDK不要版 - すべてサーバーサイドAPI経由でデータ通信
 const apiBase = '/api';
+
+// スピナーアニメーション用スタイルの追加
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .video-status-container.initializing { background: #f3f4f6; border: 1px solid #e5e7eb; }
+  .video-status-container.generating_audio { background: #f0f9ff; border: 1px solid #bae6fd; }
+  .video-status-container.rendering_video { background: #fffbeb; border: 1px solid #fef3c7; }
+  .video-status-container.failed { background: #fef2f2; border: 1px solid #fecaca; }
+`;
+document.head.appendChild(style);
 const defaults = {
   ownerName: '遠藤正俊',
   hotelName: '赤沢温泉旅館',
@@ -36,8 +50,6 @@ form.addEventListener('submit', async (event) => {
   let pollCount = 0;
 
   try {
-    let uploadedVoiceUrl = null;
-
     setMessage('登録処理を開始しています…');
     
     const channelSettings = {};
@@ -59,7 +71,7 @@ form.addEventListener('submit', async (event) => {
       channels: selectedChannels,
       channelSettings,
       assets: [],
-      voiceUrl: uploadedVoiceUrl,
+      voiceUrl: null,
       brandSnapshot: {
         ownerName: defaults.ownerName,
         hotelName: defaults.hotelName,
@@ -69,56 +81,59 @@ form.addEventListener('submit', async (event) => {
       }
     };
 
-    // UI進捗ポーリングの開始 (2秒間隔)
-    const startPolling = () => {
-      pollInterval = setInterval(async () => {
-        pollCount++;
-        try {
-          const res = await fetch(`${apiBase}/list-submissions`);
-          if (!res.ok) return;
-          const data = await res.json();
-          const latest = data.submissions?.[0]; // 一覧の先頭（最新）
-          if (latest && latest.videoStatus) {
-            let statusText = '自動生成の初期化中...';
-            if (latest.videoStatus === 'generating_audio') {
-              statusText = '🎙️ 遠藤正俊のクローン音声を合成中...';
-            } else if (latest.videoStatus === 'rendering_video') {
-              statusText = '🎬 プレミアム縦型動画（Remotion）を書き出し中...';
-            } else if (latest.videoStatus === 'completed') {
-              statusText = '✅ 動画生成が完了しました！';
-              clearInterval(pollInterval);
-            } else if (latest.videoStatus === 'failed') {
-              statusText = `❌ 生成失敗: ${latest.videoError || '不明なエラー'}`;
-              clearInterval(pollInterval);
-            }
-            setMessage(`${statusText} (${pollCount * 2}秒経過...)`);
-          }
-        } catch (e) {
-          console.error('Progress polling error:', e);
-        }
-      }, 2000);
-    };
-
-    // APIを呼び出した直後にポーリングを開始
-    startPolling();
-
     const response = await fetch(`${apiBase}/submit-metadata`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
-    if (pollInterval) clearInterval(pollInterval);
-
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error || '登録に失敗しました');
     }
 
-    setMessage(`✅ 登録完了！動画と下書きが自動生成されました。`);
+    const submissionId = data.id;
+    setMessage('⏳ データベースにメタデータを登録しました。動画の自動生成を開始します…');
     form.reset();
-    
     await loadQueue();
+
+    // UI進捗ポーリングの開始 (2秒間隔)
+    pollInterval = setInterval(async () => {
+      pollCount++;
+      try {
+        const res = await fetch(`${apiBase}/list-submissions`);
+        if (!res.ok) return;
+        const listData = await res.json();
+        const target = listData.submissions?.find(s => s.id === submissionId);
+        
+        if (target && target.videoStatus) {
+          let statusText = '自動生成の初期化中...';
+          let isDone = false;
+          
+          if (target.videoStatus === 'generating_audio') {
+            statusText = '🎙️ 遠藤正俊のクローン音声を合成中...';
+          } else if (target.videoStatus === 'rendering_video') {
+            statusText = '🎬 プレミアム縦型動画（Remotion）を書き出し中...';
+          } else if (target.videoStatus === 'completed') {
+            statusText = '✅ 動画と下書きの自動生成がすべて完了しました！';
+            isDone = true;
+          } else if (target.videoStatus === 'failed') {
+            statusText = `❌ 動画生成に失敗しました: ${target.videoError || '不明なエラー'}`;
+            isDone = true;
+          }
+          
+          setMessage(`${statusText} (${pollCount * 2}秒経過...)`, target.videoStatus === 'failed');
+          
+          if (isDone) {
+            clearInterval(pollInterval);
+            await loadQueue(); // 完了または失敗時に最新情報でリストを再描画
+          }
+        }
+      } catch (e) {
+        console.error('Progress polling error:', e);
+      }
+    }, 2000);
+
   } catch (error) {
     if (pollInterval) clearInterval(pollInterval);
     console.error(error);
@@ -330,8 +345,43 @@ async function loadQueue() {
                 </div>
               </div>
             ` : `
-              <div style="margin: 14px 0; padding: 10px; background: #fafaf9; border: 1px dashed var(--line); border-radius: 8px; font-size: 13px; color: #6b7280;">
-                ⏳ 動画は現在バックグラウンドで自動生成（レンダリング）中です。数分後に🔄ボタンで更新してください。
+              <div class="video-status-container ${escapeHtml(row.videoStatus || 'initializing')}" style="margin: 14px 0; padding: 14px; border-radius: 12px; font-size: 13px;">
+                ${(() => {
+                  const status = row.videoStatus || 'initializing';
+                  if (status === 'generating_audio') {
+                    return `
+                      <div style="color: #0284c7; display: flex; align-items: center; gap: 8px; font-weight: bold;">
+                        <span class="spinner" style="display: inline-block; width: 14px; height: 14px; border: 2px solid #0284c7; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+                        🎙️ 遠藤正俊のクローン音声を合成中...
+                      </div>
+                      <p style="margin: 6px 0 0; color: #6b7280; font-size: 12px;">AIが台本テキストからナレーション音声を生成しています。少々お待ちください。</p>
+                    `;
+                  } else if (status === 'rendering_video') {
+                    return `
+                      <div style="color: #d97706; display: flex; align-items: center; gap: 8px; font-weight: bold;">
+                        <span class="spinner" style="display: inline-block; width: 14px; height: 14px; border: 2px solid #d97706; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+                        🎬 プレミアム縦型動画（Remotion）を書き出し中...
+                      </div>
+                      <p style="margin: 6px 0 0; color: #6b7280; font-size: 12px;">映像アセットと合成音声を組み合わせて、縦型動画ファイルをエンコードしています。</p>
+                    `;
+                  } else if (status === 'failed') {
+                    return `
+                      <div style="color: #dc2626; font-weight: bold;">
+                        ❌ 動画自動生成に失敗しました
+                      </div>
+                      <p style="margin: 6px 0 0; color: #7f1d1d; font-size: 12px; background: #fee2e2; padding: 8px; border-radius: 6px; border: 1px solid #fecaca;">
+                        エラー内容: ${escapeHtml(row.videoError || '不明な内部エラーが発生しました。')}
+                      </p>
+                    `;
+                  } else {
+                    return `
+                      <div style="color: #6b7280; display: flex; align-items: center; gap: 8px;">
+                        <span class="spinner" style="display: inline-block; width: 14px; height: 14px; border: 2px solid #6b7280; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+                        ⏳ 動画自動生成タスクを初期化中...
+                      </div>
+                    `;
+                  }
+                })()}
               </div>
             `}
 

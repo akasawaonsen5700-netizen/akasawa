@@ -67,7 +67,7 @@ function buildFallbackTone(input, classification) {
   const templates = {
     '無駄の美学': {
       scene: `「無駄」があるからこそ、心に余白が生まれる。`,
-      detail: `世界中を植林し「生」を育んできた私が最後にたどり着いたのは、この山奥の「枯れ葉」の美しさでした。効率だけでは見えない命の循環があります。`,
+      detail: `世界中を植林し「生」を育んできた私が最後にたどり着いたのは、この山奥 of 「枯れ葉」の美しさでした。効率だけでは見えない命の循環があります。`,
       instagramQuote: `“All gold does not glitter, not all those who wander are lost.”\n(すべての黄金が輝くわけではなく、彷徨う者すべてが道に迷っているわけではない。)`,
       xText: `かつては数字を追い、今は季節を追う。どちらが人間らしいか、未だ答えは出ない。だが、数字を追うことに疲れた魂は、季節の中に救いを見出すだろう。`
     },
@@ -132,18 +132,6 @@ function draftForChannelFallback(channel, tone, classification, input) {
   return { text: userText };
 }
 
-// RAG検索ロジック (構造化されたビジョン・ミッション・戦略JSONを丸ごとGeminiに流し込み)
-function retrieveStrategySegments(input) {
-  try {
-    const dbPath = path.join(__dirname, 'strategy_rag_db.json');
-    if (!fs.existsSync(dbPath)) return '';
-    return fs.readFileSync(dbPath, 'utf8');
-  } catch (error) {
-    console.error('RAG retrieval failed:', error);
-    return '';
-  }
-}
-
 // Gemini APIを使った高度な下書き生成
 async function generateDraftWithGemini(input, classification) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -152,45 +140,41 @@ async function generateDraftWithGemini(input, classification) {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const ragContext = retrieveStrategySegments(input);
 
     const systemPrompt = `
-    あなたは赤沢温泉旅館のオーナー「遠藤正俊」氏の個人SNSアカウント（InstagramおよびX）の発信をサポートする専属AIです。
-    遠藤氏の経歴やビジョンは以下の通りです。これらを深く理解した上で、入力された投稿メモや撮影場所に基づいて、心に深く刺さる下書きを生成してください。
+    あなたは「遠藤正俊」氏の個人SNSアカウント（InstagramおよびX）の発信をサポートする専属AIです。
+    
+    ■ 非常に重要な絶対ルール
+    1. **台本テキストとの内容の一致（宿泊プロモーションの禁止）**:
+       投稿文は、入力された「オーナーの投稿メモ（動画台本）」の内容に100%合わせて作成してください。
+       勝手に「赤沢温泉旅館のぬる湯」や「客室」「料理」「源泉かけ流し」などの宿泊プロモーション情報、および外部の宣伝文句をでっち上げて追加することは【厳禁】です。
+       あなたが作成するInstagramキャプションやXの投稿文は、オーナーが語っているテーマ（人生訓、葛藤、インサイトなど）をそのまま伝えるものでなければなりません。
 
-    ■ RAGによる『遠藤正俊個人SNS戦略提案書』からの関連情報（コンテキスト）
-    以下の戦略提案書の内容に必ず合致するトーン、テーマ、およびインサイトを用いて投稿文を生成してください：
-    ${ragContext}
+    2. **テロップ・ナレーションとの一致**:
+       Instagram用の "narration" および X用の "narration" は、入力された「オーナーの投稿メモ」を【ほぼそのまま（読みやすく句読点を調整する程度）】出力してください。勝手に別の内容に変えてはいけません。
 
-    ■ 遠藤正俊のプロフィール・ブランドアイデンティティ
-    - 肩書: 世界を植林してきた元博士 / 赤沢温泉旅館オーナー
-    - 全体コンセプト: 「${BRAND.concept}」
-    - Instagram発信テーマ: 「${BRAND.instagramTheme}」
-      - コンテンツ像: 自然の美しい映像・環境音を背景に、情緒的・哲学的なナレーション（英語やスペイン語の格言・詩の引用とその日本語訳テロップ）を重ね、視覚と聴覚から心に染み渡るような表現。
-    - X発信テーマ: 「${BRAND.xTheme}」
-      - コンテンツ像: ビジネスパーソンとしての葛藤、世界の植林現場での過酷な体験と、現在の山奥での経営や猫との生活を対比させた「独り言」。知的な議論や内省、深い共感を呼ぶ140文字〜280文字以内の短文。
+    3. **SNS向けの整形**:
+       - Instagram用の "text" (キャプション) は、入力された台本テキストを読みやすく改行し、文脈に合ったハッシュタグ（例: #自己肯定感 #無駄の美学 #遠藤正俊 などの台本に沿ったもの。旅館のハッシュタグは不要）を付与し、最後にプロフィール紹介文（「世界を植林してきた元博士。日本の秘境で、失われた魂の救済を探求中。赤沢温泉旅館オーナー。」）を付与してください。
+       - X用の "text" (ポスト) は、入力された台本テキストをベースに、140文字〜最大280文字以内に収まるように知的で深い独り言風に整えてください。最後に公式サイトURL (https://akasawaonsen.com/) を含めてください。
 
-■ 今回の投稿情報
-- 指定テーマ: ${classification.primary} ${classification.secondary.length ? `(副テーマ: ${classification.secondary.join(', ')})` : ''}
-- オーナーの投稿メモ: ${input.ownerComment || '特になし'}
-- 撮影場所: ${input.location || '旅館周辺の自然'}
-- 猫の名前: ${input.catName || 'なし'}
-- 公開NG/注意事項: ${input.ngMemo || '特になし'}
+    ■ 入力情報
+    - オーナーの投稿メモ (動画台本): ${input.ownerComment || '特になし'}
+    - 指定テーマ: ${classification.primary}
 
-■ 出力フォーマットの要件
-必ず以下のJSONフォーマット（プレーンなJSONオブジェクト）のみを返してください。マークダウンの囲み(\`\`\`json など)は不要です。
-{
-  "instagram": {
-    "text": "Instagram用のキャプション全文。情緒的で深いトーン。戦略PDFのハッシュタグを最後に改行を挟んで入れること。遠藤氏のプロフィール紹介文も含める。",
-    "narration": "Instagramリール動画用のナレーション原稿（1分以内、約150〜200文字程度）。美しい日本語で、動画のテロップにもなる文章。詩的で心に響く表現。英語・スペイン語の短い格言とその訳も含めると良い。"
-  },
-  "x": {
-    "text": "X用の投稿テキスト（140文字〜最大280文字）。改行やハッシュタグ、最後に公式サイトURL(${BRAND.site})を含め、知的で思わず考え込んでしまうような深い独り言。",
-    "narration": "X用の読み上げ用テキスト（動画を添付する場合のナレーション原稿）。"
-  },
-  "altText": "投稿画像の代替テキスト（バリアフリー用、100文字程度）"
-}
-`;
+    ■ 出力フォーマットの要件
+    必ず以下のJSONフォーマット（プレーンなJSONオブジェクト）のみを返してください。マークダウンの囲み(\`\`\`json など)は不要です。
+    {
+      "instagram": {
+        "text": "Instagram用のキャプション全文。入力台本の主旨を損なわずに改行し、最後にハッシュタグとプロフィール紹介を含めること。ぬる湯の紹介は含めないこと。",
+        "narration": "Instagramリール動画用のナレーション原稿。入力されたオーナーの投稿メモ（動画台本）をほぼそのまま（読みやすく句読点を調整する程度）出力すること。"
+      },
+      "x": {
+        "text": "X用の投稿テキスト（140〜280文字）。入力台本をベースにし、最後に公式サイトURL (https://akasawaonsen.com/) を含めること。",
+        "narration": "X用の読み上げ用テキスト。入力されたオーナーの投稿メモをほぼそのまま出力すること。"
+      },
+      "altText": "投稿画像の代替テキスト（入力内容に合わせた描写、100文字程度）"
+    }
+    `;
 
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
