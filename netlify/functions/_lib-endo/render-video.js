@@ -3,10 +3,46 @@ const path = require('path');
 const fs = require('fs');
 const { getBucket } = require('./firebase-admin');
 
+// 物理的な apps/endo-sns ディレクトリを確実に取得するヘルパー
+function getEndoSnsDir() {
+  const rootDir = process.cwd();
+  if (fs.existsSync(path.join(rootDir, 'apps', 'endo-sns'))) {
+    return path.join(rootDir, 'apps', 'endo-sns');
+  }
+  if (fs.existsSync(path.join(rootDir, 'package.json'))) {
+    try {
+      const pkg = require(path.join(rootDir, 'package.json'));
+      if (pkg.name === 'endo-sns-personal-tool') {
+        return rootDir;
+      }
+    } catch (e) {}
+  }
+  let currentDir = __dirname;
+  while (currentDir && currentDir !== path.parse(currentDir).root) {
+    if (currentDir.endsWith(path.join('apps', 'endo-sns'))) {
+      return currentDir;
+    }
+    if (currentDir.includes('.netlify')) {
+      const parts = currentDir.split(path.sep);
+      const netlifyIdx = parts.indexOf('.netlify');
+      if (netlifyIdx !== -1) {
+        const projectRoot = parts.slice(0, netlifyIdx).join(path.sep);
+        if (projectRoot.endsWith(path.join('apps', 'endo-sns')) || projectRoot.endsWith('endo-sns')) {
+          return projectRoot;
+        }
+        return path.join(projectRoot, 'apps', 'endo-sns');
+      }
+    }
+    currentDir = path.dirname(currentDir);
+  }
+  return path.resolve(__dirname, '..', '..', '..', 'apps', 'endo-sns');
+}
+
 // デバッグログファイルへの出力関数
 function logDebug(message) {
   try {
-    const logFile = path.resolve(__dirname, '..', '..', '..', 'apps', 'endo-sns', 'render-debug.log');
+    const endoSnsDir = getEndoSnsDir();
+    const logFile = path.join(endoSnsDir, 'render-debug.log');
     const timestamp = new Date().toISOString();
     fs.appendFileSync(logFile, `[${timestamp}] ${message}\n`);
   } catch (e) {
@@ -28,6 +64,7 @@ async function renderVideo(submissionId, props) {
       logDebug(`[RenderVideo] Local environment detected. Skipping actual Remotion render to prevent browser freeze/timeout.`);
       logDebug(`[RenderVideo] Mocking video render success for submission: ${submissionId}`);
       
+      // テスト用のサンプル動画URL
       const mockVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
       
       setTimeout(() => {
@@ -36,10 +73,7 @@ async function renderVideo(submissionId, props) {
       return;
     }
 
-    // パスの解決
-    const appDir = path.resolve(__dirname, '..', '..', '..', 'apps', 'endo-sns');
-    const localAppDir = path.resolve(__dirname, '..', '..'); // apps/endo-sns (ローカル実行時)
-    const cwd = fs.existsSync(path.join(localAppDir, 'package.json')) ? localAppDir : appDir;
+    const cwd = getEndoSnsDir();
 
     const outputFilename = `${submissionId}.mp4`;
     const outputPath = path.join(cwd, 'public', 'renders', outputFilename);
@@ -62,8 +96,10 @@ async function renderVideo(submissionId, props) {
       return reject(writeErr);
     }
     
-    // Remotion レンダリングコマンドの構築 (相対パスでJSONファイルを指定)
-    const command = `npx remotion render src/remotion/index.tsx EndoInstagramReel public/renders/${outputFilename} --props=public/renders/${propsFilename}`;
+    // Windows環境のバックスラッシュ/スペース問題を避けるため、コマンド内ではcwdからの相対パス（スラッシュ指定）を利用する
+    const relativeOutputPath = `public/renders/${outputFilename}`;
+    const relativePropsPath = `public/renders/${propsFilename}`;
+    const command = `npx remotion render src/remotion/index.tsx EndoInstagramReel "${relativeOutputPath}" --props="${relativePropsPath}"`;
 
     logDebug(`[RenderVideo] Starting Remotion rendering in cwd: ${cwd}`);
     logDebug(`[RenderVideo] Command: ${command}`);

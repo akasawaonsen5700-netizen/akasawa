@@ -1,4 +1,3 @@
-const fetch = require('node-fetch');
 const { getBucket } = require('./firebase-admin');
 
 /**
@@ -27,7 +26,7 @@ async function generateVoiceFromCartesia(text, filename) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model_id: 'sonic-multilingual', // 日本語を含む多言語モデル
+      model_id: 'sonic-3.5', // 最新の多言語モデル
       transcript: text,
       voice: {
         mode: 'id',
@@ -47,7 +46,23 @@ async function generateVoiceFromCartesia(text, filename) {
     throw new Error(`Cartesia API error (HTTP ${response.status}): ${errorText}`);
   }
 
-  const audioBuffer = await response.buffer();
+  const arrayBuffer = await response.arrayBuffer();
+  const audioBuffer = Buffer.from(arrayBuffer);
+
+  // ローカル環境用に public/voices にも書き出す
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const localDir = path.join(process.cwd(), 'apps', 'endo-sns', 'public', 'voices');
+    if (!fs.existsSync(localDir)) {
+      fs.mkdirSync(localDir, { recursive: true });
+    }
+    const localPath = path.join(localDir, filename);
+    fs.writeFileSync(localPath, audioBuffer);
+    console.log(`Saved voice to local path: ${localPath}`);
+  } catch (err) {
+    console.error('Failed to save voice file locally:', err);
+  }
 
   // Firebase Storageへ保存
   const bucket = getBucket();

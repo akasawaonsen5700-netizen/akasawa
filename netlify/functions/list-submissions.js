@@ -1,5 +1,5 @@
-const { getDb } = require('./_lib-endo/firebase-admin');
-const { ok, json, methodNotAllowed } = require('./_lib-endo/helpers');
+const { getDb } = require('./_lib/firebase-admin');
+const { ok, json, methodNotAllowed } = require('./_lib/helpers');
 
 /**
  * Firestoreから投稿一覧を取得するサーバーサイドAPI。
