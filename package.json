@@ -10,7 +10,7 @@
     "build-video": "npm run build-video --workspace=apps/endo-sns",
     "install-all": "npm install",
     "dev:sns": "npm run dev --workspace=apps/akasawa-sns",
-    "dev:endo": "npm run dev --workspace=apps/endo-sns",
+    "dev:endo": "node pre-dev.js && netlify dev --port=8891 --staticServerPort=3996 --filter=endo-sns-personal-tool",
     "dev:dp": "npm run dev --workspace=apps/akasawa.dp",
     "dev:crm": "npm run dev --workspace=apps/akasawa-ml",
     "dev:chat": "npm run dev --workspace=apps/akasawa-chat"
@@ -29,5 +29,9 @@
     "react-dom": "^18.2.0",
     "remotion": "^4.0.120",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3"
   }
 }

@@ -32,12 +32,13 @@ form.addEventListener('submit', async (event) => {
     return;
   }
 
+  let pollInterval = null;
+  let pollCount = 0;
+
   try {
-    // 音声ファイルがある場合はサーバー側で処理させるため、ここではスキップ
-    // （voiceUrlはnullのままにし、サーバー側のCartesiaクローン音声自動生成に任せる）
     let uploadedVoiceUrl = null;
 
-    setMessage('登録処理とAI下書き・動画の自動生成を開始しています…');
+    setMessage('登録処理を開始しています…');
     
     const channelSettings = {};
     for (const channel of selectedChannels) {
@@ -68,23 +69,58 @@ form.addEventListener('submit', async (event) => {
       }
     };
 
+    // UI進捗ポーリングの開始 (2秒間隔)
+    const startPolling = () => {
+      pollInterval = setInterval(async () => {
+        pollCount++;
+        try {
+          const res = await fetch(`${apiBase}/list-submissions`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const latest = data.submissions?.[0]; // 一覧の先頭（最新）
+          if (latest && latest.videoStatus) {
+            let statusText = '自動生成の初期化中...';
+            if (latest.videoStatus === 'generating_audio') {
+              statusText = '🎙️ 遠藤正俊のクローン音声を合成中...';
+            } else if (latest.videoStatus === 'rendering_video') {
+              statusText = '🎬 プレミアム縦型動画（Remotion）を書き出し中...';
+            } else if (latest.videoStatus === 'completed') {
+              statusText = '✅ 動画生成が完了しました！';
+              clearInterval(pollInterval);
+            } else if (latest.videoStatus === 'failed') {
+              statusText = `❌ 生成失敗: ${latest.videoError || '不明なエラー'}`;
+              clearInterval(pollInterval);
+            }
+            setMessage(`${statusText} (${pollCount * 2}秒経過...)`);
+          }
+        } catch (e) {
+          console.error('Progress polling error:', e);
+        }
+      }, 2000);
+    };
+
+    // APIを呼び出した直後にポーリングを開始
+    startPolling();
+
     const response = await fetch(`${apiBase}/submit-metadata`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
+    if (pollInterval) clearInterval(pollInterval);
+
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error || '登録に失敗しました');
     }
 
-    setMessage(`✅ 登録完了！動画と下書きが自動生成されます。下の一覧で進捗を確認してください。`);
+    setMessage(`✅ 登録完了！動画と下書きが自動生成されました。`);
     form.reset();
     
-    // 登録成功時に下部の一覧を即座にリフレッシュする
     await loadQueue();
   } catch (error) {
+    if (pollInterval) clearInterval(pollInterval);
     console.error(error);
     setMessage(error.message || 'エラーが発生しました。', true);
   }
@@ -114,6 +150,7 @@ const bgmAudio = document.getElementById('bgmAudio');
 let currentPreviewId = null;
 let previewTimerInterval = null;
 let currentPreviewText = '';
+let currentPreviewMedias = []; // 背景アセット配列用
 let textAnimationTimeout = null;
 
 function escapeHtml(str) {
@@ -181,7 +218,7 @@ function renderChannelSettings(row) {
                     data-id="${row.id}" 
                     data-text="${escapeHtml(narrationText)}"
                     data-voice="${escapeHtml(row.voiceUrl)}"
-                    data-media="${escapeHtml(assets[0]?.url || '')}"
+                    data-medias="${escapeHtml(assets.map(a => a.url).filter(Boolean).join(','))}"
                     data-media-type="${escapeHtml(assets[0]?.type || '')}"
                     data-video="${escapeHtml(row.videoUrl || '')}">
               🎬 動画プレビュー ${row.videoUrl ? '⚡' : ''}
@@ -244,7 +281,16 @@ async function loadQueue() {
       const errData = await response.json();
       throw new Error(errData.error || 'データ取得に失敗しました');
     }
-    const { submissions: rows } = await response.json();
+    const data = await response.json();
+    const rows = data.submissions || [];
+
+    if (data.cartesiaVoices && data.cartesiaVoices.length > 0) {
+      console.log('====== CARTESIA VOICES (DEBUGINFO) ======');
+      data.cartesiaVoices.forEach(v => {
+        console.log(`[Name]: ${v.name} -> [ID/UUID]: ${v.id}`);
+      });
+      console.log('==========================================');
+    }
 
     const filtered = rows.filter(row => {
       const matchStatus = statusFilter.value === 'all' || row.status === statusFilter.value;
@@ -265,7 +311,10 @@ async function loadQueue() {
               <strong>ID: ${escapeHtml(row.id)}</strong>
               <div class="small">${(row.channels || []).join(', ')}</div>
             </div>
-            <div class="status ${escapeHtml(row.status || 'draft')}">${escapeHtml(row.status || 'draft')}</div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <button class="delete-btn" data-id="${row.id}" style="padding: 4px 10px; background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer;">🗑️ 削除</button>
+              <div class="status ${escapeHtml(row.status || 'draft')}">${escapeHtml(row.status || 'draft')}</div>
+            </div>
           </div>
           <div class="submission-body">
             <p><strong>台本テキスト:</strong> ${escapeHtml(row.ownerComment || 'なし')}</p>
@@ -333,7 +382,7 @@ function attachEvents() {
   [...queueEl.querySelectorAll('.preview-btn')].forEach(button => {
     button.addEventListener('click', () => {
       const d = button.dataset;
-      openPreview(d.id, d.text, d.voice, d.media, d.mediaType, d.video);
+      openPreview(d.id, d.text, d.voice, d.medias, d.mediaType, d.video);
     });
   });
 
@@ -419,12 +468,41 @@ function attachEvents() {
       }
     });
   });
+
+  // 投稿データの削除
+  [...queueEl.querySelectorAll('.delete-btn')].forEach(button => {
+    button.addEventListener('click', async () => {
+      const { id } = button.dataset;
+      if (!confirm('この投稿ドラフトデータを完全に削除します。よろしいですか？\n※動画や音声データ、承認履歴を含むすべての情報が削除されます。')) return;
+      
+      try {
+        button.disabled = true;
+        button.textContent = '削除中...';
+        const response = await fetch(`${apiBase}/delete-submission`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || '削除処理に失敗しました');
+        }
+        alert('データを完全に削除しました。');
+        await loadQueue();
+      } catch (error) {
+        alert(error.message);
+        button.disabled = false;
+        button.textContent = '🗑️ 削除';
+      }
+    });
+  });
 }
 
 // --- ③ ビデオプレビューモーダル制御 ---
-function openPreview(submissionId, text, voiceUrl, mediaUrl, mediaType, videoUrl) {
+function openPreview(submissionId, text, voiceUrl, mediaUrlsStr, mediaType, videoUrl) {
   currentPreviewId = submissionId;
   currentPreviewText = text;
+  currentPreviewMedias = mediaUrlsStr ? mediaUrlsStr.split(',').map(u => u.trim()).filter(Boolean) : [];
   
   reelVideo.muted = false;
   reelVideo.style.display = 'none';
@@ -432,14 +510,35 @@ function openPreview(submissionId, text, voiceUrl, mediaUrl, mediaType, videoUrl
   mockScreen.style.display = 'block';
   
   if (videoUrl) {
+    isPlayingRealVideo = true;
     reelVideo.src = videoUrl;
     reelVideo.style.display = 'block';
     mockScreen.style.display = 'none';
+    
+    narrationAudio.removeAttribute('src');
+    reelTextOverlay.innerHTML = '<div class="vertical-reel-text" style="font-size: 24px; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px;">自動レンダリング動画再生中</div>';
   } else {
-    reelImage.src = mediaUrl || '';
+    isPlayingRealVideo = false;
+    
+    // 最初の背景アセットを設定
+    const defaultBgs = ['/bg-premium.png', '/bg-premium2.png', '/bg-premium3.png'];
+    const initialBg = currentPreviewMedias[0] || defaultBgs[0];
+    const isVideoBg = initialBg.endsWith('.mp4') || initialBg.includes('video') || initialBg.includes('preview');
+
+    if (isVideoBg) {
+      reelVideo.src = initialBg;
+      reelVideo.style.display = 'block';
+      mockScreen.style.display = 'none';
+    } else {
+      reelImage.src = initialBg;
+      mockScreen.style.display = 'block';
+      reelVideo.style.display = 'none';
+    }
+
     narrationAudio.src = voiceUrl || '';
-    bgmAudio.src = '';
-    bgmAudio.volume = 0.15;
+    bgmAudio.src = 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav';
+    bgmAudio.volume = 0.08;
+    reelTextOverlay.innerHTML = '';
   }
   
   previewModal.style.display = 'flex';
@@ -465,6 +564,10 @@ function startPreview(isRealVideo = false) {
       const cur = reelVideo.currentTime.toFixed(1);
       const dur = reelVideo.duration ? reelVideo.duration.toFixed(1) : '30.0';
       reelTimer.textContent = `${cur}s / ${dur}s`;
+      
+      if (reelVideo.ended) {
+        stopPreview();
+      }
     }, 100);
     return;
   }
@@ -472,31 +575,106 @@ function startPreview(isRealVideo = false) {
   narrationAudio.play().catch(e => console.error(e));
   bgmAudio.play().catch(e => console.error(e));
   
-  const startTime = Date.now();
-  const duration = 30000;
+  if (reelVideo.style.display === 'block') {
+    reelVideo.play().catch(e => console.warn(e));
+  }
+
+  // メタ指示語（ラベル）を削除
+  const cleanedText = currentPreviewText
+    .replace(/(冒頭フック|フック|台本|締めの一言|締め|ナレーション|タイトル)[:：\s]*/gi, '')
+    .trim();
+
+  // テロップ同期ロジック
+  const rawLines = cleanedText.split(/[。\n\?？！!]/).map(l => l.trim()).filter(Boolean);
+
+  // 1文が長すぎる場合、読点「、」でさらに細かく分割して、テロップが２〜３行に綺麗に収まるようにする
+  const lines = [];
+  for (const line of rawLines) {
+    if (line.length <= 25) {
+      lines.push(line);
+    } else {
+      const subParts = line.split(/[、,]/).map(p => p.trim()).filter(Boolean);
+      let currentPart = '';
+      for (const part of subParts) {
+        if ((currentPart + part).length <= 25) {
+          currentPart += (currentPart ? '、' : '') + part;
+        } else {
+          if (currentPart) lines.push(currentPart + '、');
+          currentPart = part;
+        }
+      }
+      if (currentPart) lines.push(currentPart);
+    }
+  }
+
+  reelTextOverlay.innerHTML = '';
   
   previewTimerInterval = setInterval(() => {
-    const elapsed = Date.now() - startTime;
-    const seconds = (elapsed / 1000).toFixed(1);
-    reelTimer.textContent = `${seconds}s / 30.0s`;
+    const cur = narrationAudio.currentTime;
+    const dur = narrationAudio.duration || 30;
+    reelTimer.textContent = `${cur.toFixed(1)}s / ${dur.toFixed(1)}s`;
     
-    if (elapsed >= duration) {
+    if (narrationAudio.ended) {
       stopPreview();
     }
   }, 100);
-  
-  let index = 0;
-  const chars = currentPreviewText.split('');
-  reelTextOverlay.textContent = '';
-  
-  function showNextChar() {
-    if (index < chars.length) {
-      reelTextOverlay.textContent += chars[index];
-      index++;
-      textAnimationTimeout = setTimeout(showNextChar, 100);
-    }
+
+  // 1行ずつのテロップ表示タイマー
+  const showLines = () => {
+    const dur = narrationAudio.duration || 12; // ナレーション再生時間
+    const timePerLine = (dur / lines.length) * 1000; // 1行あたりのミリ秒数
+
+    lines.forEach((line, index) => {
+      textAnimationTimeout = setTimeout(() => {
+        // 同期して背景画像を切り替える
+        const defaultBgs = ['/bg-premium.png', '/bg-premium2.png', '/bg-premium3.png'];
+        const bgs = currentPreviewMedias.length > 0 ? currentPreviewMedias : defaultBgs;
+        const bgIndex = index % bgs.length;
+        const currentBg = bgs[bgIndex];
+
+        const mockScreen = document.getElementById('reelMockScreen');
+        const isVideoBg = currentBg.endsWith('.mp4') || currentBg.includes('video') || currentBg.includes('preview');
+        if (isVideoBg) {
+          reelVideo.src = currentBg;
+          reelVideo.style.display = 'block';
+          mockScreen.style.display = 'none';
+          reelVideo.play().catch(e => console.warn(e));
+        } else {
+          reelImage.src = currentBg;
+          mockScreen.style.display = 'block';
+          reelVideo.style.display = 'none';
+        }
+
+        // 前のテキストをクリアして新テキストを追加（フェード効果付き）
+        reelTextOverlay.innerHTML = `<div class="vertical-reel-text">${escapeHtml(line)}</div>`;
+        const activeText = reelTextOverlay.querySelector('.vertical-reel-text');
+        
+        // 文字を一文字ずつバラしてディレイ表示する演出
+        const text = activeText.textContent;
+        activeText.innerHTML = '';
+        text.split('').forEach((char, charIdx) => {
+          const span = document.createElement('span');
+          span.textContent = char;
+          span.style.opacity = '0';
+          span.style.transform = 'translateY(10px)';
+          span.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+          span.style.display = 'inline-block';
+          activeText.appendChild(span);
+          
+          setTimeout(() => {
+            span.style.opacity = '1';
+            span.style.transform = 'translateY(0)';
+          }, charIdx * 80);
+        });
+      }, index * timePerLine);
+    });
+  };
+
+  if (narrationAudio.readyState >= 1) {
+    showLines();
+  } else {
+    narrationAudio.addEventListener('loadedmetadata', showLines, { once: true });
   }
-  showNextChar();
 }
 
 function stopPreview() {

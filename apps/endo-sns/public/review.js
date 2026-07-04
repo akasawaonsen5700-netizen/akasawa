@@ -1,13 +1,4 @@
-import {
-  collection,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  doc,
-  getDoc
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-import { db, apiBase } from './firebase-init.js';
+const apiBase = '/api';
 
 const queueEl = document.getElementById('queue');
 const statusFilter = document.getElementById('statusFilter');
@@ -32,6 +23,7 @@ let currentPreviewId = null;
 
 let previewTimerInterval = null;
 let currentPreviewText = '';
+let currentPreviewMedias = []; // 背景アセット配列用
 let textAnimationTimeout = null;
 let isPlayingRealVideo = false;
 
@@ -91,7 +83,7 @@ function renderChannelSettings(row) {
                     data-id="${row.id}" 
                     data-text="${escapeHtml(narrationText)}"
                     data-voice="${escapeHtml(row.voiceUrl)}"
-                    data-media="${escapeHtml(assets[0]?.url || '')}"
+                    data-medias="${escapeHtml(assets.map(a => a.url).filter(Boolean).join(','))}"
                     data-media-type="${escapeHtml(assets[0]?.type || '')}"
                     data-video="${escapeHtml(row.videoUrl || '')}">
               🎬 動画プレビュー ${row.videoUrl ? '⚡' : ''}
@@ -166,9 +158,10 @@ async function updateStatus(id, action) {
 }
 
 // プレビュー表示ロジック
-function openPreview(submissionId, text, voiceUrl, mediaUrl, mediaType, videoUrl) {
+function openPreview(submissionId, text, voiceUrl, mediaUrlsStr, mediaType, videoUrl) {
   currentPreviewId = submissionId;
   currentPreviewText = text;
+  currentPreviewMedias = mediaUrlsStr ? mediaUrlsStr.split(',').map(u => u.trim()).filter(Boolean) : [];
   
   // 初期化としてビデオをミュートにしておく
   reelVideo.muted = true;
@@ -183,13 +176,18 @@ function openPreview(submissionId, text, voiceUrl, mediaUrl, mediaType, videoUrl
     reelTextOverlay.innerHTML = '<div class="vertical-reel-text" style="font-size: 24px; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px;">自動レンダリング動画再生中</div>';
   } else {
     isPlayingRealVideo = false;
-    // メディアの設定
-    if (mediaType.startsWith('video/')) {
-      reelVideo.src = mediaUrl;
+    
+    // 最初の背景アセットを設定
+    const defaultBgs = ['/bg-premium.png', '/bg-premium2.png', '/bg-premium3.png'];
+    const initialBg = currentPreviewMedias[0] || defaultBgs[0];
+    const isVideoBg = initialBg.endsWith('.mp4') || initialBg.includes('video') || initialBg.includes('preview');
+
+    if (isVideoBg) {
+      reelVideo.src = initialBg;
       reelVideo.style.display = 'block';
       reelImage.style.display = 'none';
     } else {
-      reelImage.src = mediaUrl || 'https://assets.mixkit.co/posts/music/preview/mixkit-forest-river-in-morning-1335-large.mp4';
+      reelImage.src = initialBg;
       reelImage.style.display = 'block';
       reelVideo.style.display = 'none';
     }
@@ -246,8 +244,34 @@ function startPreview() {
     reelVideo.play().catch(e => console.warn(e));
   }
 
+  // メタ指示語（ラベル）を削除
+  const cleanedText = currentPreviewText
+    .replace(/(冒頭フック|フック|台本|締めの一言|締め|ナレーション|タイトル)[:：\s]*/gi, '')
+    .trim();
+
   // テロップ同期ロジック
-  const lines = currentPreviewText.split(/[。\n\?？！!]/).map(l => l.trim()).filter(Boolean);
+  const rawLines = cleanedText.split(/[。\n\?？！!]/).map(l => l.trim()).filter(Boolean);
+
+  // 1文が長すぎる場合、読点「、」でさらに細かく分割して、テロップが２〜３行に綺麗に収まるようにする
+  const lines = [];
+  for (const line of rawLines) {
+    if (line.length <= 25) {
+      lines.push(line);
+    } else {
+      const subParts = line.split(/[、,]/).map(p => p.trim()).filter(Boolean);
+      let currentPart = '';
+      for (const part of subParts) {
+        if ((currentPart + part).length <= 25) {
+          currentPart += (currentPart ? '、' : '') + part;
+        } else {
+          if (currentPart) lines.push(currentPart + '、');
+          currentPart = part;
+        }
+      }
+      if (currentPart) lines.push(currentPart);
+    }
+  }
+
   reelTextOverlay.innerHTML = '';
   
   // タイマー更新
@@ -268,6 +292,24 @@ function startPreview() {
 
     lines.forEach((line, index) => {
       textAnimationTimeout = setTimeout(() => {
+        // 同期して背景画像を切り替える
+        const defaultBgs = ['/bg-premium.png', '/bg-premium2.png', '/bg-premium3.png'];
+        const bgs = currentPreviewMedias.length > 0 ? currentPreviewMedias : defaultBgs;
+        const bgIndex = index % bgs.length;
+        const currentBg = bgs[bgIndex];
+
+        const isVideoBg = currentBg.endsWith('.mp4') || currentBg.includes('video') || currentBg.includes('preview');
+        if (isVideoBg) {
+          reelVideo.src = currentBg;
+          reelVideo.style.display = 'block';
+          reelImage.style.display = 'none';
+          reelVideo.play().catch(e => console.warn(e));
+        } else {
+          reelImage.src = currentBg;
+          reelImage.style.display = 'block';
+          reelVideo.style.display = 'none';
+        }
+
         // 前のテキストをクリアして新テキストを追加（フェード効果付き）
         reelTextOverlay.innerHTML = `<div class="vertical-reel-text">${escapeHtml(line)}</div>`;
         const activeText = reelTextOverlay.querySelector('.vertical-reel-text');
@@ -322,9 +364,19 @@ function stopPreview() {
 
 async function loadQueue() {
   queueEl.innerHTML = '<div class="card">読み込み中…</div>';
-  const snapshot = await getDocs(query(collection(db, 'submissions'), orderBy('createdAt', 'desc'), limit(50)));
-  const rows = [];
-  snapshot.forEach(doc => rows.push({ id: doc.id, ...doc.data() }));
+  let rows = [];
+  try {
+    const res = await fetch(`${apiBase}/list-submissions`);
+    if (!res.ok) {
+      throw new Error('一覧の取得に失敗しました');
+    }
+    const data = await res.json();
+    rows = data.submissions || [];
+  } catch (error) {
+    console.error(error);
+    queueEl.innerHTML = `<div class="card" style="color: #ef4444;">エラー: ${escapeHtml(error.message)}</div>`;
+    return;
+  }
 
   const filtered = rows.filter(row => {
     const matchStatus = statusFilter.value === 'all' || row.status === statusFilter.value;
@@ -345,7 +397,10 @@ async function loadQueue() {
             <strong>ID: ${escapeHtml(row.id)}</strong>
             <div class="small">${escapeHtml(row.location || '場所未入力')} / ${(row.channels || []).join(', ')}</div>
           </div>
-          <div class="status ${escapeHtml(row.status || 'draft')}">${escapeHtml(row.status || 'draft')}</div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button class="delete-btn" data-id="${row.id}" style="padding: 4px 10px; background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer;">🗑️ 削除</button>
+            <div class="status ${escapeHtml(row.status || 'draft')}">${escapeHtml(row.status || 'draft')}</div>
+          </div>
         </div>
         <div class="submission-body">
           <p><strong>オーナーメモ:</strong> ${escapeHtml(row.ownerComment || 'なし')}</p>
@@ -396,6 +451,34 @@ async function loadQueue() {
     });
   });
 
+  // 投稿データの削除
+  [...queueEl.querySelectorAll('.delete-btn')].forEach(button => {
+    button.addEventListener('click', async () => {
+      const { id } = button.dataset;
+      if (!confirm('この投稿ドラフトデータを完全に削除します。よろしいですか？\n※動画や音声データ、承認履歴を含むすべての情報が削除されます。')) return;
+      
+      try {
+        button.disabled = true;
+        button.textContent = '削除中...';
+        const response = await fetch(`${apiBase}/delete-submission`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || '削除処理に失敗しました');
+        }
+        alert('データを完全に削除しました。');
+        await loadQueue();
+      } catch (error) {
+        alert(error.message);
+        button.disabled = false;
+        button.textContent = '🗑️ 削除';
+      }
+    });
+  });
+
   // AI音声生成ボタンイベント付与
   [...queueEl.querySelectorAll('.voice-btn')].forEach(button => {
     button.addEventListener('click', async () => {
@@ -433,7 +516,7 @@ async function loadQueue() {
   [...queueEl.querySelectorAll('.preview-btn')].forEach(button => {
     button.addEventListener('click', () => {
       const d = button.dataset;
-      openPreview(d.id, d.text, d.voice, d.media, d.mediaType, d.video);
+      openPreview(d.id, d.text, d.voice, d.medias, d.mediaType, d.video);
     });
   });
 

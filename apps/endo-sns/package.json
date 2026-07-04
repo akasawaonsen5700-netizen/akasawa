@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "netlify dev --port=8899 --functionsPort=4999",
+    "dev": "netlify dev",
     "build": "echo \"Static build complete\"",
     "build-video": "remotion render src/remotion/index.tsx EndoInstagramReel public/out.mp4"
   },
@@ -29,6 +29,10 @@
     "remotion": "^4.0.120",
     "@remotion/cli": "^4.0.120",
     "@remotion/renderer": "^4.0.120",
-    "zod": "^3.23.8"
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0"
   }
 }

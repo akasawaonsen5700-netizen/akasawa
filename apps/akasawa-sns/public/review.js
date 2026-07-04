@@ -1,11 +1,4 @@
-import {
-  collection,
-  getDocs,
-  limit,
-  orderBy,
-  query
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-import { db, apiBase } from './firebase-init.js';
+const apiBase = '/api';
 
 const queueEl = document.getElementById('queue');
 const statusFilter = document.getElementById('statusFilter');
@@ -85,9 +78,19 @@ async function updateStatus(id, action) {
 
 async function loadQueue() {
   queueEl.innerHTML = '<div class="card">読み込み中…</div>';
-  const snapshot = await getDocs(query(collection(db, 'submissions'), orderBy('createdAt', 'desc'), limit(50)));
-  const rows = [];
-  snapshot.forEach(doc => rows.push({ id: doc.id, ...doc.data() }));
+  let rows = [];
+  try {
+    const res = await fetch(`${apiBase}/list-submissions`);
+    if (!res.ok) {
+      throw new Error('一覧の取得に失敗しました');
+    }
+    const data = await res.json();
+    rows = data.submissions || [];
+  } catch (error) {
+    console.error(error);
+    queueEl.innerHTML = `<div class="card" style="color: #b91c1c;">エラー: ${escapeHtml(error.message)}</div>`;
+    return;
+  }
 
   const filtered = rows.filter(row => {
     const matchStatus = statusFilter.value === 'all' || row.status === statusFilter.value;
@@ -108,7 +111,10 @@ async function loadQueue() {
             <strong>${escapeHtml(row.id)}</strong>
             <div class="small">${escapeHtml(row.location || '場所未入力')} / ${(row.channels || []).join(', ')}</div>
           </div>
-          <div class="status ${escapeHtml(row.status || 'draft')}">${escapeHtml(row.status || 'draft')}</div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button class="delete-btn" data-id="${row.id}" style="padding: 4px 10px; background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer;">🗑️ 削除</button>
+            <div class="status ${escapeHtml(row.status || 'draft')}">${escapeHtml(row.status || 'draft')}</div>
+          </div>
         </div>
         <div class="submission-body">
           <p><strong>オーナーメモ:</strong> ${escapeHtml(row.ownerComment || 'なし')}</p>
@@ -139,6 +145,34 @@ async function loadQueue() {
       } catch (error) {
         alert(error.message);
         button.disabled = false;
+      }
+    });
+  });
+
+  // 投稿データの削除
+  [...queueEl.querySelectorAll('.delete-btn')].forEach(button => {
+    button.addEventListener('click', async () => {
+      const { id } = button.dataset;
+      if (!confirm('この投稿ドラフトデータを完全に削除します。よろしいですか？\n※動画や音声データ、承認履歴を含むすべての情報が削除されます。')) return;
+      
+      try {
+        button.disabled = true;
+        button.textContent = '削除中...';
+        const response = await fetch(`${apiBase}/delete-submission`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || '削除処理に失敗しました');
+        }
+        alert('データを完全に削除しました。');
+        await loadQueue();
+      } catch (error) {
+        alert(error.message);
+        button.disabled = false;
+        button.textContent = '🗑️ 削除';
       }
     });
   });
