@@ -60,7 +60,9 @@ exports.handler = async (event) => {
     await ref.set(data);
 
     // 自動音声合成＆自動動画レンダリングフローをバックグラウンドで開始
-    await triggerAutoRenderFlow(db, ref, data, payload.voiceUrl);
+    triggerAutoRenderFlow(db, ref, data, payload.voiceUrl).catch(err => {
+      console.error('[Background AutoRender Error]:', err);
+    });
 
     return ok({ id: ref.id, status: draftPackage.status, publishAt: draftPackage.publishAt });
   } catch (error) {

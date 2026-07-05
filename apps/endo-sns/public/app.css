@@ -366,3 +366,41 @@ footer {
   .hero, .grid-2, .grid-3 { grid-template-columns: 1fr; }
   .channel-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
+
+/* ダッシュボード2カラムレイアウト */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 440px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 2px solid var(--brand);
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+.section-title h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--brand);
+}
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+}
+@media (max-width: 1024px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+}

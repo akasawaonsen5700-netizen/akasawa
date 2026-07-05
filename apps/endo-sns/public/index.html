@@ -5,223 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>遠藤正俊 個人SNS配信ツール (X / Instagram)</title>
     <link rel="stylesheet" href="app.css" />
-    <style>
-      /* モーダル */
-      .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.7);
-        align-items: center;
-        justify-content: center;
-      }
-      .modal-content {
-        background: white;
-        padding: 30px;
-        border-radius: 16px;
-        width: 90%;
-        max-width: 480px;
-        position: relative;
-        color: #333;
-      }
-      .modal-content h2 {
-        margin-top: 0;
-        color: #111827;
-      }
-      .close-btn {
-        position: absolute;
-        right: 20px;
-        top: 15px;
-        font-size: 28px;
-        font-weight: bold;
-        cursor: pointer;
-        color: #9ca3af;
-      }
-      .close-btn:hover {
-        color: #374151;
-      }
-      
-      /* プレビューエリア */
-      .reel-preview-area {
-        margin-top: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 15px;
-        width: 100%;
-      }
-      .reel-mock-screen {
-        width: 320px;
-        height: 480px;
-        background: #000;
-        border-radius: 12px;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-      }
-      .reel-bg-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        opacity: 0.6;
-      }
-      .reel-text-overlay {
-        position: absolute;
-        top: 50%;
-        left: 10px;
-        right: 10px;
-        transform: translateY(-50%);
-        color: white;
-        text-align: center;
-        font-size: 20px;
-        font-weight: bold;
-        line-height: 1.5;
-        text-shadow: 0 2px 8px rgba(0,0,0,0.9);
-        padding: 10px;
-        background: rgba(0,0,0,0.3);
-        border-radius: 8px;
-        pointer-events: none;
-      }
-      .reel-controls {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
-        background: #f3f4f6;
-        padding: 12px;
-        border-radius: 10px;
-        flex-wrap: wrap;
-      }
-      .reel-timer {
-        font-size: 13px;
-        font-weight: bold;
-        color: #4b5563;
-      }
-
-      /* 投稿リスト・キュー表示 */
-      .queue-container {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 20px;
-        margin-top: 15px;
-      }
-      .submission {
-        background: white;
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-        color: #333;
-      }
-      .submission-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid var(--line);
-        padding-bottom: 10px;
-        margin-bottom: 15px;
-      }
-      .submission-header strong {
-        color: #111827;
-      }
-      .submission-header .small {
-        font-size: 12px;
-        color: #6b7280;
-      }
-      .submission-body p {
-        margin: 6px 0;
-        font-size: 14px;
-      }
-      .submission-body pre {
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 12px;
-        white-space: pre-wrap;
-        word-break: break-all;
-        font-family: inherit;
-      }
-      .status {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 9999px;
-        font-size: 11px;
-        font-weight: bold;
-        text-transform: uppercase;
-      }
-      .status.draft { background: #e5e7eb; color: #374151; }
-      .status.review_required { background: #fef3c7; color: #d97706; }
-      .status.approved { background: #d1fae5; color: #059669; }
-      .status.publishing { background: #dbeafe; color: #2563eb; }
-      .status.published { background: #e0e7ff; color: #4f46e5; }
-      .status.rejected { background: #fee2e2; color: #dc2626; }
-
-      .actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
-        flex-wrap: wrap;
-      }
-      .actions button {
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-weight: bold;
-        cursor: pointer;
-        font-size: 13px;
-      }
-      .actions button.good { background: #10b981; color: white; border: 1px solid #10b981; }
-      .actions button.warn { background: #f59e0b; color: white; border: 1px solid #f59e0b; }
-      .actions button.danger { background: #ef4444; color: white; border: 1px solid #ef4444; }
-      .actions button.secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
-      .actions button:disabled { opacity: 0.5; cursor: not-allowed; }
-    </style>
   </head>
   <body>
     <header>
-      <h1>遠藤正俊 個人SNS配信ツール (X / Instagram)</h1>
-      <p>「地球を緑にしてきた男の独り言 (X)」×「世界を旅した博士が、日本の影に癒やされる理由 (Instagram)」</p>
+      <h1>遠藤正俊 個人SNS自動配信システム</h1>
+      <p>【登録 ➔ 生成 ➔ 投稿】の3ステップで、直観的にSNS運用を完結します</p>
     </header>
 
     <main>
-      <!-- コンセプト・運用方針 -->
-      <section class="hero">
-        <div class="card">
-          <h2>個人SNS配信コンセプト</h2>
-          <p>
-            本ツールは、<strong>『遠藤正俊個人SNS戦略』</strong>に基づき、現代日本人の「モヤモヤ」を解消する強烈なインサイトをAIによって下書き生成します。
-          </p>
-          <div>
-            <span class="pill">コンセプト特化</span>
-            <span class="pill">Gemini AI下書き</span>
-            <span class="pill">Cartesiaクローン音声</span>
-            <span class="pill">Remotion縦型動画</span>
-            <span class="pill">X & Instagram</span>
+      <div class="dashboard-layout">
+        <!-- 左側：登録エリア (ステップ①) -->
+        <section class="card registration-section">
+          <div class="section-title">
+            <span class="step-badge">1</span>
+            <h2>登録：台本と背景の入力</h2>
           </div>
-          <div class="note" style="margin-top: 12px;">
-            全体コンセプト：「世界を植林してきた博士が、日本の『枯れ葉』に見た、失われた魂の救済」
-          </div>
-        </div>
-        <div class="card">
-          <h2>運用方針 (戦略PDFより)</h2>
-          <div class="kpis">
-            <div class="kpi"><strong>毎日1-2回</strong>X（旧Twitter）推奨</div>
-            <div class="kpi"><strong>週2-3回</strong>Instagram推奨</div>
-            <div class="kpi"><strong>顔出しなし</strong>自然背景＋音声テロップ</div>
-            <div class="kpi"><strong>Cartesia音声</strong>遠藤正俊氏クローン音声</div>
-          </div>
-          <p class="help">ナレーション音声は Cartesia.ai のクローンボイス生成APIを使用します。</p>
-        </div>
-      </section>
-
-      <!-- 投稿登録 ＆ フロー説明 -->
-      <section class="grid-2">
-        <div class="card">
-          <h2>① 投稿原案の作成 (台本入力)</h2>
           <form id="uploadForm">
             <div class="channel-selection-card">
               <label class="form-label-bold">投稿先チャネル</label>
@@ -234,24 +32,21 @@
             <div style="margin-top: 16px;">
               <label for="ownerComment" style="font-weight: bold; color: var(--brand);">オーナーの投稿メモ / 動画台本 (必須)</label>
               <textarea id="ownerComment" required placeholder="ここに投稿したい台本やインサイトメモを入力してください。例：立ち止まることは、後退ではないと私は思っています。海外で仕事をしていた頃、前に進むことが正しいとずっと思っていました……。" style="min-height: 120px;"></textarea>
-              <div class="help">入力されたテキストを元に、自動で遠藤正俊氏のクローン音声およびテロップ付き縦型リール動画（Instagram用）と、X用の投稿文章が生成されます。</div>
             </div>
 
             <div style="margin-top: 16px;">
               <label for="mediaFiles">背景画像・動画 (任意)</label>
               <input id="mediaFiles" type="file" accept="image/*,video/*" multiple />
-              <div class="help">動画の背景として使用する画像や動画を選択してください。未選択の場合はデフォルト背景画像が使用されます。</div>
             </div>
 
             <div style="margin-top: 16px;">
               <label for="voiceFile">自身の録音音声ファイル (任意)</label>
               <input id="voiceFile" type="file" accept="audio/*" />
-              <div class="help">遠藤正俊氏自身の録音音声（endo.mp3など）を直接使用したい場合は選択してください。未選択の場合は、Cartesia.ai APIを用いて本人のクローン音声が自動合成されます。</div>
             </div>
 
             <div class="grid-2" style="margin-top: 16px;">
               <div>
-                <label for="simpleTag">投稿テーマ (戦略PDF分類)</label>
+                <label for="simpleTag">投稿テーマ</label>
                 <select id="simpleTag">
                   <option value="">AIに自動判定させる</option>
                   <option value="無駄の美学">無駄の美学</option>
@@ -275,7 +70,7 @@
 
             <div style="margin-top: 16px;">
               <label for="ngMemo">公開NGメモ / 注意事項 (任意)</label>
-              <textarea id="ngMemo" placeholder="例：人物の顔は使用不可、過剰な宣伝表現は避ける。"></textarea>
+              <textarea id="ngMemo" placeholder="例：人物の顔は使用不可。"></textarea>
             </div>
 
             <div class="actions" style="margin-top: 24px;">
@@ -283,75 +78,58 @@
             </div>
             <p id="formMessage" class="help"></p>
           </form>
-        </div>
+        </section>
 
-        <div class="card">
-          <h2>② 配信フローとシステム連携</h2>
-          <p>
-            Web画面からの登録を契機に、<strong>Gemini API</strong> を用いた「情緒的なInstagramキャプション/ナレーション台本」および「X用の思考を促す短文」の下書きが自動生成されます。
-          </p>
-          <div class="note" style="border-left-color: #10b981; background: #f0fdf4; color: #14532d;">
-            <strong>Cartesia.ai API ＆ Remotion 自動レンダリング連携中</strong><br>
-            登録と同時にバックグラウンドで自動的に遠藤正俊氏のクローン音声が生成され、テロップとBGMが一体となった本物の縦型動画（MP4）が自動で書き出されます。
+        <!-- 右側：生成・投稿エリア (ステップ②＆③) -->
+        <section class="card queue-section">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--brand); padding-bottom: 12px; margin-bottom: 20px;">
+            <div class="section-title" style="border: none; padding: 0; margin: 0;">
+              <span class="step-badge" style="background: var(--accent);">2 & 3</span>
+              <h2>生成と投稿：AIドラフトの確認と配信</h2>
+            </div>
+            <button id="refreshBtn" class="primary-btn" style="padding: 6px 12px; font-size: 13px; background-color: var(--brand); border-color: var(--brand); border-radius: 6px;">🔄 更新</button>
           </div>
-          <ul>
-            <li><strong>AI下書き生成</strong>: 遠藤氏の戦略PDFを学習したプロンプトでGeminiが自律的に起稿</li>
-            <li><strong>クローン音声合成</strong>: Cartesia.aiのボイスクローニングAPIと連携し、遠藤正俊氏本人の声で台本を朗読する音声を自動生成</li>
-            <li><strong>自動ビデオ書き出し</strong>: 登録直後に裏で Remotion レンダリングを起動し、テロップ・BGM・クローン音声を合体させたMP4動画を自動生成</li>
-            <li><strong>プレビュー＆直接承認</strong>: 承認キューで完成したMP4動画をプレビューし、モーダル内からワンクリックで直接承認可能</li>
-            <li><strong>自律スケジュール配信</strong>: 承認済みの投稿はスケジュールされた日時に自動で各SNS（Instagram / X）へWebhook配信</li>
-          </ul>
-        </div>
-      </section>
 
-      <!-- 画面下部：動画・投稿管理のダッシュボード (承認キュー) -->
-      <section class="card" style="margin-top: 2rem; width: 100%;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--brand); padding-bottom: 12px; margin-bottom: 20px;">
-          <h2 style="margin: 0; font-size: 1.5rem; color: var(--brand);">🎬 生成済み動画・投稿ドラフトの確認 ＆ 配信管理</h2>
-          <button id="refreshBtn" class="primary-btn" style="padding: 8px 16px; font-size: 13px; background-color: var(--brand); border-color: var(--brand);">🔄 一覧を更新</button>
-        </div>
-
-        <!-- フィルターコントロール -->
-        <div style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; background: #fafaf9; padding: 14px; border-radius: 10px; border: 1px solid var(--line);">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <label for="statusFilter" style="font-size: 13px; font-weight: bold; color: #4b5563;">ステータス:</label>
-            <select id="statusFilter" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 13px;">
-              <option value="all">すべて</option>
-              <option value="draft">draft (下書き)</option>
-              <option value="review_required" selected>review_required (要確認)</option>
-              <option value="approved">approved (承認済み)</option>
-              <option value="published">published (公開済み)</option>
-              <option value="rejected">rejected (却下)</option>
-            </select>
+          <!-- フィルターコントロール -->
+          <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; background: rgba(30, 41, 59, 0.4); padding: 10px; border-radius: 10px; border: 1px solid var(--line);">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label for="statusFilter" style="font-size: 12px; font-weight: bold; color: #94a3b8;">ステータス:</label>
+              <select id="statusFilter" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); font-size: 12px; background: #0f172a; width: auto; color: white;">
+                <option value="all">すべて</option>
+                <option value="draft">draft (下書き)</option>
+                <option value="review_required" selected>review_required (要確認)</option>
+                <option value="approved">approved (承認済み)</option>
+                <option value="published">published (公開済み)</option>
+                <option value="rejected">rejected (却下)</option>
+              </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label for="channelFilter" style="font-size: 12px; font-weight: bold; color: #94a3b8;">チャネル:</label>
+              <select id="channelFilter" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); font-size: 12px; background: #0f172a; width: auto; color: white;">
+                <option value="all">すべて</option>
+                <option value="instagram">Instagram</option>
+                <option value="x">X</option>
+              </select>
+            </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <label for="channelFilter" style="font-size: 13px; font-weight: bold; color: #4b5563;">チャネル:</label>
-            <select id="channelFilter" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 13px;">
-              <option value="all">すべて</option>
-              <option value="instagram">Instagram</option>
-              <option value="x">X</option>
-            </select>
-          </div>
-        </div>
 
-        <!-- 投稿キュー一覧表示エリア -->
-        <div id="queue" class="queue-container">
-          <div class="card">データを読み込み中…</div>
-        </div>
-      </section>
+          <!-- 投稿キュー一覧表示エリア -->
+          <div id="queue" class="queue-container">
+            <div class="card">データを読み込み中…</div>
+          </div>
+        </section>
+      </div>
     </main>
 
-    <!-- プレビュー用モーダル (同一画面内で動作) -->
+    <!-- プレビュー用モーダル (シミュレーションおよび完成動画再生) -->
     <div id="previewModal" class="modal">
       <div class="modal-content">
         <span class="close-btn">&times;</span>
         <h2>動画プレビュー</h2>
         
         <div class="reel-preview-area">
-          <!-- ビデオプレビュー (videoUrlが存在する場合) -->
           <video id="reelVideo" src="" controls style="width: 100%; height: 100%; border-radius: 12px; display: none; object-fit: cover; background: #000;"></video>
           
-          <!-- シミュレーションプレビュー (旧フォールバック用) -->
           <div class="reel-mock-screen" id="reelMockScreen">
             <img id="reelImage" class="reel-bg-image" src="" alt="preview" />
             <div class="reel-text-overlay" id="reelTextOverlay"></div>
@@ -373,7 +151,7 @@
     <audio id="bgmAudio" style="display: none;"></audio>
 
     <footer>
-      遠藤正俊 個人SNS配信用ツール - Powered by Netlify + Firebase + Cartesia.ai + Remotion.
+      遠藤正俊 個人SNS配信用ツール - Powered by Netlify + Firebase.
     </footer>
 
     <script src="runtime-config.js"></script>

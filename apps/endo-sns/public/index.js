@@ -261,35 +261,6 @@ function renderChannelSettings(row) {
     const isPublished = status === 'published';
 
     let extraButtonsHtml = '';
-    if (channel === 'instagram' && narrationText) {
-      const hasVoice = !!row.voiceUrl;
-      extraButtonsHtml = `
-        <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
-          <button class="voice-btn ${hasVoice ? 'has-voice' : ''}" 
-                  data-id="${row.id}" 
-                  data-text="${escapeHtml(narrationText)}"
-                  ${isPublished ? 'disabled' : ''}>
-            ${hasVoice ? '🎙️ AI音声再生成' : '🎙️ Gemini AI音声生成'}
-          </button>
-          ${hasVoice ? `
-            <button class="preview-btn" 
-                    data-id="${row.id}" 
-                    data-text="${escapeHtml(narrationText)}"
-                    data-voice="${escapeHtml(row.voiceUrl)}"
-                    data-medias="${escapeHtml(assets.map(a => a.url).filter(Boolean).join(','))}"
-                    data-media-type="${escapeHtml(assets[0]?.type || '')}"
-                    data-video="${escapeHtml(row.videoUrl || '')}">
-              🎬 動画プレビュー ${row.videoUrl ? '⚡' : ''}
-            </button>
-          ` : ''}
-        </div>
-        ${hasVoice ? `
-          <div style="margin-top: 6px;">
-            <audio src="${escapeHtml(row.voiceUrl)}" controls style="width: 100%; height: 32px;"></audio>
-          </div>
-        ` : ''}
-      `;
-    }
 
     return `
       <div class="channel-card-setting" style="margin-top: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fafaf9;">
@@ -363,82 +334,109 @@ async function loadQueue() {
 
     queueEl.innerHTML = filtered.map(row => {
       return `
-        <article class="submission" id="submission-${row.id}">
-          <div class="submission-header">
+        <article class="submission" id="submission-${row.id}" style="border: 1px solid var(--line); border-radius: 18px; margin-bottom: 24px; background: var(--card); overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+          <!-- ヘッダー部 -->
+          <div class="submission-header" style="background: rgba(15, 23, 42, 0.4); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line);">
             <div>
-              <strong>ID: ${escapeHtml(row.id)}</strong>
-              <div class="small">${(row.channels || []).join(', ')}</div>
+              <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--brand); letter-spacing: 0.05em;">SUBMISSION</span>
+              <strong style="display: block; font-size: 15px; color: var(--ink);">ID: ${escapeHtml(row.id)}</strong>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <button class="delete-btn" data-id="${row.id}" style="padding: 4px 10px; background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer;">🗑️ 削除</button>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <button class="delete-btn" data-id="${row.id}" style="padding: 6px 12px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s;">🗑️ 削除</button>
               <div class="status ${escapeHtml(row.status || 'draft')}">${escapeHtml(row.status || 'draft')}</div>
             </div>
           </div>
-          <div class="submission-body">
-            <p><strong>台本テキスト:</strong> ${escapeHtml(row.ownerComment || 'なし')}</p>
-            <p><strong>自動カテゴリ:</strong> ${escapeHtml(row.classification?.primary || '未分類')} / ${escapeHtml((row.classification?.secondary || []).join(', '))}</p>
-            <p><strong>リスク判定:</strong> ${renderRisk(row.risk)}</p>
-            ${row.assets && row.assets.length > 0 ? `
-              <div style="margin: 10px 0; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;">
-                <strong style="font-size: 13px; color: #4b5563;">📷 登録された背景画像・動画:</strong>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
-                  ${row.assets.map(renderAsset).join('')}
-                </div>
-              </div>
-            ` : ''}
-            
-            ${row.videoUrl ? `
-              <div class="completed-video-container" style="margin: 14px 0; padding: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px;">
-                <strong style="color: #166534; font-size: 14px; display: block; margin-bottom: 8px;">🟢 自動生成された完成動画 (MP4):</strong>
-                <video src="${escapeHtml(row.videoUrl)}" controls style="width: 100%; max-width: 360px; height: auto; border-radius: 8px; border: 1px solid #dcfce7; background: #000;"></video>
-                <div style="margin-top: 10px;">
-                  <a href="${escapeHtml(row.videoUrl)}" target="_blank" download="${row.id}.mp4" style="display: inline-block; background: #16a34a; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold; text-align: center; border: 1px solid #16a34a;">📥 動画ファイルをダウンロード</a>
-                </div>
-              </div>
-            ` : `
-              <div class="video-status-container ${escapeHtml(row.videoStatus || 'initializing')}" style="margin: 14px 0; padding: 14px; border-radius: 12px; font-size: 13px;">
-                ${(() => {
-                  const status = row.videoStatus || 'initializing';
-                  if (status === 'generating_audio') {
-                    return `
-                      <div style="color: #0284c7; display: flex; align-items: center; gap: 8px; font-weight: bold;">
-                        <span class="spinner" style="display: inline-block; width: 14px; height: 14px; border: 2px solid #0284c7; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></span>
-                        🎙️ 遠藤正俊のクローン音声を合成中...
-                      </div>
-                      <p style="margin: 6px 0 0; color: #6b7280; font-size: 12px;">AIが台本テキストからナレーション音声を生成しています。少々お待ちください。</p>
-                    `;
-                  } else if (status === 'rendering_video') {
-                    return `
-                      <div style="color: #d97706; display: flex; align-items: center; gap: 8px; font-weight: bold;">
-                        <span class="spinner" style="display: inline-block; width: 14px; height: 14px; border: 2px solid #d97706; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></span>
-                        🎬 プレミアム縦型動画（Remotion）を書き出し中...
-                      </div>
-                      <p style="margin: 6px 0 0; color: #6b7280; font-size: 12px;">映像アセットと合成音声を組み合わせて、縦型動画ファイルをエンコードしています。</p>
-                    `;
-                  } else if (status === 'failed') {
-                    return `
-                      <div style="color: #dc2626; font-weight: bold;">
-                        ❌ 動画自動生成に失敗しました
-                      </div>
-                      <p style="margin: 6px 0 0; color: #7f1d1d; font-size: 12px; background: #fee2e2; padding: 8px; border-radius: 6px; border: 1px solid #fecaca;">
-                        エラー内容: ${escapeHtml(row.videoError || '不明な内部エラーが発生しました。')}
-                      </p>
-                    `;
-                  } else {
-                    return `
-                      <div style="color: #6b7280; display: flex; align-items: center; gap: 8px;">
-                        <span class="spinner" style="display: inline-block; width: 14px; height: 14px; border: 2px solid #6b7280; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></span>
-                        ⏳ 動画自動生成タスクを初期化中...
-                      </div>
-                    `;
-                  }
-                })()}
-              </div>
-            `}
 
-            <div style="margin-top: 16px;">
-              <h4 style="margin: 0 0 8px; font-size: 15px; color: var(--brand);">チャンネル別配信設定</h4>
-              ${renderChannelSettings(row)}
+          <div class="submission-body" style="padding: 20px; display: flex; flex-direction: column; gap: 20px;">
+            <!-- [ステップ①]：登録内容 -->
+            <div class="step-section" style="border-left: 3px solid var(--brand); padding-left: 14px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span class="step-badge" style="width: 20px; height: 20px; font-size: 11px; background: var(--brand);">1</span>
+                <strong style="font-size: 14px; color: var(--brand);">登録：台本と背景</strong>
+              </div>
+              <div style="font-size: 14px; color: #cbd5e1; background: rgba(15, 23, 42, 0.3); padding: 12px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 8px;">
+                ${escapeHtml(row.ownerComment || 'なし')}
+              </div>
+              <div style="font-size: 12px; color: #94a3b8; display: flex; gap: 16px;">
+                <span>🏷️ テーマ: <strong>${escapeHtml(row.classification?.primary || '未判定')}</strong></span>
+                <span>⚖️ 安全判定: ${renderRisk(row.risk)}</span>
+              </div>
+              ${row.assets && row.assets.length > 0 ? `
+                <div style="margin-top: 10px;">
+                  <span style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">📷 背景ファイル:</span>
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    ${row.assets.map(renderAsset).join('')}
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- [ステップ②]：生成された成果物 -->
+            <div class="step-section" style="border-left: 3px solid var(--accent); padding-left: 14px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span class="step-badge" style="width: 20px; height: 20px; font-size: 11px; background: var(--accent);">2</span>
+                <strong style="font-size: 14px; color: var(--accent);">生成：動画とナレーション</strong>
+              </div>
+              
+              ${row.videoUrl ? `
+                <div class="completed-video-container" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; max-width: 380px;">
+                  <strong style="color: var(--accent); font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                    🟢 動画生成が完了しました
+                  </strong>
+                  <video src="${escapeHtml(row.videoUrl)}" controls style="width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.1); background: #000;"></video>
+                  <div>
+                    <a href="${escapeHtml(row.videoUrl)}" target="_blank" download="${row.id}.mp4" style="display: inline-block; background: var(--accent); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; border: 1px solid var(--accent);">📥 完成動画をダウンロード</a>
+                  </div>
+                </div>
+              ` : `
+                <div class="video-status-container ${escapeHtml(row.videoStatus || 'initializing')}" style="background: rgba(15, 23, 42, 0.3); border: 1px solid var(--line); padding: 12px; border-radius: 12px; font-size: 13px;">
+                  ${(() => {
+                    const status = row.videoStatus || 'initializing';
+                    if (status === 'generating_audio') {
+                      return `
+                        <div style="color: #0284c7; display: flex; align-items: center; gap: 8px; font-weight: bold;">
+                          <span class="spinner" style="display: inline-block; width: 14px; height: 14px; border: 2px solid #0284c7; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+                          🎙️ ナレーション音声を合成中...
+                        </div>
+                      `;
+                    } else if (status === 'rendering_video') {
+                      return `
+                        <div style="color: #d97706; display: flex; align-items: center; gap: 8px; font-weight: bold;">
+                          <span class="spinner" style="display: inline-block; width: 14px; height: 14px; border: 2px solid #d97706; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+                          🎬 動画ファイルを書き出し中...
+                        </div>
+                      `;
+                    } else if (status === 'failed') {
+                      return `
+                        <div style="color: #dc2626; font-weight: bold;">
+                          ❌ 動画の書き出しに失敗しました
+                        </div>
+                        <p style="margin: 4px 0 0; color: #f87171; font-size: 11px;">
+                          エラー内容: ${escapeHtml(row.videoError || '内部エラー')}
+                        </p>
+                      `;
+                    } else {
+                      return `
+                        <div style="color: #94a3b8; display: flex; align-items: center; gap: 8px;">
+                          <span class="spinner" style="display: inline-block; width: 14px; height: 14px; border: 2px solid #94a3b8; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+                          ⏳ 生成タスクを初期化中...
+                        </div>
+                      `;
+                    }
+                  })()}
+                </div>
+              `}
+            </div>
+
+            <!-- [ステップ③]：SNSへの投稿 -->
+            <div class="step-section" style="border-left: 3px solid var(--warn); padding-left: 14px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span class="step-badge" style="width: 20px; height: 20px; font-size: 11px; background: var(--warn);">3</span>
+                <strong style="font-size: 14px; color: var(--warn);">投稿：SNS別下書きと直接配信</strong>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                ${renderChannelSettings(row)}
+              </div>
             </div>
           </div>
         </article>
