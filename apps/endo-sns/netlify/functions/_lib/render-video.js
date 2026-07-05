@@ -40,11 +40,62 @@ function logDebug(message) {
  */
 async function renderVideo(submissionId, props) {
   return new Promise((resolve, reject) => {
-    // 本番（Netlifyクラウド）環境ではブラウザ起動エラー（タイムアウト・フリーズ）を回避するため、
+    // AWS Lambda でレンダリングを呼び出す設定がある場合
+    const awsAccessKey = process.env.REMOTION_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+    const awsSecretKey = process.env.REMOTION_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+
+    if (process.env.REMOTION_AWS_FUNCTION_NAME && awsAccessKey) {
+      logDebug(`[RenderVideo] AWS Lambda Render detected. Triggering remote render on AWS...`);
+      const { renderVideoOnLambda, waitForVideoRender } = require('@remotion/lambda');
+      (async () => {
+        try {
+          const region = process.env.REMOTION_AWS_REGION || 'ap-northeast-1';
+          const functionName = process.env.REMOTION_AWS_FUNCTION_NAME;
+          const serveUrl = process.env.REMOTION_AWS_SERVE_URL;
+          const bucketName = process.env.REMOTION_AWS_BUCKET;
+
+          // 暗黙的にSDKが参照する環境変数をセット
+          process.env.AWS_ACCESS_KEY_ID = awsAccessKey;
+          process.env.AWS_SECRET_ACCESS_KEY = awsSecretKey;
+
+          const renderResult = await renderVideoOnLambda({
+            region,
+            functionName,
+            serveUrl,
+            composition: 'EndoInstagramReel',
+            inputProps: props,
+            codec: 'h264',
+            privacy: 'public',
+            imageFormat: 'jpeg',
+          });
+
+          logDebug(`[RenderVideo] Render started on Lambda. Render ID: ${renderResult.renderId}`);
+
+          // レンダー完了をポーリングで待機 (Netlify関数の制限時間内に終わるようタイムアウト管理)
+          const finalResult = await waitForVideoRender({
+            region,
+            bucketName,
+            renderId: renderResult.renderId,
+            functionName,
+            timeoutInMilliseconds: 45000, // 最大45秒待機
+          });
+
+          const videoUrl = finalResult.url;
+          logDebug(`[RenderVideo] AWS Lambda render success! URL: ${videoUrl}`);
+          resolve(videoUrl);
+        } catch (lambdaErr) {
+          logDebug(`[RenderVideo-Error] AWS Lambda render failed: ${lambdaErr.message}`);
+          reject(lambdaErr);
+        }
+      })();
+      return;
+    }
+
+    // 本番（Netlifyクラウド）環境かつAWS設定がない場合はブラウザ起動エラー（タイムアウト・フリーズ）を回避するため、
     // 実際のレンダリング処理をスキップしてモック動画URLを即座に返します。
     const isNetlifyProduction = process.env.NETLIFY_DEV !== 'true';
     if (isNetlifyProduction) {
-      logDebug(`[RenderVideo] Skipping actual Remotion render on Netlify production.`);
+      logDebug(`[RenderVideo] Skipping actual Remotion render on Netlify production (No AWS Credentials).`);
       logDebug(`[RenderVideo] Mocking video render success for submission: ${submissionId}`);
       
       const mockVideoUrl = ''; // 本番では空URLを返し、フロントのシミュレーションプレイヤーを動作させます

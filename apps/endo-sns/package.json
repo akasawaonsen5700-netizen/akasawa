@@ -29,6 +29,7 @@
     "remotion": "^4.0.120",
     "@remotion/cli": "^4.0.120",
     "@remotion/renderer": "^4.0.120",
+    "@remotion/lambda": "^4.0.120",
     "zod": "4.3.6"
   },
   "devDependencies": {

@@ -270,35 +270,6 @@ function renderChannelSettings(row) {
     const isPublished = status === 'published';
 
     let extraButtonsHtml = '';
-    if (channel === 'instagram' && narrationText) {
-      const hasVoice = !!row.voiceUrl;
-      extraButtonsHtml = `
-        <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
-          <button class="voice-btn ${hasVoice ? 'has-voice' : ''}" 
-                  data-id="${row.id}" 
-                  data-text="${escapeHtml(narrationText)}"
-                  ${isPublished ? 'disabled' : ''}>
-            ${hasVoice ? '🎙️ AI音声再生成' : '🎙️ AI音声生成'}
-          </button>
-          ${hasVoice ? `
-            <button class="preview-btn" 
-                    data-id="${row.id}" 
-                    data-text="${escapeHtml(narrationText)}"
-                    data-voice="${escapeHtml(row.voiceUrl)}"
-                    data-medias="${escapeHtml(assets.map(a => a.url).filter(Boolean).join(','))}"
-                    data-media-type="${escapeHtml(assets[0]?.type || '')}"
-                    data-video="${escapeHtml(row.videoUrl || '')}">
-              🎬 動画プレビュー ${row.videoUrl ? '⚡' : ''}
-            </button>
-          ` : ''}
-        </div>
-        ${hasVoice ? `
-          <div style="margin-top: 6px;">
-            <audio src="${escapeHtml(row.voiceUrl)}" controls style="width: 100%; height: 32px;"></audio>
-          </div>
-        ` : ''}
-      `;
-    }
 
     let mediaPreviewHtml = '';
     if (channel === 'instagram') {
@@ -371,8 +342,8 @@ function renderChannelSettings(row) {
         <p style="margin: 8px 0 4px; font-size: 13px; color: #94a3b8;"><strong>下書きドラフト:</strong></p>
         <pre style="margin: 4px 0 0; font-size: 12px; padding: 10px; max-height: 150px; overflow-y: auto; background: #0f172a; border-color: var(--line);">${escapeHtml(draftText)}</pre>
         ${narrationText ? `
-          <p style="margin: 8px 0 4px; font-size: 13px;"><strong>ナレーション原稿:</strong></p>
-          <pre style="margin: 4px 0 0; font-size: 12px; padding: 10px; background: #f0fdf4; border-color: #bbf7d0;">${escapeHtml(narrationText)}</pre>
+          <p style="margin: 8px 0 4px; font-size: 13px; color: #94a3b8;"><strong>ナレーション原稿:</strong></p>
+          <pre style="margin: 4px 0 0; font-size: 12px; padding: 10px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); color: #d1fae5;">${escapeHtml(narrationText)}</pre>
         ` : ''}
         ${extraButtonsHtml}
       </div>
@@ -476,7 +447,21 @@ async function loadQueue() {
                       <a href="${escapeHtml(row.videoUrl)}" target="_blank" download="${row.id}.mp4" style="display: inline-block; background: var(--accent); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; border: 1px solid var(--accent);">📥 完成動画をダウンロード</a>
                     </div>
                   ` : `
-                    <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">シミュレーションプレビューで動画を確認できます。プレビューボタンを押してください。</p>
+                    <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                      ${row.voiceUrl ? `
+                        <button class="preview-btn" style="background: #6d28d9; padding: 8px 16px; font-size: 13px; font-weight: bold;"
+                                data-id="${row.id}" 
+                                data-text="${escapeHtml(row.drafts?.instagram?.narration || row.ownerComment || '')}"
+                                data-voice="${escapeHtml(row.voiceUrl)}"
+                                data-medias="${escapeHtml((row.channelSettings?.instagram?.assets || row.assets || []).map(a => a.url).filter(Boolean).join(','))}"
+                                data-media-type="${escapeHtml((row.channelSettings?.instagram?.assets || row.assets || [])[0]?.type || '')}"
+                                data-video="">
+                          🎬 シミュレーションプレビュー
+                        </button>
+                      ` : `
+                        <p style="margin: 0; font-size: 12px; color: #94a3b8;">音声生成待ちです。音声が生成されるとプレビューが可能になります。</p>
+                      `}
+                    </div>
                   `}
                 </div>
               ` : `
