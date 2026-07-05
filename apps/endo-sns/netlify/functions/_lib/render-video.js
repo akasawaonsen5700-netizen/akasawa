@@ -58,14 +58,14 @@ function logDebug(message) {
  */
 async function renderVideo(submissionId, props) {
   return new Promise((resolve, reject) => {
-    // 本番・ローカル環境を問わず、サーバーレス環境でのブラウザ起動エラー（タイムアウト・フリーズ）を回避するため、
+    // 本番（Netlifyクラウド）環境ではブラウザ起動エラー（タイムアウト・フリーズ）を回避するため、
     // 実際のレンダリング処理をスキップしてモック動画URLを即座に返します。
-    if (true) {
-      logDebug(`[RenderVideo] Skipping actual Remotion render to prevent browser freeze/timeout on server.`);
+    const isNetlifyProduction = process.env.NETLIFY_DEV !== 'true';
+    if (isNetlifyProduction) {
+      logDebug(`[RenderVideo] Skipping actual Remotion render on Netlify production.`);
       logDebug(`[RenderVideo] Mocking video render success for submission: ${submissionId}`);
       
-      // テスト用のサンプル動画URL
-      const mockVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+      const mockVideoUrl = ''; // 本番では空URLを返し、フロントのシミュレーションプレイヤーを動作させます
       
       setTimeout(() => {
         resolve(mockVideoUrl);
