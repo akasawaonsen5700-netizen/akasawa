@@ -92,7 +92,7 @@ async function triggerAutoRenderFlow(db, docRef, data, rawVoiceUrl) {
     
     // Netlifyの本番環境（サーバーレス環境）では、ディスク書き込み制限やタイムアウトを完全に避けるため、
     // 即時にダミー音声（endo.mp3）とモック動画URLを設定して処理を正常完了させます。
-    const isNetlifyProduction = process.env.NETLIFY === 'true' && process.env.NETLIFY_DEV !== 'true';
+    const isNetlifyProduction = process.env.NETLIFY_DEV !== 'true';
     if (isNetlifyProduction) {
       logDebug(`[AutoRender] Netlify Production detected. Setting up demo voice/video URLs instantly.`);
       
