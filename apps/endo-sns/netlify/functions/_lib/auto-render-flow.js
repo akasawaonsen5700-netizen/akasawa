@@ -90,7 +90,7 @@ async function triggerAutoRenderFlow(db, docRef, data, rawVoiceUrl) {
       logDebug(`[AutoRender] Netlify Production detected. Setting up demo voice/video URLs instantly.`);
       
       const mockVoiceUrl = '/endo-sns/endo.mp3'; // 同梱の遠藤様クローン音声ファイル
-      const mockVideoUrl = ''; // 海洋の動画（oceans.mp4）を完全に排除して空にします
+      const mockVideoUrl = ''; // 本番ではサーバーレスのため実動画レンダリング不可。フロントでシミュレーションプレビューを使用
       
       await docRef.update({
         voiceUrl: mockVoiceUrl,

@@ -37,6 +37,7 @@ const simpleTag = document.getElementById('simpleTag');
 const visibility = document.getElementById('visibility');
 const ngMemo = document.getElementById('ngMemo');
 const mediaFilesInput = document.getElementById('mediaFiles');
+const postAttachFilesInput = document.getElementById('postAttachFiles');
 const voiceFileInput = document.getElementById('voiceFile');
 
 const setMessage = (text, isError = false) => {
@@ -79,8 +80,15 @@ form.addEventListener('submit', async (event) => {
     let assets = [];
     const mediaFiles = mediaFilesInput ? [...mediaFilesInput.files] : [];
     if (mediaFiles.length > 0) {
-      setMessage('Firebase Storage へ背景アセットをアップロード中…');
+      setMessage('Firebase Storage へ動画用背景アセットをアップロード中…');
       assets = await uploadFiles(mediaFiles, 'common');
+    }
+
+    let postAttachAssets = [];
+    const postAttachFiles = postAttachFilesInput ? [...postAttachFilesInput.files] : [];
+    if (postAttachFiles.length > 0) {
+      setMessage('Firebase Storage へ直接投稿用添付画像をアップロード中…');
+      postAttachAssets = await uploadFiles(postAttachFiles, 'common');
     }
 
     let voiceUrl = null;
@@ -98,7 +106,7 @@ form.addEventListener('submit', async (event) => {
     const channelSettings = {};
     for (const channel of selectedChannels) {
       channelSettings[channel] = {
-        assets: assets,
+        assets: postAttachAssets.length > 0 ? postAttachAssets : assets,
         publishAt: null
       };
     }
@@ -114,6 +122,7 @@ form.addEventListener('submit', async (event) => {
       channels: selectedChannels,
       channelSettings,
       assets: assets,
+      postAttachAssets: postAttachAssets,
       voiceUrl: voiceUrl,
       brandSnapshot: {
         ownerName: defaults.ownerName,
@@ -261,17 +270,88 @@ function renderChannelSettings(row) {
     const isPublished = status === 'published';
 
     let extraButtonsHtml = '';
+    if (channel === 'instagram' && narrationText) {
+      const hasVoice = !!row.voiceUrl;
+      extraButtonsHtml = `
+        <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+          <button class="voice-btn ${hasVoice ? 'has-voice' : ''}" 
+                  data-id="${row.id}" 
+                  data-text="${escapeHtml(narrationText)}"
+                  ${isPublished ? 'disabled' : ''}>
+            ${hasVoice ? '🎙️ AI音声再生成' : '🎙️ AI音声生成'}
+          </button>
+          ${hasVoice ? `
+            <button class="preview-btn" 
+                    data-id="${row.id}" 
+                    data-text="${escapeHtml(narrationText)}"
+                    data-voice="${escapeHtml(row.voiceUrl)}"
+                    data-medias="${escapeHtml(assets.map(a => a.url).filter(Boolean).join(','))}"
+                    data-media-type="${escapeHtml(assets[0]?.type || '')}"
+                    data-video="${escapeHtml(row.videoUrl || '')}">
+              🎬 動画プレビュー ${row.videoUrl ? '⚡' : ''}
+            </button>
+          ` : ''}
+        </div>
+        ${hasVoice ? `
+          <div style="margin-top: 6px;">
+            <audio src="${escapeHtml(row.voiceUrl)}" controls style="width: 100%; height: 32px;"></audio>
+          </div>
+        ` : ''}
+      `;
+    }
+
+    let mediaPreviewHtml = '';
+    if (channel === 'instagram') {
+      if (row.videoUrl) {
+        mediaPreviewHtml = `
+          <div style="margin: 8px 0;">
+            <span style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">🎥 配信されるリール動画:</span>
+            <video src="${escapeHtml(row.videoUrl)}" controls style="width: 100%; max-width: 240px; height: auto; border-radius: 8px; border: 1px solid var(--line); background: #000;"></video>
+          </div>
+        `;
+      } else if (row.videoStatus === 'completed') {
+        mediaPreviewHtml = `
+          <div style="margin: 8px 0; padding: 10px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; font-size: 12px; color: #10b981; text-align: left;">
+            ✅ 動画生成完了 — プレビューボタンからシミュレーション再生できます
+          </div>
+        `;
+      } else {
+        mediaPreviewHtml = `
+          <div style="margin: 8px 0; padding: 10px; background: rgba(30, 41, 59, 0.3); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; color: #94a3b8; text-align: left;">
+            ⏳ 動画の生成完了を待っています...
+          </div>
+        `;
+      }
+    } else if (channel === 'x') {
+      const attachAssets = row.postAttachAssets || [];
+      if (attachAssets.length > 0) {
+        mediaPreviewHtml = `
+          <div style="margin: 8px 0;">
+            <span style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">📷 ツイートに添付される画像:</span>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              ${attachAssets.map(renderAsset).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        mediaPreviewHtml = `
+          <div style="margin: 8px 0; padding: 6px; font-size: 12px; color: #94a3b8; text-align: left;">
+            📝 テキストのみの投稿（画像添付なし）
+          </div>
+        `;
+      }
+    }
 
     return `
-      <div class="channel-card-setting" style="margin-top: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fafaf9;">
+      <div class="channel-card-setting" style="margin-top: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(15, 23, 42, 0.25); text-align: left;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-bottom: 8px;">
           <strong style="color: var(--brand); font-size: 15px;">${escapeHtml(channel.toUpperCase())}</strong>
           <span class="status ${escapeHtml(status)}" style="font-size: 13px;">${escapeHtml(status)}</span>
         </div>
         
-        <div style="margin: 8px 0; padding: 10px; background: #f3f4f6; border-radius: 8px;">
-          <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #374151;">公開予定日時 (日程設定):</label>
-          <input type="datetime-local" class="publish-date-input" data-id="${row.id}" data-channel="${channel}" value="${dateVal}" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;" ${isPublished ? 'disabled' : ''} />
+        <div style="margin: 8px 0; padding: 10px; background: rgba(30, 41, 59, 0.4); border-radius: 8px; border: 1px solid var(--line);">
+          <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #94a3b8;">公開予定日時 (日程設定):</label>
+          <input type="datetime-local" class="publish-date-input" data-id="${row.id}" data-channel="${channel}" value="${dateVal}" style="width: 100%; padding: 6px; border: 1px solid var(--line); border-radius: 6px; font-size: 13px; background: #0f172a; color: white;" ${isPublished ? 'disabled' : ''} />
         </div>
 
         <div style="margin: 8px 0; display: flex; gap: 8px; flex-wrap: wrap;">
@@ -286,11 +366,10 @@ function renderChannelSettings(row) {
           </button>
         </div>
 
-        <div class="asset-grid" style="margin: 8px 0;">
-          ${assets.map(renderAsset).join('')}
-        </div>
-        <p style="margin: 4px 0; font-size: 13px;"><strong>下書きドラフト:</strong></p>
-        <pre style="margin: 4px 0 0; font-size: 12px; padding: 10px; max-height: 150px; overflow-y: auto;">${escapeHtml(draftText)}</pre>
+        ${mediaPreviewHtml}
+        
+        <p style="margin: 8px 0 4px; font-size: 13px; color: #94a3b8;"><strong>下書きドラフト:</strong></p>
+        <pre style="margin: 4px 0 0; font-size: 12px; padding: 10px; max-height: 150px; overflow-y: auto; background: #0f172a; border-color: var(--line);">${escapeHtml(draftText)}</pre>
         ${narrationText ? `
           <p style="margin: 8px 0 4px; font-size: 13px;"><strong>ナレーション原稿:</strong></p>
           <pre style="margin: 4px 0 0; font-size: 12px; padding: 10px; background: #f0fdf4; border-color: #bbf7d0;">${escapeHtml(narrationText)}</pre>
@@ -363,9 +442,17 @@ async function loadQueue() {
               </div>
               ${row.assets && row.assets.length > 0 ? `
                 <div style="margin-top: 10px;">
-                  <span style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">📷 背景ファイル:</span>
+                  <span style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">🎥 動画用背景ファイル:</span>
                   <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                     ${row.assets.map(renderAsset).join('')}
+                  </div>
+                </div>
+              ` : ''}
+              ${row.postAttachAssets && row.postAttachAssets.length > 0 ? `
+                <div style="margin-top: 10px;">
+                  <span style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">📷 SNS直接投稿用の添付画像:</span>
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    ${row.postAttachAssets.map(renderAsset).join('')}
                   </div>
                 </div>
               ` : ''}
@@ -378,15 +465,19 @@ async function loadQueue() {
                 <strong style="font-size: 14px; color: var(--accent);">生成：動画とナレーション</strong>
               </div>
               
-              ${row.videoUrl ? `
+              ${(row.videoUrl || row.videoStatus === 'completed') ? `
                 <div class="completed-video-container" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; max-width: 380px;">
                   <strong style="color: var(--accent); font-size: 13px; display: flex; align-items: center; gap: 6px;">
                     🟢 動画生成が完了しました
                   </strong>
-                  <video src="${escapeHtml(row.videoUrl)}" controls style="width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.1); background: #000;"></video>
-                  <div>
-                    <a href="${escapeHtml(row.videoUrl)}" target="_blank" download="${row.id}.mp4" style="display: inline-block; background: var(--accent); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; border: 1px solid var(--accent);">📥 完成動画をダウンロード</a>
-                  </div>
+                  ${row.videoUrl ? `
+                    <video src="${escapeHtml(row.videoUrl)}" controls style="width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.1); background: #000;"></video>
+                    <div>
+                      <a href="${escapeHtml(row.videoUrl)}" target="_blank" download="${row.id}.mp4" style="display: inline-block; background: var(--accent); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; border: 1px solid var(--accent);">📥 完成動画をダウンロード</a>
+                    </div>
+                  ` : `
+                    <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">シミュレーションプレビューで動画を確認できます。プレビューボタンを押してください。</p>
+                  `}
                 </div>
               ` : `
                 <div class="video-status-container ${escapeHtml(row.videoStatus || 'initializing')}" style="background: rgba(15, 23, 42, 0.3); border: 1px solid var(--line); padding: 12px; border-radius: 12px; font-size: 13px;">
