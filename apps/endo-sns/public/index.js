@@ -27,14 +27,6 @@ const defaults = {
   phone: '0287-46-5700',
   brandCopy: '世界を植林してきた博士が、日本の『枯れ葉』に見た、失われた魂の救済'
 };
-
-function renderAsset(asset) {
-  if ((asset.type || '').startsWith('video/')) {
-    return `<video controls src="${asset.url}" style="max-width: 100px; max-height: 100px; border-radius: 6px; border: 1px solid #e5e7eb;"></video>`;
-  }
-  return `<img src="${asset.url}" alt="uploaded asset" style="max-width: 100px; max-height: 100px; border-radius: 6px; border: 1px solid #e5e7eb; object-fit: cover;" />`;
-}
-
 // --- ① 投稿登録フォーム of 制御 ---
 const form = document.getElementById('uploadForm');
 const message = document.getElementById('formMessage');
