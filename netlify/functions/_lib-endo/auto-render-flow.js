@@ -6,33 +6,17 @@ const path = require('path');
 
 // 物理的な apps/endo-sns ディレクトリを確実に取得するヘルパー
 function getEndoSnsDir() {
-  let currentDir = __dirname;
+  // __dirname から apps/endo-sns までの物理パスを安全に切り出す (絶対に無限ループしない)
+  const match = __dirname.match(/(.*[\\/]apps[\\/]endo-sns)/i);
+  if (match) {
+    return match[1];
+  }
   
-  // もしパスに .netlify が含まれている場合は、その手前の本物のプロジェクトディレクトリをベースにする
-  if (currentDir.includes('.netlify')) {
-    const parts = currentDir.split(path.sep);
-    const netlifyIdx = parts.indexOf('.netlify');
-    if (netlifyIdx !== -1) {
-      const baseRoot = parts.slice(0, netlifyIdx).join(path.sep);
-      if (baseRoot.endsWith('endo-sns')) {
-        return baseRoot;
-      }
-      return path.join(baseRoot, 'apps', 'endo-sns');
-    }
-  }
-
-  // 通常のディレクトリ遡り探索
-  while (currentDir && currentDir !== path.parse(currentDir).root) {
-    if (currentDir.endsWith(path.join('apps', 'endo-sns')) && !currentDir.includes('.netlify')) {
-      return currentDir;
-    }
-    currentDir = path.dirname(currentDir);
-  }
-
-  // フォールバック（.netlify が含まれていない場合のみ cwd をチェック）
+  // フォールバック（プロジェクトルートから探す）
   const rootDir = process.cwd();
-  if (!rootDir.includes('.netlify') && fs.existsSync(path.join(rootDir, 'apps', 'endo-sns'))) {
-    return path.join(rootDir, 'apps', 'endo-sns');
+  const directPath = path.join(rootDir, 'apps', 'endo-sns');
+  if (!rootDir.includes('.netlify') && fs.existsSync(directPath)) {
+    return directPath;
   }
   return path.resolve(__dirname, '..', '..', '..', 'apps', 'endo-sns');
 }
