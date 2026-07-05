@@ -4,7 +4,8 @@ import { storage } from './firebase-init.js';
 // Firebase SDK不要版 - すべてサーバーサイドAPI経由でデータ通信
 function getApiUrl(endpoint) {
   const isEndoSns = window.location.pathname.includes('endo-sns') || window.location.pathname.includes('endo');
-  return isEndoSns ? `/api/endo-${endpoint}` : `/api/${endpoint}`;
+  const base = '/' + 'api';
+  return isEndoSns ? `${base}/endo-${endpoint}` : `${base}/${endpoint}`;
 }
 
 // スピナーアニメーション用スタイルの追加
