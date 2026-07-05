@@ -5,35 +5,33 @@ const { getBucket } = require('./firebase-admin');
 
 // 物理的な apps/endo-sns ディレクトリを確実に取得するヘルパー
 function getEndoSnsDir() {
-  const rootDir = process.cwd();
-  if (fs.existsSync(path.join(rootDir, 'apps', 'endo-sns'))) {
-    return path.join(rootDir, 'apps', 'endo-sns');
-  }
-  if (fs.existsSync(path.join(rootDir, 'package.json'))) {
-    try {
-      const pkg = require(path.join(rootDir, 'package.json'));
-      if (pkg.name === 'endo-sns-personal-tool') {
-        return rootDir;
-      }
-    } catch (e) {}
-  }
   let currentDir = __dirname;
+  
+  // もしパスに .netlify が含まれている場合は、その手前の本物のプロジェクトディレクトリをベースにする
+  if (currentDir.includes('.netlify')) {
+    const parts = currentDir.split(path.sep);
+    const netlifyIdx = parts.indexOf('.netlify');
+    if (netlifyIdx !== -1) {
+      const baseRoot = parts.slice(0, netlifyIdx).join(path.sep);
+      if (baseRoot.endsWith('endo-sns')) {
+        return baseRoot;
+      }
+      return path.join(baseRoot, 'apps', 'endo-sns');
+    }
+  }
+
+  // 通常のディレクトリ遡り探索
   while (currentDir && currentDir !== path.parse(currentDir).root) {
-    if (currentDir.endsWith(path.join('apps', 'endo-sns'))) {
+    if (currentDir.endsWith(path.join('apps', 'endo-sns')) && !currentDir.includes('.netlify')) {
       return currentDir;
     }
-    if (currentDir.includes('.netlify')) {
-      const parts = currentDir.split(path.sep);
-      const netlifyIdx = parts.indexOf('.netlify');
-      if (netlifyIdx !== -1) {
-        const projectRoot = parts.slice(0, netlifyIdx).join(path.sep);
-        if (projectRoot.endsWith(path.join('apps', 'endo-sns')) || projectRoot.endsWith('endo-sns')) {
-          return projectRoot;
-        }
-        return path.join(projectRoot, 'apps', 'endo-sns');
-      }
-    }
     currentDir = path.dirname(currentDir);
+  }
+
+  // フォールバック（.netlify が含まれていない場合のみ cwd をチェック）
+  const rootDir = process.cwd();
+  if (!rootDir.includes('.netlify') && fs.existsSync(path.join(rootDir, 'apps', 'endo-sns'))) {
+    return path.join(rootDir, 'apps', 'endo-sns');
   }
   return path.resolve(__dirname, '..', '..', '..', 'apps', 'endo-sns');
 }

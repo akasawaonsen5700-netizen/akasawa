@@ -19,6 +19,19 @@ export const EndoReel = ({
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
 
+  // アセットURLの解決ヘルパー
+  const resolveAssetUrl = (url: string | undefined) => {
+    if (!url) return undefined;
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+      return url;
+    }
+    const cleaned = url.startsWith('/') ? url.substring(1) : url;
+    return staticFile(cleaned);
+  };
+
+  const resolvedBgmUrl = resolveAssetUrl(bgmUrl);
+  const resolvedVoiceUrl = resolveAssetUrl(voiceUrl);
+
   // メタ指示語（ラベル）を削除
   const cleanedText = text
     .replace(/(?:ない\s*)?(冒頭フック|フック|台本|締めの一言|締め|ナレーション|タイトル)[:：\s]*/gi, '')
@@ -77,9 +90,9 @@ export const EndoReel = ({
 
   let finalBgUrls: string[] = [];
   if (backgroundUrls && backgroundUrls.length > 0) {
-    finalBgUrls = backgroundUrls;
+    finalBgUrls = backgroundUrls.map(url => resolveAssetUrl(url) || '');
   } else if (backgroundUrl) {
-    finalBgUrls = [backgroundUrl];
+    finalBgUrls = [resolveAssetUrl(backgroundUrl) || ''];
   } else {
     finalBgUrls = defaultBgs;
   }
@@ -130,18 +143,18 @@ export const EndoReel = ({
       }} />
 
       {/* 3. 環境音BGM (ループ再生) */}
-      {bgmUrl && (
+      {resolvedBgmUrl && (
         <Audio
-          src={bgmUrl}
+          src={resolvedBgmUrl}
           volume={0.08}
           loop
         />
       )}
 
       {/* 4. 本人ナレーション音声 */}
-      {voiceUrl && (
+      {resolvedVoiceUrl && (
         <Audio
-          src={voiceUrl}
+          src={resolvedVoiceUrl}
           volume={1.0}
         />
       )}
