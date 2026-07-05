@@ -610,40 +610,34 @@ function openPreview(submissionId, text, voiceUrl, mediaUrlsStr, mediaType, vide
   const mockScreen = document.getElementById('reelMockScreen');
   mockScreen.style.display = 'block';
   
-  if (videoUrl) {
-    isPlayingRealVideo = true;
-    reelVideo.src = videoUrl;
+  // 常に統一されたプレミアムな和風縦書きテロップ＋音声を重ねてシミュレーション再生します。
+  isPlayingRealVideo = false;
+  
+  // 最初の背景アセットを設定
+  const defaultBgs = ['/bg-premium.png', '/bg-premium2.png', '/bg-premium3.png'];
+  const initialBg = currentPreviewMedias[0] || defaultBgs[0];
+  const isVideoBg = initialBg.endsWith('.mp4') || initialBg.includes('video') || initialBg.includes('preview') || (videoUrl && videoUrl.endsWith('.mp4'));
+
+  // もし本番用のモック動画URLがある場合は、それをそのまま背景ビデオとして使用します。
+  const actualBg = videoUrl || initialBg;
+
+  if (isVideoBg) {
+    reelVideo.src = actualBg;
     reelVideo.style.display = 'block';
     mockScreen.style.display = 'none';
-    
-    narrationAudio.removeAttribute('src');
-    reelTextOverlay.innerHTML = '<div class="vertical-reel-text" style="font-size: 24px; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px;">自動レンダリング動画再生中</div>';
   } else {
-    isPlayingRealVideo = false;
-    
-    // 最初の背景アセットを設定
-    const defaultBgs = ['/bg-premium.png', '/bg-premium2.png', '/bg-premium3.png'];
-    const initialBg = currentPreviewMedias[0] || defaultBgs[0];
-    const isVideoBg = initialBg.endsWith('.mp4') || initialBg.includes('video') || initialBg.includes('preview');
-
-    if (isVideoBg) {
-      reelVideo.src = initialBg;
-      reelVideo.style.display = 'block';
-      mockScreen.style.display = 'none';
-    } else {
-      reelImage.src = initialBg;
-      mockScreen.style.display = 'block';
-      reelVideo.style.display = 'none';
-    }
-
-    narrationAudio.src = voiceUrl || '';
-    bgmAudio.src = 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav';
-    bgmAudio.volume = 0.08;
-    reelTextOverlay.innerHTML = '';
+    reelImage.src = actualBg;
+    mockScreen.style.display = 'block';
+    reelVideo.style.display = 'none';
   }
+
+  narrationAudio.src = voiceUrl || '';
+  bgmAudio.src = 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav';
+  bgmAudio.volume = 0.08;
+  reelTextOverlay.innerHTML = '';
   
   previewModal.style.display = 'flex';
-  startPreview(!!videoUrl);
+  startPreview(false);
 }
 
 function closePreviewModal() {
