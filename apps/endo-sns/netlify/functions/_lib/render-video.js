@@ -46,7 +46,7 @@ async function renderVideo(submissionId, props) {
 
     if (process.env.REMOTION_AWS_FUNCTION_NAME && awsAccessKey) {
       logDebug(`[RenderVideo] AWS Lambda Render detected. Triggering remote render on AWS...`);
-      const { renderVideoOnLambda, waitForVideoRender } = require('@remotion/lambda');
+      const { renderMediaOnLambda, waitForVideoRender } = require('@remotion/lambda/client');
       (async () => {
         try {
           const region = process.env.REMOTION_AWS_REGION || 'ap-northeast-1';
@@ -58,7 +58,7 @@ async function renderVideo(submissionId, props) {
           process.env.AWS_ACCESS_KEY_ID = awsAccessKey;
           process.env.AWS_SECRET_ACCESS_KEY = awsSecretKey;
 
-          const renderResult = await renderVideoOnLambda({
+          const renderResult = await renderMediaOnLambda({
             region,
             functionName,
             serveUrl,
