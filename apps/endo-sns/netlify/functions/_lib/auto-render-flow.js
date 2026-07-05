@@ -44,7 +44,7 @@ async function ensureBgmDownloaded(localBgmPath, remoteBgmUrl) {
     const https = require('https');
     const file = fs.createWriteStream(localBgmPath);
     
-    https.get(remoteBgmUrl, (response) => {
+    const request = https.get(remoteBgmUrl, (response) => {
       if (response.statusCode !== 200) {
         logDebug(`[AutoRender-Error] BGM download failed, status code: ${response.statusCode}`);
         file.close();
@@ -58,7 +58,18 @@ async function ensureBgmDownloaded(localBgmPath, remoteBgmUrl) {
         logDebug('[AutoRender] BGM downloaded successfully!');
         resolve();
       });
-    }).on('error', (err) => {
+    });
+
+    // 10秒のタイムアウトを設定 (ハング回避)
+    request.setTimeout(10000, () => {
+      logDebug(`[AutoRender-Error] BGM download timeout (10s)`);
+      request.destroy();
+      file.close();
+      fs.unlink(localBgmPath, () => {});
+      resolve();
+    });
+
+    request.on('error', (err) => {
       logDebug(`[AutoRender-Error] Failed to download BGM: ${err.message}`);
       file.close();
       fs.unlink(localBgmPath, () => {});

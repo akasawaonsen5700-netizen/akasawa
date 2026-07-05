@@ -102,7 +102,8 @@ async function renderVideo(submissionId, props) {
     logDebug(`[RenderVideo] Starting Remotion rendering in cwd: ${cwd}`);
     logDebug(`[RenderVideo] Command: ${command}`);
 
-    exec(command, { cwd }, async (error, stdout, stderr) => {
+    // 120秒 (2分) のタイムアウトを設定してフリーズを回避
+    exec(command, { cwd, timeout: 120000 }, async (error, stdout, stderr) => {
       // 一時JSONファイルをクリーンアップ
       if (fs.existsSync(propsPath)) {
         fs.unlinkSync(propsPath);
