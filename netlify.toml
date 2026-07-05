@@ -5,7 +5,7 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["firebase-admin", "googleapis"]
+  external_node_modules = ["firebase-admin", "googleapis", "remotion", "@remotion/cli", "@remotion/renderer", "@remotion/lambda"]
 
 [[redirects]]
   from = "/api/*"
