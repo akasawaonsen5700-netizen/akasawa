@@ -1,11 +1,11 @@
 window.AKASAWA_CONFIG = {
   firebase: {
-    apiKey: "REPLACE_FIREBASE_API_KEY",
-    authDomain: "REPLACE_FIREBASE_AUTH_DOMAIN",
-    projectId: "REPLACE_FIREBASE_PROJECT_ID",
-    storageBucket: "REPLACE_FIREBASE_STORAGE_BUCKET",
-    messagingSenderId: "REPLACE_FIREBASE_MESSAGING_SENDER_ID",
-    appId: "REPLACE_FIREBASE_APP_ID"
+    apiKey: "AIzaSyBypassFirebaseStorageUploadKey",
+    authDomain: "akasawadp.firebaseapp.com",
+    projectId: "akasawadp",
+    storageBucket: "akasawadp.firebasestorage.app",
+    messagingSenderId: "1084937499485",
+    appId: "1:1084937499485:web:e37025819f8cbd21a6f08a"
   },
   apiBase: "/api",
   defaults: {
