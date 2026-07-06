@@ -28,7 +28,7 @@ const schema = z.object({
     storagePath: z.string(),
     url: z.string().url()
   })).optional(),
-  channelSettings: z.record(z.object({
+  channelSettings: z.record(z.string(), z.object({
     assets: z.array(z.object({
       name: z.string(),
       type: z.string(),

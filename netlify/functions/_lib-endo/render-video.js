@@ -46,7 +46,7 @@ async function renderVideo(submissionId, props) {
 
     if (process.env.REMOTION_AWS_FUNCTION_NAME && awsAccessKey) {
       logDebug(`[RenderVideo] AWS Lambda Render detected. Triggering remote render on AWS...`);
-      const { renderMediaOnLambda, waitForVideoRender } = require('@remotion/lambda/client');
+      const { renderMediaOnLambda, getRenderProgress } = require('@remotion/lambda-client');
       (async () => {
         try {
           const region = process.env.REMOTION_AWS_REGION || 'ap-northeast-1';
@@ -69,18 +69,39 @@ async function renderVideo(submissionId, props) {
             imageFormat: 'jpeg',
           });
 
-          logDebug(`[RenderVideo] Render started on Lambda. Render ID: ${renderResult.renderId}`);
+          logDebug(`[RenderVideo] Render started on Lambda. Render ID: ${renderResult.renderId}, Bucket: ${renderResult.bucketName}`);
 
-          // レンダー完了をポーリングで待機 (Netlify関数の制限時間内に終わるようタイムアウト管理)
-          const finalResult = await waitForVideoRender({
-            region,
-            bucketName,
-            renderId: renderResult.renderId,
-            functionName,
-            timeoutInMilliseconds: 45000, // 最大45秒待機
-          });
+          // getRenderProgressでポーリング待機 (最大45秒)
+          const startTime = Date.now();
+          const TIMEOUT = 45000;
+          const POLL_INTERVAL = 3000;
+          let videoUrl = null;
 
-          const videoUrl = finalResult.url;
+          while (Date.now() - startTime < TIMEOUT) {
+            await new Promise(r => setTimeout(r, POLL_INTERVAL));
+            const progress = await getRenderProgress({
+              region,
+              bucketName: renderResult.bucketName,
+              renderId: renderResult.renderId,
+              functionName,
+            });
+
+            if (progress.fatalErrorEncountered) {
+              throw new Error(`Lambda render fatal error: ${progress.errors?.[0]?.message || 'Unknown error'}`);
+            }
+
+            if (progress.done) {
+              videoUrl = progress.outputFile;
+              break;
+            }
+
+            logDebug(`[RenderVideo] Render progress: ${Math.round((progress.overallProgress || 0) * 100)}%`);
+          }
+
+          if (!videoUrl) {
+            throw new Error('Lambda render timed out after 45 seconds');
+          }
+
           logDebug(`[RenderVideo] AWS Lambda render success! URL: ${videoUrl}`);
           resolve(videoUrl);
         } catch (lambdaErr) {
