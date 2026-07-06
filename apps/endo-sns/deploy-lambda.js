@@ -1,5 +1,6 @@
 const { deployFunction, deploySite, getOrCreateBucket } = require('@remotion/lambda');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 const region = process.env.REMOTION_AWS_REGION || 'ap-northeast-1';
@@ -32,10 +33,10 @@ async function deploy() {
     console.log('2. Deploying Remotion Lambda function (this may take a minute)...');
     const { functionName } = await deployFunction({
       createCloudWatchLogGroup: true,
-      memorySizeInMb: 2048,
+      memorySizeInMb: 3008, // Chromiumのクラッシュを防ぐためメモリを増強
       region,
       timeoutInSeconds: 240,
-      diskSizeInMb: 512,
+      diskSizeInMb: 2048, // 一時領域も最大化
     });
     console.log(`Lambda Function Deployed: ${functionName}`);
 
@@ -48,8 +49,18 @@ async function deploy() {
     });
     console.log(`Serve URL (S3): ${serveUrl}`);
 
-    console.log('\nDeployment completed successfully!');
-    console.log('Please add the following variables to your Netlify / .env configuration:');
+    console.log('\nUpdating .env file automatically...');
+    const envPath = path.join(__dirname, '../../.env');
+    let envContent = fs.readFileSync(envPath, 'utf8');
+    
+    // 環境変数を置換
+    envContent = envContent.replace(/^REMOTION_AWS_FUNCTION_NAME=.*$/m, `REMOTION_AWS_FUNCTION_NAME=${functionName}`);
+    envContent = envContent.replace(/^REMOTION_AWS_BUCKET=.*$/m, `REMOTION_AWS_BUCKET=${bucketName}`);
+    envContent = envContent.replace(/^REMOTION_AWS_SERVE_URL=.*$/m, `REMOTION_AWS_SERVE_URL=${serveUrl}`);
+    
+    fs.writeFileSync(envPath, envContent, 'utf8');
+
+    console.log('\nDeployment and .env update completed successfully!');
     console.log(`REMOTION_AWS_FUNCTION_NAME=${functionName}`);
     console.log(`REMOTION_AWS_BUCKET=${bucketName}`);
     console.log(`REMOTION_AWS_SERVE_URL=${serveUrl}`);

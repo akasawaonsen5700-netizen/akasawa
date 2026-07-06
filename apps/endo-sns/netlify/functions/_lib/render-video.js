@@ -55,6 +55,7 @@ async function startRenderVideo(submissionId, props) {
       codec: 'h264',
       privacy: 'public',
       imageFormat: 'jpeg',
+      concurrency: 5
     });
 
     logDebug(`[RenderVideo] Render successfully kicked on Lambda. ID: ${renderResult.renderId}`);
