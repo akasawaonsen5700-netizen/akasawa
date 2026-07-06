@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "@remotion/lambda-client": "^4.0.120",
     "dayjs": "^1.11.13",
     "firebase": "^11.10.0",
     "firebase-admin": "^12.6.0",
