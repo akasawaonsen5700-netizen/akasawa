@@ -76,13 +76,16 @@ export const EndoReel = ({
     }
   }
 
-  // 1文字あたりの表示フレーム数（全体の長さを文字数で均等に分配）
-  const totalChars = lines.join('').length || 1;
-  const framesPerChar = durationInFrames / totalChars;
-
   // ★ 3秒（90フレーム）の遅延を考慮したコンテンツ用のフレーム
   const delayFrames = 90;
   const contentFrame = frame - delayFrames;
+
+  // テロップ表示に使える実質的なフレーム数（全体の尺から冒頭の3秒を引いた時間）
+  const contentDuration = Math.max(1, durationInFrames - delayFrames);
+
+  // 1文字あたりの表示フレーム数（全体の長さを文字数で均等に分配）
+  const totalChars = lines.join('').length || 1;
+  const framesPerChar = contentDuration / totalChars;
 
   // 現在のフレームがどの行に該当するかを計算
   let currentLineIndex = 0;
