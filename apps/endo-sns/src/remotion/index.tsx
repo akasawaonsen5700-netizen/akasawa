@@ -31,8 +31,8 @@ export const RemotionVideo: React.FC = () => {
                 audioUrl = 'https://akasawa.netlify.app' + audioUrl;
               }
               const durationSec = await getAudioDurationInSeconds(audioUrl);
-              // 音声の長さに合わせて動画の全体のフレーム数を決定（＋余白として1秒分を追加）
-              duration = Math.ceil(durationSec * fps) + 30;
+              // 音声の長さに合わせて動画の全体のフレーム数を決定（＋余白として1秒分 ＋ 冒頭のフック表示用3秒を追加）
+              duration = Math.ceil((durationSec + 3) * fps) + 30;
             } catch (err) {
               console.warn("Failed to fetch audio duration, using default", err);
             }

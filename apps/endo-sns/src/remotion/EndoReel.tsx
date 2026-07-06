@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, Video, Audio, Img, useCurrentFrame, useVideoConfig, staticFile, delayRender, continueRender } from 'remotion';
+import { AbsoluteFill, Video, Audio, Img, useCurrentFrame, useVideoConfig, staticFile, delayRender, continueRender, Sequence } from 'remotion';
 import { useState, useEffect } from 'react';
 
 export interface EndoReelProps {
@@ -80,6 +80,10 @@ export const EndoReel = ({
   const totalChars = lines.join('').length || 1;
   const framesPerChar = durationInFrames / totalChars;
 
+  // ★ 3秒（90フレーム）の遅延を考慮したコンテンツ用のフレーム
+  const delayFrames = 90;
+  const contentFrame = frame - delayFrames;
+
   // 現在のフレームがどの行に該当するかを計算
   let currentLineIndex = 0;
   let framesAccumulated = 0;
@@ -87,7 +91,7 @@ export const EndoReel = ({
 
   for (let i = 0; i < lines.length; i++) {
     const lineDuration = Math.max(1, Math.floor(lines[i].length * framesPerChar));
-    if (frame < framesAccumulated + lineDuration) {
+    if (contentFrame < framesAccumulated + lineDuration) {
       currentLineIndex = i;
       framesForCurrentLine = lineDuration;
       break;
@@ -96,7 +100,7 @@ export const EndoReel = ({
   }
 
   // 最後のフレームを超えた場合のセーフフォールバック
-  if (currentLineIndex === 0 && frame >= framesAccumulated && lines.length > 0) {
+  if (currentLineIndex === 0 && contentFrame >= framesAccumulated && lines.length > 0) {
     currentLineIndex = lines.length - 1;
     framesForCurrentLine = Math.max(1, Math.floor(lines[currentLineIndex].length * framesPerChar));
     framesAccumulated -= framesForCurrentLine;
@@ -105,15 +109,15 @@ export const EndoReel = ({
   const currentLineText: string = lines[currentLineIndex] || '';
   
   // 現在の行の中での経過フレーム
-  const lineFrame = frame - framesAccumulated;
+  const lineFrame = contentFrame - framesAccumulated;
 
   // フェードイン・アウトのアニメーション用opacity計算（前後12フレームでフェード）
   const fadeFrames = 12;
   let opacity = 1;
   if (lineFrame < fadeFrames) {
-    opacity = lineFrame / fadeFrames; // フェードイン
+    opacity = Math.max(0, lineFrame / fadeFrames); // フェードイン
   } else if (lineFrame > framesForCurrentLine - fadeFrames) {
-    opacity = (framesForCurrentLine - lineFrame) / fadeFrames; // フェードアウト
+    opacity = Math.max(0, (framesForCurrentLine - lineFrame) / fadeFrames); // フェードアウト
   }
 
   // デフォルト背景画像のリスト (ローカルで生成した高解像度プレミアムイメージ)
@@ -191,12 +195,14 @@ export const EndoReel = ({
         />
       )}
 
-      {/* 4. 本人ナレーション音声 */}
+      {/* 4. 本人ナレーション音声 (3秒遅延) */}
       {resolvedVoiceUrl && (
-        <Audio
-          src={resolvedVoiceUrl}
-          volume={1.0}
-        />
+        <Sequence from={delayFrames}>
+          <Audio
+            src={resolvedVoiceUrl}
+            volume={1.0}
+          />
+        </Sequence>
       )}
 
       {/* 5. プレミアムデザイン：エステティカルなフレーム（和風ゴールドライン） */}
@@ -243,13 +249,14 @@ export const EndoReel = ({
         遠藤正俊 — 枯れ葉の美学
       </div>
 
-      {/* 6. テロップ表示エリア（中央固定・縦書き） */}
-      <AbsoluteFill style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 10
-      }}>
+      {/* 6. テロップ表示エリア（中央固定・縦書き）: 3秒後から表示 */}
+      {contentFrame >= 0 && (
+        <AbsoluteFill style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10
+        }}>
         {/* 背景の曇りガラス調の優美なカード */}
         <div style={{
           width: '500px',
@@ -305,9 +312,10 @@ export const EndoReel = ({
           </div>
         </div>
       </AbsoluteFill>
+      )}
 
-      {/* 7. 冒頭フック（最初の行の表示中のみ画面中央に大きく表示） */}
-      {hookText && currentLineIndex === 0 && (
+      {/* 7. 冒頭フック（開始から3秒間だけ縦書きで大きく表示） */}
+      {hookText && frame < delayFrames && (
         <AbsoluteFill style={{
           display: 'flex',
           justifyContent: 'center',
@@ -316,29 +324,31 @@ export const EndoReel = ({
           pointerEvents: 'none'
         }}>
           <div style={{
-            backgroundColor: 'rgba(212, 175, 55, 0.95)',
-            padding: '40px 60px',
+            backgroundColor: 'rgba(212, 175, 55, 0.95)', // ゴールド背景
+            padding: '60px 40px',
             borderRadius: '20px',
             boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(212,175,55,0.4)',
             border: '2px solid #fff',
-            transform: `scale(${Math.min(1, 0.8 + (lineFrame / 20))}) translateY(${Math.max(0, 20 - lineFrame)}px)`,
-            opacity: opacity, // テロップと同じフェードイン・フェードアウト
-            maxWidth: '900px',
-            textAlign: 'center'
+            transform: `scale(${Math.min(1, 0.9 + (frame / 100))})`,
+            opacity: frame < 12 ? frame / 12 : (frame > delayFrames - 12 ? (delayFrames - frame) / 12 : 1), // フェードイン＆アウト
+            height: '80%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
           }}>
             <h1 style={{
               margin: 0,
               color: '#07090e',
               fontSize: '64px',
-              fontFamily: '"Noto Sans JP", sans-serif',
+              fontFamily: '"Shippori Mincho", "Noto Serif JP", serif',
               fontWeight: 900,
-              lineHeight: 1.4,
-              letterSpacing: '0.05em',
-              textShadow: '0 2px 10px rgba(255,255,255,0.5)'
+              letterSpacing: '0.2em',
+              textShadow: '0 2px 10px rgba(255,255,255,0.5)',
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              lineHeight: 1.6
             }}>
-              {hookText.split('\n').map((line, i) => (
-                <span key={i} style={{ display: 'block' }}>{line}</span>
-              ))}
+              {hookText}
             </h1>
           </div>
         </AbsoluteFill>
