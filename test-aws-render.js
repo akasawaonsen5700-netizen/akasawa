@@ -40,8 +40,8 @@ async function main() {
   }
 
   const props = {
-    text: 'テスト用のナレーションです。',
-    voiceUrl: 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg', // 確実にアクセスできる音声URL
+    text: '世界中を植林し、命を育んできた私が、最後にたどり着いたのは、この山奥の「枯れ葉」の美しさでした。効率だけを求める世界では見落とされてしまう、静かな命の循環が、ここにはあります。',
+    voiceUrl: 'https://akasawa.netlify.app/endo-sns/endo.mp3', // 1秒のビープ音ではなく実際の長さの音声を使用
     backgroundUrl: '',
     backgroundUrls: null
   };
@@ -76,7 +76,7 @@ async function main() {
         functionName
       });
       
-      console.log(`Progress: Math.round(progress.overallProgress * 100)%`);
+      console.log(`Progress: ${Math.round(progress.overallProgress * 100)}%`);
       if (progress.fatalErrorEncountered) {
         console.error("FATAL ERROR ENCOUNTERED!");
         console.error(JSON.stringify(progress.errors, null, 2));

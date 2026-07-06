@@ -171,7 +171,7 @@ export const EndoReel = ({
       {resolvedBgmUrl && (
         <Audio
           src={resolvedBgmUrl}
-          volume={0.08}
+          volume={0.4}
           loop
         />
       )}

@@ -1,5 +1,6 @@
 import { registerRoot, Composition } from 'remotion';
-import { EndoReel } from './EndoReel';
+import { getAudioDurationInSeconds } from '@remotion/media-utils';
+import { EndoReel, EndoReelProps } from './EndoReel';
 import React from 'react';
 
 export const RemotionVideo: React.FC = () => {
@@ -8,15 +9,37 @@ export const RemotionVideo: React.FC = () => {
       <Composition
         id="EndoInstagramReel"
         component={EndoReel}
-        durationInFrames={1800} // 60秒 (30fps)
+        durationInFrames={1800} // デフォルトフォールバック
         fps={30}
         width={1080}
         height={1920}
         defaultProps={{
           text: '世界中を植林し、命を育んできた私が、最後にたどり着いたのは、この山奥の「枯れ葉」の美しさでした。効率だけを求める世界では見落とされてしまう、静かな命の循環が、ここにはあります。',
           voiceUrl: '',
-          bgmUrl: '',
-          backgroundUrl: '' // MixkitのURLを削除してアクセス拒否クラッシュを防止
+          bgmUrl: 'endo.mp3',
+          backgroundUrl: ''
+        }}
+        calculateMetadata={async ({ props }) => {
+          const fps = 30;
+          let duration = 1800; // デフォルト60秒
+          
+          if (props.voiceUrl) {
+            try {
+              let audioUrl = props.voiceUrl;
+              if (audioUrl.startsWith('/')) {
+                audioUrl = 'https://akasawa.netlify.app' + audioUrl;
+              }
+              const durationSec = await getAudioDurationInSeconds(audioUrl);
+              // 音声の長さに合わせて動画の全体のフレーム数を決定（＋余白として1秒分を追加）
+              duration = Math.ceil(durationSec * fps) + 30;
+            } catch (err) {
+              console.warn("Failed to fetch audio duration, using default", err);
+            }
+          }
+          return {
+            durationInFrames: duration,
+            props: { ...props }
+          };
         }}
       />
     </>
