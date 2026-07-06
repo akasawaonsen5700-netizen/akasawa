@@ -24,7 +24,7 @@
     "formidable": "^3.5.1",
     "googleapis": "^144.0.0",
     "node-fetch": "^3.3.2",
-    "@remotion/lambda": "^4.0.120",
+    "@remotion/lambda-client": "^4.0.120",
     "zod": "4.3.6"
   },
   "devDependencies": {

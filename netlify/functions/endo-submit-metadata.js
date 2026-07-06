@@ -21,6 +21,13 @@ const schema = z.object({
     storagePath: z.string(),
     url: z.string().url()
   })).optional(),
+  postAttachAssets: z.array(z.object({
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+    storagePath: z.string(),
+    url: z.string().url()
+  })).optional(),
   channelSettings: z.record(z.object({
     assets: z.array(z.object({
       name: z.string(),
