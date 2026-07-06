@@ -16,7 +16,7 @@ export const RemotionVideo: React.FC = () => {
         defaultProps={{
           text: '世界中を植林し、命を育んできた私が、最後にたどり着いたのは、この山奥の「枯れ葉」の美しさでした。効率だけを求める世界では見落とされてしまう、静かな命の循環が、ここにはあります。',
           voiceUrl: '',
-          bgmUrl: 'endo.mp3',
+          bgmUrl: '',
           backgroundUrl: ''
         }}
         calculateMetadata={async ({ props }) => {

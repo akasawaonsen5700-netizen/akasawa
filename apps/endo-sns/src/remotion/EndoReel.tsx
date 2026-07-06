@@ -1,5 +1,6 @@
 import React from 'react';
-import { AbsoluteFill, Video, Audio, Img, useCurrentFrame, useVideoConfig, staticFile } from 'remotion';
+import { AbsoluteFill, Video, Audio, Img, useCurrentFrame, useVideoConfig, staticFile, delayRender, continueRender } from 'remotion';
+import { useState, useEffect } from 'react';
 
 export interface EndoReelProps {
   text: string;           // ナレーションおよびテロップのテキスト
@@ -12,12 +13,24 @@ export interface EndoReelProps {
 export const EndoReel = ({
   text,
   voiceUrl,
-  bgmUrl = 'endo.mp3',
+  bgmUrl = 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav',
   backgroundUrl,
   backgroundUrls
 }: EndoReelProps) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
+
+  // フォント読み込み完了までレンダリングを待機する
+  const [handle] = useState(() => delayRender("Waiting for fonts"));
+  useEffect(() => {
+    if (typeof document !== 'undefined' && document.fonts) {
+      document.fonts.ready.then(() => {
+        continueRender(handle);
+      });
+    } else {
+      continueRender(handle);
+    }
+  }, [handle]);
 
   // アセットURLの解決ヘルパー
   const resolveAssetUrl = (url: string | undefined) => {
