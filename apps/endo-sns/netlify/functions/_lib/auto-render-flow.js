@@ -115,6 +115,7 @@ async function triggerAutoRenderFlow(db, docRef, data, rawVoiceUrl) {
     }
 
     const props = {
+      hookText: data.hookText || '',
       text: data.drafts?.instagram?.narration || data.ownerComment || '無題',
       voiceUrl: absoluteVoiceUrl,
       backgroundUrl: '', // これによりLambda上の古いバンドルのMixkit動画(クラッシュ原因)を強制上書き

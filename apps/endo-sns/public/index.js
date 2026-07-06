@@ -32,6 +32,7 @@ const defaults = {
 const form = document.getElementById('uploadForm');
 const message = document.getElementById('formMessage');
 const channelCbs = document.querySelectorAll('input[name="channelSelect"]');
+const hookText = document.getElementById('hookText');
 const ownerComment = document.getElementById('ownerComment');
 const simpleTag = document.getElementById('simpleTag');
 const visibility = document.getElementById('visibility');
@@ -112,6 +113,7 @@ form.addEventListener('submit', async (event) => {
     }
 
     const payload = {
+      hookText: hookText.value.trim(),
       ownerComment: ownerComment.value.trim(),
       shotDate: null,
       location: '',

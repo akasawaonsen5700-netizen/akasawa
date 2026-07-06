@@ -14,6 +14,7 @@ export const RemotionVideo: React.FC = () => {
         width={1080}
         height={1920}
         defaultProps={{
+          hookText: '【必見】温泉に行く前に知っておくべき3つのこと',
           text: '世界中を植林し、命を育んできた私が、最後にたどり着いたのは、この山奥の「枯れ葉」の美しさでした。効率だけを求める世界では見落とされてしまう、静かな命の循環が、ここにはあります。',
           voiceUrl: '',
           bgmUrl: '',

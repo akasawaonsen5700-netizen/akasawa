@@ -3,6 +3,7 @@ import { AbsoluteFill, Video, Audio, Img, useCurrentFrame, useVideoConfig, stati
 import { useState, useEffect } from 'react';
 
 export interface EndoReelProps {
+  hookText?: string;      // 冒頭フックテキスト
   text: string;           // ナレーションおよびテロップのテキスト
   voiceUrl?: string;      // Gemini APIで生成した音声のURL
   bgmUrl?: string;        // 自然音BGM of URL
@@ -11,6 +12,7 @@ export interface EndoReelProps {
 }
 
 export const EndoReel = ({
+  hookText,
   text,
   voiceUrl,
   bgmUrl = 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav',
@@ -303,6 +305,44 @@ export const EndoReel = ({
           </div>
         </div>
       </AbsoluteFill>
+
+      {/* 7. 冒頭フック（最初の行の表示中のみ画面中央に大きく表示） */}
+      {hookText && currentLineIndex === 0 && (
+        <AbsoluteFill style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 15,
+          pointerEvents: 'none'
+        }}>
+          <div style={{
+            backgroundColor: 'rgba(212, 175, 55, 0.95)',
+            padding: '40px 60px',
+            borderRadius: '20px',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(212,175,55,0.4)',
+            border: '2px solid #fff',
+            transform: `scale(${Math.min(1, 0.8 + (lineFrame / 20))}) translateY(${Math.max(0, 20 - lineFrame)}px)`,
+            opacity: opacity, // テロップと同じフェードイン・フェードアウト
+            maxWidth: '900px',
+            textAlign: 'center'
+          }}>
+            <h1 style={{
+              margin: 0,
+              color: '#07090e',
+              fontSize: '64px',
+              fontFamily: '"Noto Sans JP", sans-serif',
+              fontWeight: 900,
+              lineHeight: 1.4,
+              letterSpacing: '0.05em',
+              textShadow: '0 2px 10px rgba(255,255,255,0.5)'
+            }}>
+              {hookText.split('\n').map((line, i) => (
+                <span key={i} style={{ display: 'block' }}>{line}</span>
+              ))}
+            </h1>
+          </div>
+        </AbsoluteFill>
+      )}
     </AbsoluteFill>
   );
 };

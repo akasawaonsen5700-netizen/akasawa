@@ -5,6 +5,7 @@ const { buildDraftPackage } = require('./_lib/ai');
 const { triggerAutoRenderFlow } = require('./_lib/auto-render-flow');
 
 const schema = z.object({
+  hookText: z.string().optional().default(''),
   ownerComment: z.string().optional().default(''),
   shotDate: z.string().nullable().optional(),
   location: z.string().optional().default(''),
