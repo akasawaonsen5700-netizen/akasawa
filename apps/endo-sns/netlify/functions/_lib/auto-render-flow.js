@@ -117,7 +117,7 @@ async function triggerAutoRenderFlow(db, docRef, data, rawVoiceUrl) {
     const props = {
       text: data.drafts?.instagram?.narration || data.ownerComment || '無題',
       voiceUrl: absoluteVoiceUrl,
-      bgmUrl: remoteBgmUrl,
+      bgmUrl: null,
       backgroundUrls: backgroundUrls.length > 0 ? backgroundUrls : null
     };
 
