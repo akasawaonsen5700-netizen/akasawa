@@ -42,7 +42,6 @@ async function main() {
   const props = {
     text: 'テスト用のナレーションです。',
     voiceUrl: 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg', // 確実にアクセスできる音声URL
-    bgmUrl: '',
     backgroundUrl: '',
     backgroundUrls: null
   };

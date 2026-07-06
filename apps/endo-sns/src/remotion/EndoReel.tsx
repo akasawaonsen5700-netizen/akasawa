@@ -12,7 +12,7 @@ export interface EndoReelProps {
 export const EndoReel = ({
   text,
   voiceUrl,
-  bgmUrl = 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav',
+  bgmUrl = 'endo.mp3',
   backgroundUrl,
   backgroundUrls
 }: EndoReelProps) => {
@@ -61,24 +61,44 @@ export const EndoReel = ({
     }
   }
 
-  // 1行あたりの表示フレーム数（全体の長さを均等に分配）
-  const totalLines = lines.length || 1;
-  const framesPerLine = durationInFrames / totalLines;
+  // 1文字あたりの表示フレーム数（全体の長さを文字数で均等に分配）
+  const totalChars = lines.join('').length || 1;
+  const framesPerChar = durationInFrames / totalChars;
 
-  // 現在表示すべき行のインデックスを計算
-  const currentLineIndex = Math.floor(frame / framesPerLine);
+  // 現在のフレームがどの行に該当するかを計算
+  let currentLineIndex = 0;
+  let framesAccumulated = 0;
+  let framesForCurrentLine = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const lineDuration = Math.max(1, Math.floor(lines[i].length * framesPerChar));
+    if (frame < framesAccumulated + lineDuration) {
+      currentLineIndex = i;
+      framesForCurrentLine = lineDuration;
+      break;
+    }
+    framesAccumulated += lineDuration;
+  }
+
+  // 最後のフレームを超えた場合のセーフフォールバック
+  if (currentLineIndex === 0 && frame >= framesAccumulated && lines.length > 0) {
+    currentLineIndex = lines.length - 1;
+    framesForCurrentLine = Math.max(1, Math.floor(lines[currentLineIndex].length * framesPerChar));
+    framesAccumulated -= framesForCurrentLine;
+  }
+
   const currentLineText: string = lines[currentLineIndex] || '';
-
+  
   // 現在の行の中での経過フレーム
-  const lineFrame = frame % framesPerLine;
+  const lineFrame = frame - framesAccumulated;
 
   // フェードイン・アウトのアニメーション用opacity計算（前後12フレームでフェード）
   const fadeFrames = 12;
   let opacity = 1;
   if (lineFrame < fadeFrames) {
     opacity = lineFrame / fadeFrames; // フェードイン
-  } else if (lineFrame > framesPerLine - fadeFrames) {
-    opacity = (framesPerLine - lineFrame) / fadeFrames; // フェードアウト
+  } else if (lineFrame > framesForCurrentLine - fadeFrames) {
+    opacity = (framesForCurrentLine - lineFrame) / fadeFrames; // フェードアウト
   }
 
   // デフォルト背景画像のリスト (ローカルで生成した高解像度プレミアムイメージ)
@@ -108,7 +128,12 @@ export const EndoReel = ({
   const chars: string[] = currentLineText.split('');
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#07090e', overflow: 'hidden', fontFamily: 'Noto Serif JP, serif' }}>
+    <AbsoluteFill style={{ backgroundColor: '#07090e', overflow: 'hidden', fontFamily: '"Shippori Mincho", "Noto Serif JP", serif' }}>
+      {/* 確実に明朝体を読み込むためのGoogle Fontsインポート */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600&family=Noto+Serif+JP:wght@400;600&display=swap');
+      `}</style>
+      
       {/* 1. 背景映像または画像 */}
       {isVideo ? (
         <Video
@@ -231,7 +256,7 @@ export const EndoReel = ({
           <div style={{
             writingMode: 'vertical-rl',
             textOrientation: 'mixed',
-            fontFamily: 'Noto Serif JP, Shippori Mincho, serif',
+            fontFamily: '"Shippori Mincho", "Noto Serif JP", serif',
             fontSize: '54px',
             lineHeight: '2.0',
             letterSpacing: '0.25em',
