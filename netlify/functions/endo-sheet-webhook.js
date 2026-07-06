@@ -1,6 +1,7 @@
 const { getDb, admin } = require('./_lib-endo/firebase-admin');
 const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib-endo/helpers');
 const { buildDraftPackage } = require('./_lib-endo/ai');
+const { triggerAutoRenderFlow } = require('./_lib-endo/auto-render-flow');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return ok({ ok: true });
@@ -46,19 +47,8 @@ exports.handler = async (event) => {
     };
     await ref.set(data);
 
-    // NetlifyのBackground Functionsを叩いて、非同期で長時間の生成処理を開始
-    const host = event.headers.host || 'localhost:8891';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const functionName = host.includes('localhost') ? 'generate-assets-background' : 'endo-generate-assets-background';
-    const bgUrl = `${protocol}://${host}/.netlify/functions/${functionName}`;
-
-    fetch(bgUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: ref.id, voiceUrl: payload.voiceUrl || null })
-    }).catch(err => {
-      console.error('[Background Kick Error]:', err);
-    });
+    // 自動音声合成＆自動動画レンダリングを非同期で開始
+    await triggerAutoRenderFlow(db, ref, data, payload.voiceUrl || null);
 
     return ok({ id: ref.id, status: draftPackage.status });
   } catch (error) {
