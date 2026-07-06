@@ -219,6 +219,7 @@ let previewTimerInterval = null;
 let currentPreviewText = '';
 let currentPreviewMedias = []; // 背景アセット配列用
 let textAnimationTimeout = null;
+let isPlayingRealVideo = false;
 
 function escapeHtml(str) {
   if (!str) return '';
