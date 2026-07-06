@@ -107,17 +107,16 @@ async function triggerAutoRenderFlow(db, docRef, data, rawVoiceUrl) {
     const endoSnsDir = getEndoSnsDir();
     const remoteBgmUrl = 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav';
 
-    let localVoiceUrl = finalVoiceUrl;
-    if (finalVoiceUrl.includes('_cartesia.wav')) {
-      const voiceFilename = `voice_${docRef.id}_cartesia.wav`;
-      localVoiceUrl = `/voices/${voiceFilename}`;
-    } else if (finalVoiceUrl === '/endo-sns/endo.mp3') {
-      localVoiceUrl = '/endo.mp3';
+    // AWS Lambdaからは絶対URLでないとアクセスできないため、finalVoiceUrlをそのまま使用する
+    let absoluteVoiceUrl = finalVoiceUrl;
+    if (finalVoiceUrl === '/endo-sns/endo.mp3' || finalVoiceUrl === '/endo.mp3') {
+      // プロジェクト内アセットの場合は、本番のフルURLに変換
+      absoluteVoiceUrl = 'https://akasawa.netlify.app/endo-sns/endo.mp3';
     }
 
     const props = {
       text: data.drafts?.instagram?.narration || data.ownerComment || '無題',
-      voiceUrl: localVoiceUrl,
+      voiceUrl: absoluteVoiceUrl,
       bgmUrl: remoteBgmUrl,
       backgroundUrls: backgroundUrls.length > 0 ? backgroundUrls : null
     };
