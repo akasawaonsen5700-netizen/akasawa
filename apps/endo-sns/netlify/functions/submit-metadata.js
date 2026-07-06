@@ -66,12 +66,7 @@ exports.handler = async (event) => {
 
     await ref.set(data);
 
-    // 自動音声合成＆動画生成のキックをインラインで安全に実行 (2〜3秒で完了)
-    try {
-      await triggerAutoRenderFlow(db, ref, data, payload.voiceUrl || null);
-    } catch (err) {
-      console.error('[Trigger AutoRender Error]:', err);
-    }
+    // 動画生成キックはフロントエンドからの非同期呼び出し(generate-assets-background)に委譲するため、ここではスキップします
 
     return ok({ id: ref.id, status: draftPackage.status, publishAt: draftPackage.publishAt });
   } catch (error) {
