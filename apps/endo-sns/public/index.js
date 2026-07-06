@@ -145,6 +145,16 @@ form.addEventListener('submit', async (event) => {
     }
 
     const submissionId = data.id;
+    
+    // ブラウザから直接バックグラウンド生成処理を起動
+    fetch(getApiUrl('generate-assets-background'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: submissionId, voiceUrl })
+    }).catch(err => {
+      console.error('Failed to start background generation:', err);
+    });
+
     setMessage('⏳ データベースにメタデータを登録しました。動画の自動生成を開始します…');
     form.reset();
     await loadQueue();
@@ -166,6 +176,34 @@ form.addEventListener('submit', async (event) => {
             statusText = '🎙️ 遠藤正俊のクローン音声を合成中...';
           } else if (target.videoStatus === 'rendering_video') {
             statusText = '🎬 プレミアム縦型動画（Remotion）を書き出し中...';
+            
+            // AWSの進捗を確認するポーリングをフロントで実行
+            if (target.awsRenderId && target.awsBucketName) {
+              try {
+                const progressRes = await fetch(`${getApiUrl('check-render-progress')}?renderId=${target.awsRenderId}&bucketName=${target.awsBucketName}&region=${target.awsRegion || 'ap-northeast-1'}`);
+                if (progressRes.ok) {
+                  const progressData = await progressRes.json();
+                  if (progressData.done) {
+                    statusText = '✅ 動画のレンダリングが完了しました！データを保存中...';
+                    // 完了APIを叩く
+                    await fetch(getApiUrl('complete-render'), {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ id: submissionId, videoUrl: progressData.outputFile })
+                    });
+                    isDone = true;
+                  } else if (progressData.fatalErrorEncountered) {
+                    statusText = `❌ 動画の書き出しに失敗しました: ${progressData.errors?.[0]?.message || 'AWSエラー'}`;
+                    isDone = true;
+                  } else {
+                    const percent = Math.round((progressData.overallProgress || 0) * 100);
+                    statusText = `🎬 動画ファイルを書き出し中... (${percent}%)`;
+                  }
+                }
+              } catch (err) {
+                console.error('AWS progress check failed:', err);
+              }
+            }
           } else if (target.videoStatus === 'completed') {
             statusText = '✅ 動画と下書きの自動生成がすべて完了しました！';
             isDone = true;
@@ -174,7 +212,7 @@ form.addEventListener('submit', async (event) => {
             isDone = true;
           }
           
-          setMessage(`${statusText} (${pollCount * 2}秒経過...)`, target.videoStatus === 'failed');
+          setMessage(`${statusText} (${pollCount * 2}秒経過...)`, target.videoStatus === 'failed' || statusText.includes('❌'));
           
           if (isDone) {
             clearInterval(pollInterval);

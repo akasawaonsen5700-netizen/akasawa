@@ -3,24 +3,15 @@ const path = require('path');
 const fs = require('fs');
 const { getBucket } = require('./firebase-admin');
 
-// 物理的な apps/endo-sns ディレクトリを確実に取得するヘルパー
 function getEndoSnsDir() {
-  // __dirname から apps/endo-sns までの物理パスを安全に切り出す (絶対に無限ループしない)
   const match = __dirname.match(/(.*[\\/]apps[\\/]endo-sns)/i);
-  if (match) {
-    return match[1];
-  }
-  
-  // フォールバック（プロジェクトルートから探す）
+  if (match) return match[1];
   const rootDir = process.cwd();
   const directPath = path.join(rootDir, 'apps', 'endo-sns');
-  if (!rootDir.includes('.netlify') && fs.existsSync(directPath)) {
-    return directPath;
-  }
+  if (!rootDir.includes('.netlify') && fs.existsSync(directPath)) return directPath;
   return path.resolve(__dirname, '..', '..', '..', 'apps', 'endo-sns');
 }
 
-// デバッグログファイルへの出力関数
 function logDebug(message) {
   try {
     const endoSnsDir = getEndoSnsDir();
@@ -34,192 +25,109 @@ function logDebug(message) {
 }
 
 /**
- * Remotionを使用して動画を自動レンダリングし、Firebase StorageにアップロードしてそのURLを返します。
- * @param {string} submissionId 投稿ID
- * @param {object} props Remotionに渡すプロパティ (text, voiceUrl, bgmUrl, backgroundUrl)
+ * 動画レンダリングを開始します。
+ * AWS環境変数がある場合は即時にAWSのレンダー情報を返します。
+ * ローカル開発環境の場合は同期的に実行し、アップロードした動画URLを返します。
  */
-async function renderVideo(submissionId, props) {
+async function startRenderVideo(submissionId, props) {
+  const awsAccessKey = process.env.REMOTION_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+  const awsSecretKey = process.env.REMOTION_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+
+  if (process.env.REMOTION_AWS_FUNCTION_NAME && awsAccessKey) {
+    logDebug(`[RenderVideo] AWS Lambda Render detected. Kicking remote render on AWS...`);
+    const { renderMediaOnLambda } = require('@remotion/lambda-client');
+
+    const region = process.env.REMOTION_AWS_REGION || 'ap-northeast-1';
+    const functionName = process.env.REMOTION_AWS_FUNCTION_NAME;
+    const serveUrl = process.env.REMOTION_AWS_SERVE_URL;
+
+    process.env.AWS_ACCESS_KEY_ID = awsAccessKey;
+    process.env.AWS_SECRET_ACCESS_KEY = awsSecretKey;
+
+    const renderResult = await renderMediaOnLambda({
+      region,
+      functionName,
+      serveUrl,
+      composition: 'EndoInstagramReel',
+      inputProps: props,
+      codec: 'h264',
+      privacy: 'public',
+      imageFormat: 'jpeg',
+    });
+
+    logDebug(`[RenderVideo] Render successfully kicked on Lambda. ID: ${renderResult.renderId}`);
+    return {
+      mode: 'aws',
+      renderId: renderResult.renderId,
+      bucketName: renderResult.bucketName,
+      region
+    };
+  }
+
+  // AWSキーがなく、Netlify本番環境である場合はモックを即時返却
+  const isNetlifyProduction = process.env.NETLIFY_DEV !== 'true';
+  if (isNetlifyProduction) {
+    logDebug(`[RenderVideo] Netlify Production detected (No AWS). Returning mock URL.`);
+    return { mode: 'mock', videoUrl: '' };
+  }
+
+  // ローカル開発環境（Netlify Dev等）の場合は、従来通り同期的にローカルでビルドしてStorageにアップロードして返す
+  logDebug(`[RenderVideo] Local development detected. Running local Remotion CLI...`);
+  const cwd = getEndoSnsDir();
+  const outputFilename = `${submissionId}.mp4`;
+  const outputPath = path.join(cwd, 'public', 'renders', outputFilename);
+
+  const rendersDir = path.dirname(outputPath);
+  if (!fs.existsSync(rendersDir)) {
+    fs.mkdirSync(rendersDir, { recursive: true });
+  }
+
+  const propsFilename = `props_${submissionId}.json`;
+  const propsPath = path.join(cwd, 'public', 'renders', propsFilename);
+  fs.writeFileSync(propsPath, JSON.stringify(props));
+
+  const relativeOutputPath = `public/renders/${outputFilename}`;
+  const relativePropsPath = `public/renders/${propsFilename}`;
+  const command = `npx remotion render src/remotion/index.tsx EndoInstagramReel "${relativeOutputPath}" --props="${relativePropsPath}"`;
+
   return new Promise((resolve, reject) => {
-    // AWS Lambda でレンダリングを呼び出す設定がある場合
-    const awsAccessKey = process.env.REMOTION_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
-    const awsSecretKey = process.env.REMOTION_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
-
-    if (process.env.REMOTION_AWS_FUNCTION_NAME && awsAccessKey) {
-      logDebug(`[RenderVideo] AWS Lambda Render detected. Triggering remote render on AWS...`);
-      const { renderMediaOnLambda, getRenderProgress } = require('@remotion/lambda-client');
-      (async () => {
-        try {
-          const region = process.env.REMOTION_AWS_REGION || 'ap-northeast-1';
-          const functionName = process.env.REMOTION_AWS_FUNCTION_NAME;
-          const serveUrl = process.env.REMOTION_AWS_SERVE_URL;
-          const bucketName = process.env.REMOTION_AWS_BUCKET;
-
-          // 暗黙的にSDKが参照する環境変数をセット
-          process.env.AWS_ACCESS_KEY_ID = awsAccessKey;
-          process.env.AWS_SECRET_ACCESS_KEY = awsSecretKey;
-
-          const renderResult = await renderMediaOnLambda({
-            region,
-            functionName,
-            serveUrl,
-            composition: 'EndoInstagramReel',
-            inputProps: props,
-            codec: 'h264',
-            privacy: 'public',
-            imageFormat: 'jpeg',
-          });
-
-          logDebug(`[RenderVideo] Render started on Lambda. Render ID: ${renderResult.renderId}, Bucket: ${renderResult.bucketName}`);
-
-          // getRenderProgressでポーリング待機 (最大45秒)
-          const startTime = Date.now();
-          const TIMEOUT = 45000;
-          const POLL_INTERVAL = 3000;
-          let videoUrl = null;
-
-          while (Date.now() - startTime < TIMEOUT) {
-            await new Promise(r => setTimeout(r, POLL_INTERVAL));
-            const progress = await getRenderProgress({
-              region,
-              bucketName: renderResult.bucketName,
-              renderId: renderResult.renderId,
-              functionName,
-            });
-
-            if (progress.fatalErrorEncountered) {
-              throw new Error(`Lambda render fatal error: ${progress.errors?.[0]?.message || 'Unknown error'}`);
-            }
-
-            if (progress.done) {
-              videoUrl = progress.outputFile;
-              break;
-            }
-
-            logDebug(`[RenderVideo] Render progress: ${Math.round((progress.overallProgress || 0) * 100)}%`);
-          }
-
-          if (!videoUrl) {
-            throw new Error('Lambda render timed out after 45 seconds');
-          }
-
-          logDebug(`[RenderVideo] AWS Lambda render success! URL: ${videoUrl}`);
-          resolve(videoUrl);
-        } catch (lambdaErr) {
-          logDebug(`[RenderVideo-Error] AWS Lambda render failed: ${lambdaErr.message}`);
-          reject(lambdaErr);
-        }
-      })();
-      return;
-    }
-
-    // 本番（Netlifyクラウド）環境かつAWS設定がない場合はブラウザ起動エラー（タイムアウト・フリーズ）を回避するため、
-    // 実際のレンダリング処理をスキップしてモック動画URLを即座に返します。
-    const isNetlifyProduction = process.env.NETLIFY_DEV !== 'true';
-    if (isNetlifyProduction) {
-      logDebug(`[RenderVideo] Skipping actual Remotion render on Netlify production (No AWS Credentials).`);
-      logDebug(`[RenderVideo] Mocking video render success for submission: ${submissionId}`);
-      
-      const mockVideoUrl = ''; // 本番では空URLを返し、フロントのシミュレーションプレイヤーを動作させます
-      
-      setTimeout(() => {
-        resolve(mockVideoUrl);
-      }, 1000);
-      return;
-    }
-
-    const cwd = getEndoSnsDir();
-
-    const outputFilename = `${submissionId}.mp4`;
-    const outputPath = path.join(cwd, 'public', 'renders', outputFilename);
-
-    // 出力先ディレクトリの作成
-    const rendersDir = path.dirname(outputPath);
-    if (!fs.existsSync(rendersDir)) {
-      fs.mkdirSync(rendersDir, { recursive: true });
-    }
-
-    // propsを一時的にJSONファイルとして保存 (Windowsコマンドのエスケープ問題を完全回避するため)
-    const propsFilename = `props_${submissionId}.json`;
-    const propsPath = path.join(cwd, 'public', 'renders', propsFilename);
-    
-    try {
-      fs.writeFileSync(propsPath, JSON.stringify(props));
-      logDebug(`[RenderVideo] Wrote temp props file: ${propsPath}`);
-    } catch (writeErr) {
-      logDebug(`[RenderVideo-Error] Failed to write temp props file: ${writeErr.message}`);
-      return reject(writeErr);
-    }
-    
-    // Windows環境のバックスラッシュ/スペース問題を避けるため、コマンド内ではcwdからの相対パス（スラッシュ指定）を利用する
-    const relativeOutputPath = `public/renders/${outputFilename}`;
-    const relativePropsPath = `public/renders/${propsFilename}`;
-    const command = `npx remotion render src/remotion/index.tsx EndoInstagramReel "${relativeOutputPath}" --props="${relativePropsPath}"`;
-
-    logDebug(`[RenderVideo] Starting Remotion rendering in cwd: ${cwd}`);
-    logDebug(`[RenderVideo] Command: ${command}`);
-
-    // 120秒 (2分) のタイムアウトを設定してフリーズを回避
     exec(command, { cwd, timeout: 120000 }, async (error, stdout, stderr) => {
-      // 一時JSONファイルをクリーンアップ
-      if (fs.existsSync(propsPath)) {
-        fs.unlinkSync(propsPath);
-        logDebug(`[RenderVideo] Cleaned up temp props file: ${propsFilename}`);
-      }
+      if (fs.existsSync(propsPath)) fs.unlinkSync(propsPath);
 
       if (error) {
-        logDebug(`[RenderVideo-Error] Remotion render CLI process failed: ${error.message}`);
-        logDebug(`[RenderVideo-Error] CLI stderr: ${stderr}`);
-        logDebug(`[RenderVideo-Error] CLI stdout: ${stdout}`);
-        if (fs.existsSync(outputPath)) {
-          fs.unlinkSync(outputPath);
-        }
+        logDebug(`[RenderVideo-Error] CLI process failed: ${error.message}`);
+        if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
         return reject(error);
       }
-      
-      logDebug(`[RenderVideo] Remotion render CLI process success!`);
-      logDebug(`[RenderVideo] CLI stdout snippet: ${stdout.substring(0, 300)}...`);
 
       try {
         if (fs.existsSync(outputPath)) {
-          logDebug(`[RenderVideo] Uploading rendered video ${outputFilename} to Firebase Storage...`);
+          logDebug(`[RenderVideo] Uploading local render to Firebase Storage...`);
           const bucket = getBucket();
           const storagePath = `submissions/videos/${outputFilename}`;
           const file = bucket.file(storagePath);
-          
+
           await file.save(fs.readFileSync(outputPath), {
             metadata: {
               contentType: 'video/mp4',
               cacheControl: 'public, max-age=31536000'
             }
           });
-
-          // 一般公開URLとしてアクセスできるようにする
-          await file.makePublic().catch(err => {
-            logDebug(`[RenderVideo-Warn] makePublic failed: ${err.message}`);
-          });
+          await file.makePublic().catch(() => {});
 
           const videoUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
-          logDebug(`[RenderVideo] Video uploaded successfully. URL: ${videoUrl}`);
-
-          // ローカルの一時ファイルを削除
           fs.unlinkSync(outputPath);
-          logDebug(`[RenderVideo] Cleaned up local video file: ${outputPath}`);
-
-          resolve(videoUrl);
+          logDebug(`[RenderVideo] Local render successfully completed. URL: ${videoUrl}`);
+          resolve({ mode: 'local', videoUrl });
         } else {
-          const missingFileErr = new Error(`Rendered video file not found at expected path: ${outputPath}`);
-          logDebug(`[RenderVideo-Error] ${missingFileErr.message}`);
-          reject(missingFileErr);
+          reject(new Error(`Rendered video not found at ${outputPath}`));
         }
-      } catch (uploadErr) {
-        logDebug(`[RenderVideo-Error] Storage upload failed: ${uploadErr.message}`);
-        if (fs.existsSync(outputPath)) {
-          fs.unlinkSync(outputPath);
-        }
-        reject(uploadErr);
+      } catch (err) {
+        if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+        reject(err);
       }
     });
   });
 }
 
-module.exports = { renderVideo };
+module.exports = { startRenderVideo };

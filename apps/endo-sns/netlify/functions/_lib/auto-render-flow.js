@@ -1,36 +1,27 @@
 const { generateVoiceFromCartesia } = require('./cartesia-tts');
-const { renderVideo } = require('./render-video');
+const { startRenderVideo } = require('./render-video');
 const { admin } = require('./firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// 物理的な apps/endo-sns ディレクトリを確実に取得するヘルパー
 function getEndoSnsDir() {
-  // __dirname から apps/endo-sns までの物理パスを安全に切り出す (絶対に無限ループしない)
   const match = __dirname.match(/(.*[\\/]apps[\\/]endo-sns)/i);
-  if (match) {
-    return match[1];
-  }
-  
-  // フォールバック（プロジェクトルートから探す）
+  if (match) return match[1];
   const rootDir = process.cwd();
   const directPath = path.join(rootDir, 'apps', 'endo-sns');
-  if (!rootDir.includes('.netlify') && fs.existsSync(directPath)) {
-    return directPath;
-  }
+  if (!rootDir.includes('.netlify') && fs.existsSync(directPath)) return directPath;
   return path.resolve(__dirname, '..', '..', '..', 'apps', 'endo-sns');
 }
 
 async function ensureBgmDownloaded(localBgmPath, remoteBgmUrl) {
   if (fs.existsSync(localBgmPath)) return;
   return new Promise((resolve) => {
-    logDebug(`[AutoRender] Downloading BGM from ${remoteBgmUrl} to ${localBgmPath}...`);
+    logDebug(`[AutoRender] Downloading BGM from ${remoteBgmUrl}...`);
     const https = require('https');
     const file = fs.createWriteStream(localBgmPath);
     
     const request = https.get(remoteBgmUrl, (response) => {
       if (response.statusCode !== 200) {
-        logDebug(`[AutoRender-Error] BGM download failed, status code: ${response.statusCode}`);
         file.close();
         fs.unlink(localBgmPath, () => {});
         resolve();
@@ -39,22 +30,18 @@ async function ensureBgmDownloaded(localBgmPath, remoteBgmUrl) {
       response.pipe(file);
       file.on('finish', () => {
         file.close();
-        logDebug('[AutoRender] BGM downloaded successfully!');
         resolve();
       });
     });
 
-    // 10秒のタイムアウトを設定 (ハング回避)
     request.setTimeout(10000, () => {
-      logDebug(`[AutoRender-Error] BGM download timeout (10s)`);
       request.destroy();
       file.close();
       fs.unlink(localBgmPath, () => {});
       resolve();
     });
 
-    request.on('error', (err) => {
-      logDebug(`[AutoRender-Error] Failed to download BGM: ${err.message}`);
+    request.on('error', () => {
       file.close();
       fs.unlink(localBgmPath, () => {});
       resolve();
@@ -62,7 +49,6 @@ async function ensureBgmDownloaded(localBgmPath, remoteBgmUrl) {
   });
 }
 
-// デバッグログファイルへの出力関数
 function logDebug(message) {
   try {
     const endoSnsDir = getEndoSnsDir();
@@ -76,37 +62,13 @@ function logDebug(message) {
 }
 
 /**
- * 登録された投稿ドキュメントに対し、音声合成(Cartesia)と動画レンダリング(Remotion)を自動で行い、
- * 完了後にFirestoreドキュメントを更新します。
+ * 音声合成と動画生成のキックを管理します。
+ * Netlifyの10秒タイムアウト制限内に安全に収まるよう、動画生成の完了待ちは行わず
+ * キックした時点でレスポンスを返します。
  */
 async function triggerAutoRenderFlow(db, docRef, data, rawVoiceUrl) {
   try {
     logDebug(`=== Starting auto render flow for submission: ${docRef.id} ===`);
-    
-    // Netlifyの本番環境（サーバーレス環境）で、かつAWS Lambda動画生成の設定がない場合のみ、
-    // 即時にダミー音声（endo.mp3）とモック動画URLを設定して処理を正常完了させます。
-    const isNetlifyProduction = process.env.NETLIFY_DEV !== 'true';
-    const awsAccessKey = process.env.REMOTION_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
-    const hasAws = !!(process.env.REMOTION_AWS_FUNCTION_NAME && awsAccessKey);
-
-    if (isNetlifyProduction && !hasAws) {
-      logDebug(`[AutoRender] Netlify Production detected (No AWS config). Setting up demo voice/video URLs instantly.`);
-      
-      const mockVoiceUrl = '/endo-sns/endo.mp3'; // 同梱の遠藤様クローン音声ファイル
-      const mockVideoUrl = ''; // フロントでシミュレーションプレビューを使用
-      
-      await docRef.update({
-        voiceUrl: mockVoiceUrl,
-        'channelSettings.instagram.voiceUrl': mockVoiceUrl,
-        videoUrl: mockVideoUrl,
-        'channelSettings.instagram.videoUrl': mockVideoUrl,
-        videoStatus: 'completed',
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-      
-      logDebug(`[AutoRender] Netlify Production bypass success!`);
-      return;
-    }
     
     // 1. 初期ステータス（音声生成中）を設定
     await docRef.update({ videoStatus: 'generating_audio' });
@@ -121,73 +83,82 @@ async function triggerAutoRenderFlow(db, docRef, data, rawVoiceUrl) {
           logDebug(`[AutoRender] Generating Cartesia voice for: ${docRef.id}`);
           const filename = `voice_${docRef.id}_cartesia.wav`;
           finalVoiceUrl = await generateVoiceFromCartesia(narrationText, filename);
-          
           logDebug(`[AutoRender] Generated Cartesia voice URL: ${finalVoiceUrl}`);
+          
           await docRef.update({
             voiceUrl: finalVoiceUrl,
-            'channelSettings.instagram.voiceUrl': finalVoiceUrl,
-            videoStatus: 'rendering_video' // 音声完了 ➔ 動画レンダリングへ
+            'channelSettings.instagram.voiceUrl': finalVoiceUrl
           });
         } catch (err) {
-          logDebug(`[AutoRender-Error] Cartesia voice generation failed: ${err.message}\nStack: ${err.stack}`);
-          throw err; // 即座にエラーをスローして終了（フォールバックなし）
+          logDebug(`[AutoRender-Error] Cartesia voice generation failed: ${err.message}`);
+          throw err;
         }
-      } else {
-        logDebug(`[AutoRender] No narration text found for Instagram, skipping voice synthesis`);
       }
-    } else {
-      logDebug(`[AutoRender] Skipped Cartesia voice (Already set, or CARTESIA env keys missing)`);
     }
 
-    // 音声がない場合はエラーにする（フォールバック廃止）
     if (!finalVoiceUrl) {
       throw new Error('音声の生成に失敗したため、動画のレンダリングを中止しました。');
     }
 
-    // Remotion自動動画レンダリング
-    if (finalVoiceUrl) {
-      const instagramAssets = data.channelSettings?.instagram?.assets || data.assets || [];
-      const backgroundUrls = instagramAssets.map(asset => asset.url).filter(Boolean);
+    // 2. Remotion自動動画レンダリングのキック準備
+    const instagramAssets = data.channelSettings?.instagram?.assets || data.assets || [];
+    const backgroundUrls = instagramAssets.map(asset => asset.url).filter(Boolean);
 
-      // ローカル用の BGM パスとダウンロード
-      const endoSnsDir = getEndoSnsDir();
-      const localBgmPath = path.join(endoSnsDir, 'public', 'bgm.wav');
-      const remoteBgmUrl = 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav';
-      await ensureBgmDownloaded(localBgmPath, remoteBgmUrl);
+    const endoSnsDir = getEndoSnsDir();
+    const localBgmPath = path.join(endoSnsDir, 'public', 'bgm.wav');
+    const remoteBgmUrl = 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav';
+    await ensureBgmDownloaded(localBgmPath, remoteBgmUrl);
 
-      // ローカル上のアセットパスを指定して Remotion の CORS / ロード遅延を完全回避する
-      let localVoiceUrl = finalVoiceUrl;
-      if (finalVoiceUrl.includes('_cartesia.wav')) {
-        const voiceFilename = `voice_${docRef.id}_cartesia.wav`;
-        localVoiceUrl = `/voices/${voiceFilename}`;
-      } else if (finalVoiceUrl === '/endo-sns/endo.mp3') {
-        localVoiceUrl = '/endo.mp3';
-      }
+    let localVoiceUrl = finalVoiceUrl;
+    if (finalVoiceUrl.includes('_cartesia.wav')) {
+      const voiceFilename = `voice_${docRef.id}_cartesia.wav`;
+      localVoiceUrl = `/voices/${voiceFilename}`;
+    } else if (finalVoiceUrl === '/endo-sns/endo.mp3') {
+      localVoiceUrl = '/endo.mp3';
+    }
 
-      const bgmExists = fs.existsSync(localBgmPath);
-      logDebug(`[AutoRender] BGM file exists on disk: ${bgmExists}`);
-      const props = {
-        text: data.drafts?.instagram?.narration || data.ownerComment || '無題',
-        voiceUrl: localVoiceUrl,
-        bgmUrl: bgmExists ? '/bgm.wav' : null,
-        backgroundUrls: backgroundUrls.length > 0 ? backgroundUrls : null
-      };
+    const bgmExists = fs.existsSync(localBgmPath);
+    const props = {
+      text: data.drafts?.instagram?.narration || data.ownerComment || '無題',
+      voiceUrl: localVoiceUrl,
+      bgmUrl: bgmExists ? '/bgm.wav' : null,
+      backgroundUrls: backgroundUrls.length > 0 ? backgroundUrls : null
+    };
 
-      logDebug(`[AutoRender] Triggering Remotion render for submission: ${docRef.id}`);
-      const videoUrl = await renderVideo(docRef.id, props);
-      
-      logDebug(`[AutoRender] Remotion render success! Video URL: ${videoUrl}`);
+    logDebug(`[AutoRender] Kicking startRenderVideo for: ${docRef.id}`);
+    const renderInfo = await startRenderVideo(docRef.id, props);
+
+    if (renderInfo.mode === 'aws') {
+      // AWSキック成功時は、進捗チェック用の情報を登録して 'rendering_video' とする
+      logDebug(`[AutoRender] AWS Lambda render successfully kicked. Status -> rendering_video.`);
       await docRef.update({
-        videoUrl: videoUrl,
-        'channelSettings.instagram.videoUrl': videoUrl,
-        videoStatus: 'completed', // レンダリング完了
+        videoStatus: 'rendering_video',
+        awsRenderId: renderInfo.renderId,
+        awsBucketName: renderInfo.bucketName,
+        awsRegion: renderInfo.region,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
-      logDebug(`[AutoRender] Firestore document successfully updated for: ${docRef.id}`);
+    } else if (renderInfo.mode === 'local') {
+      // ローカル開発環境時は同期的に完了するため、即時completedにする
+      logDebug(`[AutoRender] Local render completed. Status -> completed.`);
+      await docRef.update({
+        videoUrl: renderInfo.videoUrl,
+        'channelSettings.instagram.videoUrl': renderInfo.videoUrl,
+        videoStatus: 'completed',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    } else {
+      // モックモード
+      logDebug(`[AutoRender] Mock render complete. Status -> completed.`);
+      await docRef.update({
+        videoUrl: '',
+        'channelSettings.instagram.videoUrl': '',
+        videoStatus: 'completed',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
     }
   } catch (err) {
-    logDebug(`[AutoRender-Error] General error in auto render flow: ${err.message}\nStack: ${err.stack}`);
-    // エラーステータスとメッセージを保存
+    logDebug(`[AutoRender-Error] Flow failed: ${err.message}`);
     await docRef.update({
       videoStatus: 'failed',
       videoError: err.message

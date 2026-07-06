@@ -2,7 +2,6 @@ const { google } = require('googleapis');
 const { getDb, admin } = require('./_lib-endo/firebase-admin');
 const { ok, json } = require('./_lib-endo/helpers');
 const { buildDraftPackage } = require('./_lib-endo/ai');
-const { triggerAutoRenderFlow } = require('./_lib-endo/auto-render-flow');
 
 function auth() {
   const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '{}');
@@ -12,7 +11,7 @@ function auth() {
   });
 }
 
-exports.handler = async () => {
+exports.handler = async (event) => {
   try {
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
     const range = process.env.GOOGLE_SHEET_RANGE || 'queue!A1:Z';
@@ -58,8 +57,19 @@ exports.handler = async () => {
       };
       const docRef = await db.collection('submissions').add(data);
 
-      // 自動音声合成＆自動動画レンダリングを非同期で開始
-      await triggerAutoRenderFlow(db, docRef, data, item.voiceUrl || null);
+      // NetlifyのBackground Functionsを叩いて、非同期で長時間の生成処理を開始
+      const host = (event && event.headers && event.headers.host) || 'localhost:8891';
+      const protocol = host.includes('localhost') ? 'http' : 'https';
+      const functionName = host.includes('localhost') ? 'generate-assets-background' : 'endo-generate-assets-background';
+      const bgUrl = `${protocol}://${host}/.netlify/functions/${functionName}`;
+
+      fetch(bgUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: docRef.id, voiceUrl: item.voiceUrl || null })
+      }).catch(err => {
+        console.error('[Background Kick Error]:', err);
+      });
 
       imported += 1;
     }

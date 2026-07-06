@@ -83,14 +83,17 @@ async function triggerAutoRenderFlow(db, docRef, data, rawVoiceUrl) {
   try {
     logDebug(`=== Starting auto render flow for submission: ${docRef.id} ===`);
     
-    // Netlifyの本番環境（サーバーレス環境）では、ディスク書き込み制限やタイムアウトを完全に避けるため、
+    // Netlifyの本番環境（サーバーレス環境）で、かつAWS Lambda動画生成の設定がない場合のみ、
     // 即時にダミー音声（endo.mp3）とモック動画URLを設定して処理を正常完了させます。
     const isNetlifyProduction = process.env.NETLIFY_DEV !== 'true';
-    if (isNetlifyProduction) {
-      logDebug(`[AutoRender] Netlify Production detected. Setting up demo voice/video URLs instantly.`);
+    const awsAccessKey = process.env.REMOTION_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+    const hasAws = !!(process.env.REMOTION_AWS_FUNCTION_NAME && awsAccessKey);
+
+    if (isNetlifyProduction && !hasAws) {
+      logDebug(`[AutoRender] Netlify Production detected (No AWS config). Setting up demo voice/video URLs instantly.`);
       
       const mockVoiceUrl = '/endo-sns/endo.mp3'; // 同梱の遠藤様クローン音声ファイル
-      const mockVideoUrl = ''; // 本番ではサーバーレスのため実動画レンダリング不可。フロントでシミュレーションプレビューを使用
+      const mockVideoUrl = ''; // フロントでシミュレーションプレビューを使用
       
       await docRef.update({
         voiceUrl: mockVoiceUrl,

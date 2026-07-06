@@ -2,6 +2,7 @@ const { z } = require('zod');
 const { getDb, admin } = require('./_lib/firebase-admin');
 const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib/helpers');
 const { buildDraftPackage } = require('./_lib/ai');
+const { triggerAutoRenderFlow } = require('./_lib/auto-render-flow');
 
 const schema = z.object({
   ownerComment: z.string().optional().default(''),
@@ -65,19 +66,12 @@ exports.handler = async (event) => {
 
     await ref.set(data);
 
-    // NetlifyのBackground Functionsを叩いて、非同期で長時間の生成処理を開始（最大15分保証）
-    const host = event.headers.host || 'localhost:8891';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const functionName = host.includes('localhost') ? 'generate-assets-background' : 'endo-generate-assets-background';
-    const bgUrl = `${protocol}://${host}/.netlify/functions/${functionName}`;
-
-    fetch(bgUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: ref.id, voiceUrl: payload.voiceUrl })
-    }).catch(err => {
-      console.error('[Background Kick Error]:', err);
-    });
+    // 自動音声合成＆動画生成のキックをインラインで安全に実行 (2〜3秒で完了)
+    try {
+      await triggerAutoRenderFlow(db, ref, data, payload.voiceUrl || null);
+    } catch (err) {
+      console.error('[Trigger AutoRender Error]:', err);
+    }
 
     return ok({ id: ref.id, status: draftPackage.status, publishAt: draftPackage.publishAt });
   } catch (error) {
