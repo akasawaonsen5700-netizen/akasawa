@@ -324,26 +324,21 @@ export const EndoReel = ({
           pointerEvents: 'none'
         }}>
           <div style={{
-            backgroundColor: 'rgba(212, 175, 55, 0.95)', // ゴールド背景
-            padding: '60px 40px',
-            borderRadius: '20px',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(212,175,55,0.4)',
-            border: '2px solid #fff',
             transform: `scale(${Math.min(1, 0.9 + (frame / 100))})`,
             opacity: frame < 12 ? frame / 12 : (frame > delayFrames - 12 ? (delayFrames - frame) / 12 : 1), // フェードイン＆アウト
-            height: '80%',
+            height: '90%',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center'
           }}>
             <h1 style={{
               margin: 0,
-              color: '#07090e',
-              fontSize: '64px',
+              color: '#ffffff',
+              fontSize: '128px',
               fontFamily: '"Shippori Mincho", "Noto Serif JP", serif',
               fontWeight: 900,
-              letterSpacing: '0.2em',
-              textShadow: '0 2px 10px rgba(255,255,255,0.5)',
+              letterSpacing: '0.15em',
+              textShadow: '0 10px 40px rgba(0,0,0,0.9), 0 5px 15px rgba(0,0,0,0.8), 0 0 50px rgba(0,0,0,0.6)',
               writingMode: 'vertical-rl',
               textOrientation: 'mixed',
               lineHeight: 1.6
