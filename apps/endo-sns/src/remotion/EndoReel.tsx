@@ -114,8 +114,9 @@ export const EndoReel = ({
   // 現在の行の中での経過フレーム
   const lineFrame = contentFrame - framesAccumulated;
 
-  // フェードイン・アウトのアニメーション用opacity計算（前後12フレームでフェード）
-  const fadeFrames = 12;
+  // フェードイン・アウトのアニメーション用opacity計算
+  // 行の表示時間が短い場合は、フェード時間を短くして透明化を防ぐ
+  const fadeFrames = Math.min(12, Math.floor(framesForCurrentLine / 3));
   let opacity = 1;
   if (lineFrame < fadeFrames) {
     opacity = Math.max(0, lineFrame / fadeFrames); // フェードイン
@@ -346,7 +347,9 @@ export const EndoReel = ({
               textOrientation: 'mixed',
               lineHeight: 1.6
             }}>
-              {hookText}
+              {hookText.replace(/、/g, '、\n').split('\n').map((line, i) => (
+                <span key={i} style={{ display: 'block' }}>{line}</span>
+              ))}
             </h1>
           </div>
         </AbsoluteFill>
