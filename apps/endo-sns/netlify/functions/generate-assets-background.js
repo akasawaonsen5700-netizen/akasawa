@@ -24,7 +24,10 @@ exports.handler = async (event) => {
     // バックグラウンドで音声合成と動画生成を実行
     await triggerAutoRenderFlow(db, docRef, data, voiceUrl);
     console.log(`[Background] Auto render flow successfully completed for ID: ${id}`);
+    
+    return { statusCode: 200, body: JSON.stringify({ ok: true }) };
   } catch (err) {
     console.error('[Background Error]:', err);
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };

@@ -105,9 +105,7 @@ async function triggerAutoRenderFlow(db, docRef, data, rawVoiceUrl) {
     const backgroundUrls = instagramAssets.map(asset => asset.url).filter(Boolean);
 
     const endoSnsDir = getEndoSnsDir();
-    const localBgmPath = path.join(endoSnsDir, 'public', 'bgm.wav');
     const remoteBgmUrl = 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav';
-    await ensureBgmDownloaded(localBgmPath, remoteBgmUrl);
 
     let localVoiceUrl = finalVoiceUrl;
     if (finalVoiceUrl.includes('_cartesia.wav')) {
@@ -117,11 +115,10 @@ async function triggerAutoRenderFlow(db, docRef, data, rawVoiceUrl) {
       localVoiceUrl = '/endo.mp3';
     }
 
-    const bgmExists = fs.existsSync(localBgmPath);
     const props = {
       text: data.drafts?.instagram?.narration || data.ownerComment || '無題',
       voiceUrl: localVoiceUrl,
-      bgmUrl: bgmExists ? '/bgm.wav' : null,
+      bgmUrl: remoteBgmUrl,
       backgroundUrls: backgroundUrls.length > 0 ? backgroundUrls : null
     };
 
