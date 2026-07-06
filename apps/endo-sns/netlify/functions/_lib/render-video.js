@@ -40,6 +40,7 @@ async function startRenderVideo(submissionId, props) {
     const region = process.env.REMOTION_AWS_REGION || 'ap-northeast-1';
     const functionName = process.env.REMOTION_AWS_FUNCTION_NAME;
     const serveUrl = process.env.REMOTION_AWS_SERVE_URL;
+    const bucketName = process.env.REMOTION_AWS_BUCKET;
 
     process.env.AWS_ACCESS_KEY_ID = awsAccessKey;
     process.env.AWS_SECRET_ACCESS_KEY = awsSecretKey;
@@ -48,6 +49,7 @@ async function startRenderVideo(submissionId, props) {
       region,
       functionName,
       serveUrl,
+      bucketName,
       composition: 'EndoInstagramReel',
       inputProps: props,
       codec: 'h264',
