@@ -105,7 +105,8 @@ async function triggerAutoRenderFlow(db, docRef, data, rawVoiceUrl) {
     const backgroundUrls = instagramAssets.map(asset => asset.url).filter(Boolean);
 
     const endoSnsDir = getEndoSnsDir();
-    const remoteBgmUrl = 'https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav';
+    // Mixkitは弾かれるため、ブロックが存在しないGoogle公式のフリー環境音（小川のせせらぎ）を直接指定
+    const remoteBgmUrl = 'https://actions.google.com/sounds/v1/water/small_stream_flowing.ogg';
 
     // AWS Lambdaからは絶対URLでないとアクセスできないため、finalVoiceUrlをそのまま使用する
     let absoluteVoiceUrl = finalVoiceUrl;
