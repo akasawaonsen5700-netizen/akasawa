@@ -217,8 +217,9 @@ async function buildDraftPackage(input) {
 
   const channels = input.channels?.length ? input.channels : ['instagram', 'x'];
 
-  // Gemini APIでの生成を試みる
-  const geminiDraft = await generateDraftWithGemini(input, classification);
+  // Netlifyの10秒タイムアウト（502エラー）を回避するため、ここでは同期的にGeminiを呼び出さず、
+  // バックグラウンドタスク（generate-assets-background.js）で非同期に生成するように変更します。
+  const geminiDraft = null; // await generateDraftWithGemini(input, classification);
 
   let drafts = {};
   let altText = '';
@@ -272,4 +273,4 @@ async function buildDraftPackage(input) {
   };
 }
 
-module.exports = { buildDraftPackage };
+module.exports = { buildDraftPackage, generateDraftWithGemini, classifySubmission };
