@@ -111,10 +111,9 @@ function draftForChannelFallback(channel, tone, classification, input) {
   if (channel === 'instagram') {
     const lines = [
       `【${BRAND.instagramTheme}】`,
-      userText || tone.scene,
-      userText ? '' : tone.detail,
-      '',
-      tone.instagramQuote,
+      tone.scene,
+      '毎日忙しさに追われ、自分の疲れにすら気づけないことはありませんか？',
+      'この動画には、そんなあなたの心を整えるヒントがあります。',
       '',
       BRAND.profileInstagram
     ].filter(Boolean);
@@ -123,7 +122,7 @@ function draftForChannelFallback(channel, tone, classification, input) {
       narration: userText || `${tone.scene}。${tone.detail}`
     };
   } else if (channel === 'x') {
-    const mainText = userText || `${tone.xText}\n\n${BRAND.site}`;
+    const mainText = `${tone.xText}\n動画から、あなたの悩みを解決するヒントを見つけてください。\n\n${BRAND.site}`;
     return {
       text: mainText.slice(0, 280),
       narration: userText || tone.xText
@@ -139,7 +138,7 @@ async function generateDraftWithGemini(input, classification) {
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const systemPrompt = `
     あなたは「遠藤正俊」氏の個人SNSアカウント（InstagramおよびX）の発信をサポートする専属AIです。
@@ -153,14 +152,17 @@ async function generateDraftWithGemini(input, classification) {
     2. キャプション（text）にナレーション原稿をそのまま流用・コピペすること。これは厳禁です。
 
     ■ Instagram用の「text」（キャプション）の書き方
-    - ユーザーに「検索してみよう」「この場所に行ってみたい」と思わせるような、感情を揺さぶる知的なエッセイ調の導入文（3〜5行程度）を書いてください。
-    - テロップ（narration）の文章は使わず、テーマの背景にある想いや、「なぜ現代人にそれが必要なのか」という問いかけを中心に書いてください。
+    - 長い文章は絶対に書かないでください！非常に短く簡潔に（2〜3行程度）してください。
+    - 「現代人の疲れ、忙しさ、自己肯定感の低下」などの**現状の悩みや問題**に強くフォーカスしてください。
+    - 「動画を見ることで、現状の悩みや問題の解決のヒントがある」というメッセージを必ず含めてください。
+    - 「心のモヤモヤ」「ストレス解消」「哲学」などの検索されやすいキーワードを自然に含めてください。
+    - テロップ（narration）のコピペは厳禁です。
     - 末尾にハッシュタグ（5〜8個）を付与すること。台本テーマに合ったものを使い、旅館名のタグは最後に1つだけ。
     - 最後にプロフィール紹介文を付与：「${BRAND.profileInstagram}」
 
     ■ X用の「text」（ポスト文）の書き方
-    - 台本の核心メッセージからインスピレーションを受けた、全く別の言い回しの独り言（140〜200文字）にすること。台本のコピペは禁止。
-    - 読んだ人がハッとして、思わず検索やリポストをしたくなるような鋭いインサイトを含めること。
+    - テロップ（narration）のコピペは厳禁です。
+    - 現代人の悩みに対する鋭いインサイトを1〜2行で書き、「動画に解決のヒントがある」と誘導してください（140文字以内推奨）。
     - 最後に公式サイトURL (${BRAND.site}) を含めること。
 
     ■ narration（両チャンネル共通）
@@ -192,7 +194,10 @@ async function generateDraftWithGemini(input, classification) {
         responseMimeType: 'application/json'
       }
     });
-    const responseText = result.response.text();
+    let responseText = result.response.text().trim();
+    if (responseText.startsWith('```')) {
+      responseText = responseText.replace(/^```[a-zA-Z]*\n/, '').replace(/\n```$/, '');
+    }
     const data = JSON.parse(responseText.trim());
     if (data.instagram && data.x) {
       return data;
