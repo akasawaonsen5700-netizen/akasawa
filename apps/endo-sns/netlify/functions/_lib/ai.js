@@ -122,7 +122,7 @@ function draftForChannelFallback(channel, tone, classification, input) {
       narration: userText || `${tone.scene}。${tone.detail}`
     };
   } else if (channel === 'x') {
-    const mainText = 'あなたは最近、いつ「深い呼吸」をしましたか？\n\n情報と予定に追われる毎日の中で、私たちは「立ち止まること」にすら罪悪感を抱いてしまいます。\n\n心当たりのある方は、どうかこの音声を聴いてみてください。\n\n' + BRAND.site;
+    const mainText = 'あなたは最近、いつ「深い呼吸」をしましたか？\n\n情報と予定に追われる毎日の中で、私たちは「立ち止まること」にすら罪悪感を抱いてしまいます。\n\n心当たりのある方は、どうかこの動画を見てみてください。\n\n' + BRAND.site;
     return {
       text: mainText.slice(0, 280),
       narration: userText || tone.xText
@@ -138,7 +138,7 @@ async function generateDraftWithGemini(input, classification) {
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const systemPrompt = `
     あなたは「遠藤正俊」氏の個人SNSアカウント（InstagramおよびX）の発信をサポートする専属AIです。
