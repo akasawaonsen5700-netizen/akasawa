@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../../../../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
