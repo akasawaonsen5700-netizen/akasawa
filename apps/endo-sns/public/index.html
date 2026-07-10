@@ -21,11 +21,28 @@
             <h2>登録：台本と背景の入力</h2>
           </div>
           <form id="uploadForm">
-            <div class="channel-selection-card">
-              <label class="form-label-bold">投稿先チャネル</label>
-              <div class="channel-grid">
-                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="instagram" checked /> Instagram</label>
-                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="x" checked /> X (旧Twitter)</label>
+            <!-- 投稿テーマの設定 (最上部に配置) -->
+            <div class="theme-selection-card" style="background: rgba(30, 41, 59, 0.4); padding: 16px; border: 1px solid var(--line); border-radius: 16px; margin-bottom: 20px;">
+              <label class="form-label-bold" style="color: var(--accent); margin-bottom: 8px;">💡 投稿テーマを設定する</label>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                  <label for="simpleTag" style="font-size: 13px; color: #94a3b8; display: block; margin-bottom: 6px;">テーマを選択:</label>
+                  <select id="simpleTag" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: #0f172a; color: white;">
+                    <option value="世界が知らない日本">世界が知らない日本</option>
+                    <option value="心が動く日本の自然">心が動く日本の自然</option>
+                    <option value="遠藤正俊の視点">遠藤正俊の視点</option>
+                    <option value="赤沢温泉旅館という時間">赤沢温泉旅館という時間</option>
+                    <option value="奥日本シルバールート">奥日本シルバールート</option>
+                    <option value="custom">✍️ 新しいテーマを直接入力する</option>
+                  </select>
+                </div>
+                <div id="customThemeContainer" style="display: none;">
+                  <label for="customThemeInput" style="font-size: 13px; color: #94a3b8; display: block; margin-bottom: 6px;">直接入力するテーマ:</label>
+                  <input type="text" id="customThemeInput" placeholder="テーマを自由に入力してください（例：日本の雪景色とぬる湯の魅力）" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: #0f172a; color: white;" />
+                </div>
+                <button type="button" id="generateRagBtn" class="primary-btn" style="background: var(--brand); font-size: 14px; padding: 10px 16px; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                  🤖 思想RAGから自動生成する
+                </button>
               </div>
             </div>
 
@@ -35,23 +52,41 @@
             </div>
 
             <div style="margin-top: 16px;">
-              <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                <label for="ownerComment" style="font-weight: bold; color: var(--brand);">オーナーの投稿メモ / 動画台本 (必須)</label>
-                <button type="button" id="generateRagBtn" class="primary-btn" style="background: var(--brand); font-size: 12px; padding: 4px 10px;">🤖 思想RAGから自動生成</button>
+              <label for="ownerComment" style="font-weight: bold; color: var(--brand);">オーナーの投稿メモ / 動画台本 (必須)</label>
+              <textarea id="ownerComment" required placeholder="ここに投稿したい台本やインサイトメモを入力してください。例：立ち止まることは、後退ではないと私は思っています。海外で仕事をしていた頃、前に進むことが正しいとずっと思っていました……。" style="min-height: 120px;"></textarea>
+            </div>
+
+            <div class="channel-selection-card" style="margin-top: 20px;">
+              <label class="form-label-bold">投稿先チャネル</label>
+              <div class="channel-grid">
+                <label class="channel-cb-label"><input type="checkbox" id="instagramCb" name="channelSelect" value="instagram" checked /> Instagram</label>
+                <label class="channel-cb-label"><input type="checkbox" id="xCb" name="channelSelect" value="x" checked /> X (旧Twitter)</label>
               </div>
-              <textarea id="ownerComment" required placeholder="ここに投稿したい台本やインサイトメモを入力してください。例：立ち止まることは、後退ではないと私は思っています。海外で仕事をしていた頃、前に進むことが正しいとずっと思っていました……。" style="min-height: 120px; margin-top: 8px;"></textarea>
+              
+              <!-- Instagramの投稿形式詳細設定 -->
+              <div id="instagramDetailSettings" style="margin-top: 12px; padding: 12px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; border: 1px solid var(--line);">
+                <label style="font-size: 13px; font-weight: bold; color: #94a3b8; display: block; margin-bottom: 8px;">Instagramの投稿形式:</label>
+                <div style="display: flex; gap: 20px;">
+                  <label style="font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <input type="radio" name="instagramType" value="reels" checked /> 🎥 リール (動画)
+                  </label>
+                  <label style="font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <input type="radio" name="instagramType" value="feed" /> 📷 フィード (画像)
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div style="margin-top: 16px;">
-              <label for="mediaFiles" style="font-weight: bold;">🎥 動画制作用の背景 (画像または動画)</label>
+              <label for="mediaFiles" style="font-weight: bold;">🎥 動画制作用の背景 (画像または動画) / Instagramフィード画像</label>
               <input id="mediaFiles" type="file" accept="image/*,video/*" multiple />
-              <div class="help" style="margin-top: 4px; font-size: 11px; color: #94a3b8;">Instagram用の自動生成動画の背景として使用されます。</div>
+              <div class="help" style="margin-top: 4px; font-size: 11px; color: #94a3b8;">Instagram用の自動生成動画の背景、またはフィード投稿時のメイン画像として使用されます。</div>
             </div>
 
             <div style="margin-top: 16px;">
               <label for="postAttachFiles" style="font-weight: bold;">📷 SNS直接投稿用の添付画像 (写真など)</label>
               <input id="postAttachFiles" type="file" accept="image/*" multiple />
-              <div class="help" style="margin-top: 4px; font-size: 11px; color: #94a3b8;">XやInstagramに画像投稿として直接添付する画像ファイルです。</div>
+              <div class="help" style="margin-top: 4px; font-size: 11px; color: #94a3b8;">Xに画像投稿として直接添付する画像ファイルです。</div>
             </div>
 
             <div style="margin-top: 16px;">
@@ -61,21 +96,14 @@
 
             <div class="grid-2" style="margin-top: 16px;">
               <div>
-                <label for="simpleTag">投稿テーマ</label>
-                <select id="simpleTag">
-                  <option value="世界が知らない日本">世界が知らない日本</option>
-                  <option value="心が動く日本の自然">心が動く日本の自然</option>
-                  <option value="遠藤正俊の視点">遠藤正俊の視点</option>
-                  <option value="赤沢温泉旅館という時間">赤沢温泉旅館という時間</option>
-                  <option value="奥日本シルバールート">奥日本シルバールート</option>
-                </select>
-              </div>
-              <div>
                 <label for="visibility">公開方式</label>
                 <select id="visibility">
                   <option value="review">承認後に投稿</option>
                   <option value="auto_if_safe">安全判定なら自動承認</option>
                 </select>
+              </div>
+              <div style="visibility: hidden; height: 0; overflow: hidden;">
+                <!-- grid-2の崩れを防ぐためのダミー要素 -->
               </div>
             </div>
 

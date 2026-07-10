@@ -42,6 +42,34 @@ const postAttachFilesInput = document.getElementById('postAttachFiles');
 const voiceFileInput = document.getElementById('voiceFile');
 const generateRagBtn = document.getElementById('generateRagBtn');
 
+// 新規追加されたDOM要素
+const customThemeContainer = document.getElementById('customThemeContainer');
+const customThemeInput = document.getElementById('customThemeInput');
+const instagramCb = document.getElementById('instagramCb');
+const instagramDetailSettings = document.getElementById('instagramDetailSettings');
+
+// テーマの選択状態に応じた表示制御
+if (simpleTag) {
+  simpleTag.addEventListener('change', () => {
+    if (simpleTag.value === 'custom') {
+      customThemeContainer.style.display = 'block';
+    } else {
+      customThemeContainer.style.display = 'none';
+      customThemeInput.value = '';
+    }
+  });
+}
+
+// Instagramのチェック状態に応じた表示制御
+if (instagramCb && instagramDetailSettings) {
+  const toggleInstagramSettings = () => {
+    instagramDetailSettings.style.display = instagramCb.checked ? 'block' : 'none';
+  };
+  instagramCb.addEventListener('change', toggleInstagramSettings);
+  // 初期状態の反映
+  toggleInstagramSettings();
+}
+
 const setMessage = (text, isError = false) => {
   message.textContent = text;
   message.style.color = isError ? '#ef4444' : '#10b981';
@@ -50,9 +78,12 @@ const setMessage = (text, isError = false) => {
 // RAGからの自動生成機能
 if (generateRagBtn) {
   generateRagBtn.addEventListener('click', async () => {
-    const theme = simpleTag.value;
+    let theme = simpleTag.value;
+    if (theme === 'custom') {
+      theme = customThemeInput.value.trim();
+    }
     if (!theme) {
-      alert('自動生成する前に「投稿テーマ」を選択してください。');
+      alert('自動生成する前に「投稿テーマ」を選択または直接入力してください。');
       return;
     }
     generateRagBtn.textContent = '⏳ 生成中...';
@@ -75,7 +106,7 @@ if (generateRagBtn) {
       console.error(err);
       alert('エラー: ' + err.message);
     } finally {
-      generateRagBtn.textContent = '🤖 思想RAGから自動生成';
+      generateRagBtn.textContent = '🤖 思想RAGから自動生成する';
       generateRagBtn.disabled = false;
     }
   });
@@ -153,10 +184,11 @@ form.addEventListener('submit', async (event) => {
       shotDate: null,
       location: '',
       catName: '',
-      simpleTag: simpleTag.value || null,
+      simpleTag: simpleTag.value === 'custom' ? customThemeInput.value.trim() : (simpleTag.value || null),
       visibility: visibility.value,
       ngMemo: ngMemo.value.trim(),
       channels: selectedChannels,
+      instagramType: document.querySelector('input[name="instagramType"]:checked')?.value || 'reels',
       channelSettings,
       assets: assets,
       postAttachAssets: postAttachAssets,
@@ -349,25 +381,49 @@ function renderChannelSettings(row) {
 
     let mediaPreviewHtml = '';
     if (channel === 'instagram') {
-      if (row.videoUrl) {
-        mediaPreviewHtml = `
-          <div style="margin: 8px 0;">
-            <span style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">🎥 配信されるリール動画:</span>
-            <video src="${escapeHtml(row.videoUrl)}" controls style="width: 100%; max-width: 240px; height: auto; border-radius: 8px; border: 1px solid var(--line); background: #000;"></video>
-          </div>
-        `;
-      } else if (row.videoStatus === 'completed') {
-        mediaPreviewHtml = `
-          <div style="margin: 8px 0; padding: 10px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; font-size: 12px; color: #10b981; text-align: left;">
-            ✅ 動画生成完了 — プレビューボタンからシミュレーション再生できます
-          </div>
-        `;
+      const instagramType = row.instagramType || 'reels';
+      const isReel = instagramType === 'reels';
+
+      if (isReel) {
+        if (row.videoUrl) {
+          mediaPreviewHtml = `
+            <div style="margin: 8px 0;">
+              <span style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">🎥 配信されるリール動画 (Reels):</span>
+              <video src="${escapeHtml(row.videoUrl)}" controls style="width: 100%; max-width: 240px; height: auto; border-radius: 8px; border: 1px solid var(--line); background: #000;"></video>
+            </div>
+          `;
+        } else if (row.videoStatus === 'completed') {
+          mediaPreviewHtml = `
+            <div style="margin: 8px 0; padding: 10px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; font-size: 12px; color: #10b981; text-align: left;">
+              ✅ 動画生成完了 — プレビューボタンからシミュレーション再生できます
+            </div>
+          `;
+        } else {
+          mediaPreviewHtml = `
+            <div style="margin: 8px 0; padding: 10px; background: rgba(30, 41, 59, 0.3); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; color: #94a3b8; text-align: left;">
+              ⏳ 動画の生成完了を待っています...
+            </div>
+          `;
+        }
       } else {
-        mediaPreviewHtml = `
-          <div style="margin: 8px 0; padding: 10px; background: rgba(30, 41, 59, 0.3); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; color: #94a3b8; text-align: left;">
-            ⏳ 動画の生成完了を待っています...
-          </div>
-        `;
+        // フィード投稿 (画像) の場合
+        const feedAssets = setting.assets || row.assets || [];
+        if (feedAssets.length > 0) {
+          mediaPreviewHtml = `
+            <div style="margin: 8px 0;">
+              <span style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">📷 フィード投稿される画像 (Feed):</span>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                ${feedAssets.map(renderAsset).join('')}
+              </div>
+            </div>
+          `;
+        } else {
+          mediaPreviewHtml = `
+            <div style="margin: 8px 0; padding: 10px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; font-size: 12px; color: #ef4444; text-align: left;">
+              ⚠️ 画像が登録されていません。フィード投稿には画像が必要です。
+            </div>
+          `;
+        }
       }
     } else if (channel === 'x') {
       const attachAssets = row.postAttachAssets || [];
