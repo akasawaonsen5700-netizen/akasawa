@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>クチコミ返信ジェネレーター | 赤沢温泉旅館</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>赤沢温泉旅館 クチコミ返信エージェント</h1>
+      <p>過去の返信履歴（RAG）とオーナーの思想を基に、3パターンの返信案を自動生成します。</p>
+    </header>
+
+    <main class="main-content">
+      <section class="input-section">
+        <h2>お客様からのクチコミ</h2>
+        <textarea id="review-input" placeholder="ここにクチコミの文章を貼り付けてください..."></textarea>
+        <button id="generate-btn" class="primary-btn">
+          <span class="btn-text">AI 返信案を生成する</span>
+          <span class="spinner" id="loading-spinner" style="display: none;"></span>
+        </button>
+        <div id="error-message" class="error-msg"></div>
+      </section>
+
+      <section class="output-section" id="output-section" style="display: none;">
+        <h2>生成された返信案（3パターン）</h2>
+        
+        <div class="reply-card">
+          <div class="card-header">
+            <h3>パターンA：標準的で丁寧な返信</h3>
+            <button class="copy-btn" data-target="reply-standard">コピー</button>
+          </div>
+          <div class="card-body">
+            <textarea id="reply-standard" readonly></textarea>
+          </div>
+        </div>
+
+        <div class="reply-card">
+          <div class="card-header">
+            <h3>パターンB：感情に寄り添った長めの返信</h3>
+            <button class="copy-btn" data-target="reply-empathetic">コピー</button>
+          </div>
+          <div class="card-body">
+            <textarea id="reply-empathetic" readonly></textarea>
+          </div>
+        </div>
+
+        <div class="reply-card">
+          <div class="card-header">
+            <h3>パターンC：簡潔な返信</h3>
+            <button class="copy-btn" data-target="reply-concise">コピー</button>
+          </div>
+          <div class="card-body">
+            <textarea id="reply-concise" readonly></textarea>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

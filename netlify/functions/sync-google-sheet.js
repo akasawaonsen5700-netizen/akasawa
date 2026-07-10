@@ -2,6 +2,7 @@ const { google } = require('googleapis');
 const { getDb, admin } = require('./_lib/firebase-admin');
 const { ok, json } = require('./_lib/helpers');
 const { buildDraftPackage } = require('./_lib/ai');
+const { triggerAutoRenderFlow } = require('./_lib/auto-render-flow');
 
 function auth() {
   const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '{}');
@@ -11,7 +12,7 @@ function auth() {
   });
 }
 
-exports.handler = async () => {
+exports.handler = async (event) => {
   try {
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
     const range = process.env.GOOGLE_SHEET_RANGE || 'queue!A1:Z';
@@ -38,7 +39,7 @@ exports.handler = async () => {
         publishAt: item.publishAt || null,
         visibility: item.visibility || 'review',
         ngMemo: item.ngMemo || '',
-        channels: (item.channels || 'instagram,gbp').split(',').map(v => v.trim()).filter(Boolean),
+        channels: (item.channels || 'instagram,x').split(',').map(v => v.trim()).filter(Boolean),
         assets: [{
           name: item.mediaName || 'sheet-media',
           type: item.mediaType || 'image/jpeg',
@@ -48,13 +49,18 @@ exports.handler = async () => {
         }]
       };
       const draftPackage = await buildDraftPackage(normalized);
-      await db.collection('submissions').add({
+      const data = {
         ...normalized,
         ...draftPackage,
         source: 'google-sheet-sync',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
+      };
+      const docRef = await db.collection('submissions').add(data);
+
+      // 自動音声合成＆自動動画レンダリングを非同期で開始
+      await triggerAutoRenderFlow(db, docRef, data, item.voiceUrl || null);
+
       imported += 1;
     }
 

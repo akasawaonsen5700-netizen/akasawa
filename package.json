@@ -13,7 +13,8 @@
     "dev:endo": "node pre-dev.js && netlify dev --port=8891 --staticServerPort=3996 --filter=endo-sns-personal-tool",
     "dev:dp": "npm run dev --workspace=apps/akasawa.dp",
     "dev:crm": "npm run dev --workspace=apps/akasawa-ml",
-    "dev:chat": "npm run dev --workspace=apps/akasawa-chat"
+    "dev:chat": "npm run dev --workspace=apps/akasawa-chat",
+    "dev:review": "netlify dev --port=8895 --staticServerPort=3995 --filter=akasawa-review -d apps/akasawa-review/public"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
@@ -27,13 +28,14 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@remotion/lambda": "^4.0.120",
     "@remotion/cli": "^4.0.120",
+    "@remotion/lambda": "^4.0.120",
     "@remotion/renderer": "^4.0.120",
-    "remotion": "^4.0.120",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "cheerio": "^1.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3"
+    "remotion": "^4.0.120"
   }
 }

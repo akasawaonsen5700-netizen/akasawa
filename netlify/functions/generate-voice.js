@@ -1,7 +1,7 @@
-const { generateVoiceFromText } = require('./_lib-endo/gemini-tts');
-const { generateVoiceFromCartesia } = require('./_lib-endo/cartesia-tts');
-const { getDb } = require('./_lib-endo/firebase-admin');
-const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib-endo/helpers');
+const { generateVoiceFromText } = require('./_lib/gemini-tts');
+const { generateVoiceFromCartesia } = require('./_lib/cartesia-tts');
+const { getDb } = require('./_lib/firebase-admin');
+const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib/helpers');
 const { z } = require('zod');
 
 const schema = z.object({
@@ -18,7 +18,7 @@ exports.handler = async (event) => {
     const payload = schema.parse(parseBody(event));
     const filename = `voice_${payload.submissionId || Date.now()}_${payload.voiceName}.wav`;
     
-    // Cartesia の設定が存在する場合は Cartesia API で遠藤正俊クローン音声を生成し、
+    // Cartesia の設定が存在する場合は Cartesia API で赤沢温泉旅館クローン音声を生成し、
     // そうでない場合は従来どおり Gemini API で生成する
     let audioUrl;
     if (process.env.CARTESIA_API_KEY && process.env.CARTESIA_VOICE_ID) {

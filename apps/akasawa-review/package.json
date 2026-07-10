@@ -1,0 +1,16 @@
+{
+  "name": "akasawa-review",
+  "version": "1.0.0",
+  "description": "Akasawa Onsen Review Reply Agent",
+  "scripts": {
+    "dev": "netlify dev",
+    "start": "netlify dev",
+    "build": "echo 'Static app build not required'"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.36.1"
+  }
+}

@@ -1,0 +1,64 @@
+name: Synchronize Reviews RAG Database
+
+on:
+  schedule:
+    # 毎日 UTC 19:00 (日本時間 午前4:00) に自動実行
+    - cron: '0 19 * * *'
+  workflow_dispatch:
+    # 手動での即時実行も可能にする
+    inputs:
+      manual_mode:
+        description: '手動挿入モードで実行する場合は true'
+        required: false
+        default: 'false'
+      review_text:
+        description: '手動入力するクチコミ本文'
+        required: false
+      reply_text:
+        description: '手動入力する実際の返信文'
+        required: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Run Review Sync Script (Auto/Manual)
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: |
+        if [ "${{ github.event.inputs.manual_mode }}" = "true" ]; then
+          node scripts/sync_reviews.js --manual --review="${{ github.event.inputs.review_text }}" --reply="${{ github.event.inputs.reply_text }}"
+        else
+          node scripts/sync_reviews.js
+        fi
+
+    - name: Check for Changes & Commit
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # 変更された過去事例 markdown ファイルがあるかチェック
+        git add netlify/functions/_lib-review/past_reviews.md
+        git add apps/akasawa-review/netlify/functions/_lib/past_reviews.md
+        git add apps/akasawa-chat/past_reviews.md
+        
+        # 差分がある場合のみコミットとプッシュを行う
+        if git diff --cached --quiet; then
+          echo "No new reviews or changes to commit."
+        else
+          git commit -m "auto: synchronize new Rakuten/Jalan reviews to RAG database"
+          git push
+        fi

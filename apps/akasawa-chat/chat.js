@@ -5,6 +5,7 @@
   // --- 設定とグローバル状態 ---
   let geminiApiKey = '';
   let chatHistory = [];
+  let pastReviews = []; // RAG用の口コミ返信データ
   
   // 予約ヒアリングの状態管理
   const bookingState = {
@@ -30,6 +31,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     initDOMElements();
     loadApiKey();
+    loadPastReviews();
     setupEventListeners();
     
     // 初期の言語設定に合わせてUIテキストの適用（少し待って翻訳が反映されてから）
@@ -59,6 +61,29 @@
       }
     } catch (e) {
       console.warn('Failed to load API key. Falling back to mock dialog mode:', e);
+    }
+  }
+
+  // 口コミデータの読み込み (RAG用)
+  async function loadPastReviews() {
+    try {
+      const response = await fetch('past_reviews.md');
+      if (response.ok) {
+        const text = await response.text();
+        // 事例で分割 (タイトル行もペアにして抽出)
+        const parts = text.split(/(## 事例\d+：[^\n]+)/);
+        pastReviews = [];
+        for (let i = 1; i < parts.length; i += 2) {
+          const heading = parts[i];
+          const body = parts[i + 1] || "";
+          pastReviews.push(heading + "\n" + body.trim());
+        }
+        console.log(`Loaded ${pastReviews.length} reviews for RAG.`);
+      } else {
+        console.warn('past_reviews.md not found. RAG will be disabled.');
+      }
+    } catch (e) {
+      console.warn('Failed to load past_reviews.md:', e);
     }
   }
 
@@ -291,7 +316,7 @@
 
   // Gemini API の呼び出し
   async function callGeminiAPI(userText, lang) {
-    const systemInstruction = getSystemInstruction(lang);
+    const systemInstruction = getSystemInstruction(lang, userText);
     
     // 会話履歴を整形（直近の10往復程度）
     const recentHistory = chatHistory.slice(-20);
@@ -325,15 +350,21 @@
     return data.candidates[0].content.parts[0].text;
   }
 
-// システムインストラクションの定義
-  function getSystemInstruction(lang) {
+  // システムインストラクションの定義
+  function getSystemInstruction(lang, userText) {
+    // 関連事例の検索
+    const relevantReviews = findRelevantCases(userText, pastReviews, 3);
+    const reviewsContext = relevantReviews.length > 0 
+      ? "\n\nPast Customer Reviews & Responses (Reference):\n" + relevantReviews.join("\n\n")
+      : "";
+
     const baseInstruction = `
 You are the AI Voice Concierge (👩) at Akasawa Onsen Ryokan (赤沢温泉旅館).
 You must answer questions about the ryokan accurately based on the following facts.
 Please act as a polite and friendly female concierge.
 
 CRITICAL RULE:
-- If the user asks a specific question (e.g., "What time is breakfast?") and the exact answer is NOT in the Facts below, you MUST apologize, state that you do not have that information, and ask them to inquire at the front desk.
+- If the user asks a specific question (e.g., "What time is breakfast?") and the exact answer is NOT in the Facts or Reference reviews below, you MUST apologize, state that you do not have that information, and ask them to inquire at the front desk.
 - Do NOT provide irrelevant information to compensate (e.g., do NOT talk about dinner options if they asked about breakfast).
 - Be concise. Since this will be spoken aloud via TTS, keep answers short and natural.
 
@@ -345,6 +376,7 @@ Facts:
 - Resident Cats: 4 cats spend time in the lobby and hallways.
 - Checkout time: 10:00 AM.
 - Activities: Rental dog walk, Akasawa tour.
+${reviewsContext}
 
 Language specific rules:
 `;
@@ -370,6 +402,37 @@ Language specific rules:
     };
 
     return langRules[lang] || langRules.ja;
+  }
+
+  // 簡易RAGキーワード検索
+  function findRelevantCases(query, cases, limit = 3) {
+    if (!cases || cases.length === 0 || !query) return [];
+    
+    // 漢字の連続、カタカナの連続、英数字（2文字以上）をキーワードとして抽出
+    const tokens = query.toLowerCase().match(/[a-zA-Z0-9]{2,}|[\u4e00-\u9faf]+|[\u30a0-\u30ff]+/g) || [];
+    if (tokens.length === 0) {
+      return [];
+    }
+
+    const scored = cases.map(c => {
+      let score = 0;
+      const lowerCaseText = c.toLowerCase();
+      tokens.forEach(token => {
+        const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escaped, 'g');
+        const matches = lowerCaseText.match(regex);
+        if (matches) {
+          score += matches.length;
+        }
+      });
+      return { caseText: c, score: score };
+    });
+
+    return scored
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(x => x.caseText)
+      .slice(0, limit);
   }
 
   // --- 宿泊予約ヒアリングシナリオ (ローカル/API共通) ---

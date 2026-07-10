@@ -4,12 +4,12 @@ const fs = require('fs');
 const { getBucket } = require('./firebase-admin');
 
 function getEndoSnsDir() {
-  const match = __dirname.match(/(.*[\\/]apps[\\/]endo-sns)/i);
+  const match = __dirname.match(/(.*[\\/]apps[\\/]akasawa-sns)/i);
   if (match) return match[1];
   const rootDir = process.cwd();
-  const directPath = path.join(rootDir, 'apps', 'endo-sns');
+  const directPath = path.join(rootDir, 'apps', 'akasawa-sns');
   if (!rootDir.includes('.netlify') && fs.existsSync(directPath)) return directPath;
-  return path.resolve(__dirname, '..', '..', '..', 'apps', 'endo-sns');
+  return path.resolve(__dirname, '..', '..', '..', 'apps', 'akasawa-sns');
 }
 
 function logDebug(message) {

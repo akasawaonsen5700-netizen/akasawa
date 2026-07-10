@@ -1,6 +1,6 @@
 const { z } = require('zod');
-const { getDb } = require('./_lib-endo/firebase-admin');
-const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib-endo/helpers');
+const { getDb } = require('./_lib/firebase-admin');
+const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib/helpers');
 
 const schema = z.object({
   id: z.string().min(1)

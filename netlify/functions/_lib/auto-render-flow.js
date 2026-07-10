@@ -5,12 +5,12 @@ const fs = require('fs');
 const path = require('path');
 
 function getEndoSnsDir() {
-  const match = __dirname.match(/(.*[\\/]apps[\\/]endo-sns)/i);
+  const match = __dirname.match(/(.*[\\/]apps[\\/]akasawa-sns)/i);
   if (match) return match[1];
   const rootDir = process.cwd();
-  const directPath = path.join(rootDir, 'apps', 'endo-sns');
+  const directPath = path.join(rootDir, 'apps', 'akasawa-sns');
   if (!rootDir.includes('.netlify') && fs.existsSync(directPath)) return directPath;
-  return path.resolve(__dirname, '..', '..', '..', 'apps', 'endo-sns');
+  return path.resolve(__dirname, '..', '..', '..', 'apps', 'akasawa-sns');
 }
 
 async function ensureBgmDownloaded(localBgmPath, remoteBgmUrl) {
@@ -110,9 +110,9 @@ async function triggerAutoRenderFlow(db, docRef, data, rawVoiceUrl) {
 
     // AWS Lambdaからは絶対URLでないとアクセスできないため、finalVoiceUrlをそのまま使用する
     let absoluteVoiceUrl = finalVoiceUrl;
-    if (finalVoiceUrl === '/endo-sns/endo.mp3' || finalVoiceUrl === '/endo.mp3') {
+    if (finalVoiceUrl === '/akasawa-sns/endo.mp3' || finalVoiceUrl === '/endo.mp3') {
       // プロジェクト内アセットの場合は、本番のフルURLに変換
-      absoluteVoiceUrl = 'https://akasawa.netlify.app/endo-sns/endo.mp3';
+      absoluteVoiceUrl = 'https://akasawa.netlify.app/akasawa-sns/endo.mp3';
     }
 
     const props = {

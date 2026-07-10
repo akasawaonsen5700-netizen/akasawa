@@ -1,5 +1,5 @@
 const { getRenderProgress } = require('@remotion/lambda-client');
-const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib-endo/helpers');
+const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib/helpers');
 
 /**
  * AWS Lambdaで実行中のRemotion動画生成進捗を取得して返します。

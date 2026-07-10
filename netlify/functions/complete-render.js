@@ -1,5 +1,5 @@
-const { getDb, admin } = require('./_lib-endo/firebase-admin');
-const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib-endo/helpers');
+const { getDb, admin } = require('./_lib/firebase-admin');
+const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib/helpers');
 
 /**
  * AWS Lambdaで動画生成が正常終了したことを受け取り、
