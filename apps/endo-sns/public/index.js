@@ -1056,5 +1056,64 @@ refreshBtn.addEventListener('click', loadQueue);
 statusFilter.addEventListener('change', loadQueue);
 channelFilter.addEventListener('change', loadQueue);
 
+// AIトレンド提案のロード
+async function loadTrendSuggestions() {
+  const listEl = document.getElementById('suggestionList');
+  if (!listEl) return;
+  
+  try {
+    const res = await fetch('/.netlify/functions/get-trend-suggestions');
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || '提案の取得に失敗しました');
+    }
+    const suggestions = await res.json();
+    
+    if (!suggestions || suggestions.length === 0) {
+      listEl.innerHTML = '<div style="font-size: 12px; color: #94a3b8;">現在おすすめのトレンドテーマはありません。</div>';
+      return;
+    }
+
+    listEl.innerHTML = suggestions.map(s => `
+      <div class="suggestion-item" data-theme="${escapeHtml(s.theme)}" style="background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid var(--line); cursor: pointer; transition: all 0.2s ease;">
+        <strong style="font-size: 13px; color: var(--accent); display: block; margin-bottom: 2px;">🔥 ${escapeHtml(s.title)}</strong>
+        <p style="margin: 0; font-size: 12px; color: #cbd5e1; line-height: 1.4;">${escapeHtml(s.theme)}</p>
+        <span style="display: block; font-size: 11px; color: #94a3b8; margin-top: 4px; border-top: 1px dashed var(--line); padding-top: 4px; line-height: 1.3;">
+          💡 <strong>狙いと効果:</strong> ${escapeHtml(s.reason)}
+        </span>
+      </div>
+    `).join('');
+    
+    // クリックイベントの設定
+    [...listEl.querySelectorAll('.suggestion-item')].forEach(item => {
+      item.addEventListener('click', () => {
+        const themeText = item.dataset.theme;
+        const simpleTag = document.getElementById('simpleTag');
+        const customThemeContainer = document.getElementById('customThemeContainer');
+        const customThemeInput = document.getElementById('customThemeInput');
+        
+        if (simpleTag && customThemeContainer && customThemeInput) {
+          simpleTag.value = 'custom';
+          customThemeContainer.style.display = 'block';
+          customThemeInput.value = themeText;
+          customThemeInput.focus();
+          
+          // 選択されたことが分かりやすいように一瞬背景を光らせるアニメーション効果
+          customThemeInput.style.transition = 'none';
+          customThemeInput.style.background = 'rgba(59, 130, 246, 0.25)';
+          setTimeout(() => {
+            customThemeInput.style.transition = 'background 0.5s ease';
+            customThemeInput.style.background = '#0f172a';
+          }, 150);
+        }
+      });
+    });
+  } catch (err) {
+    console.error('Failed to load trend suggestions:', err);
+    listEl.innerHTML = `<div style="font-size: 12px; color: #f87171;">⚠️ 提案の読み込みに失敗しました (${escapeHtml(err.message)})</div>`;
+  }
+}
+
 // 初期起動時のデータ読み込み
 loadQueue();
+loadTrendSuggestions();
