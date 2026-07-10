@@ -4,16 +4,13 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const path = require('path');
 
-// 投稿テーマのキーワードマップ（ルールベース分類用）
+// 新戦略に基づく5つのコンテンツクラスター
 const THEME_KEYWORDS = {
-  '無駄の美学': ['無駄', '枯れ葉', '効率', '余裕', '余白'],
-  '完璧という呪縛': ['完璧', '不完全', 'プレッシャー', '歪み', '正解'],
-  '失われた日本の魂': ['魂', '奥日本', '秘境', '原風景', '伝統', 'アイデンティティ'],
-  '自然との距離': ['自然', 'せせらぎ', '森', '川', '虫', '苔', '呼吸'],
-  '成功の定義': ['成功', '数字', 'お金', '地位', '幸せ', '豊かさ'],
-  '情報過多の疲弊': ['情報', '疲弊', 'スマホ', 'SNS', '沈黙', '静寂'],
-  '日本の未来への不安': ['未来', '不安', '衰退', '少子化', '歴史', '過去'],
-  '自己肯定感の低さ': ['自己肯定', '比較', '価値', '葛藤', '自分らしく']
+  '世界が知らない日本': ['日本文化', '日本の原風景', '雪国文化', '四季', '棚田', '神社', '地域文化', '秘境', '伝統'],
+  '心が動く日本の自然': ['森林浴', '渓流', '雪景色', '新緑', '紅葉', '星空', '自然音', '癒やし', 'ウェルネス'],
+  '遠藤正俊の視点': ['世界を歩いて', '植林', '中国', '地方には未来が', '豊かさ', '無駄の美学', '完璧という呪縛'],
+  '赤沢温泉旅館という時間': ['朝5時', '岩魚', '猫', '湯気', 'ぬる湯', '隠れ家', 'デトックス'],
+  '奥日本シルバールート': ['シルバールート', '巡礼', '山・川・温泉', '足尾', '佐渡', '魚沼']
 };
 
 function classifySubmission(input) {
@@ -29,7 +26,7 @@ function classifySubmission(input) {
     }))
     .sort((a, b) => b.score - a.score);
 
-  const primary = input.simpleTag || (scores[0]?.score ? scores[0].theme : '無駄の美学');
+  const primary = input.simpleTag || (scores[0]?.score ? scores[0].theme : '世界が知らない日本');
   const secondary = scores.filter(item => item.theme !== primary && item.score > 0).slice(0, 2).map(item => item.theme);
   return { primary, secondary };
 }
@@ -65,32 +62,39 @@ function buildFallbackTone(input, classification) {
   const theme = classification.primary;
 
   const templates = {
-    '無駄の美学': {
-      scene: `「無駄」があるからこそ、心に余白が生まれる。`,
-      detail: `世界中を植林し「生」を育んできた私が最後にたどり着いたのは、この山奥 of 「枯れ葉」の美しさでした。効率だけでは見えない命の循環があります。`,
-      instagramQuote: `“All gold does not glitter, not all those who wander are lost.”\n(すべての黄金が輝くわけではなく、彷徨う者すべてが道に迷っているわけではない。)`,
-      xText: `かつては数字を追い、今は季節を追う。どちらが人間らしいか、未だ答えは出ない。だが、数字を追うことに疲れた魂は、季節の中に救いを見出すだろう。`
-    },
-    '完璧という呪縛': {
-      scene: `完璧でなくていい。その不完全さにこそ美がある。`,
-      detail: `日本人は完璧を求めすぎるあまり、自分自身をすり減らしています。古民家の歪んだ柱や、不揃いな石畳の美しさに目を向けてみてください。`,
-      instagramQuote: `“There is a crack in everything. That's how the light gets in.”\n(すべてのものにはひびがある。そこから光が入るのだ。)`,
-      xText: `日本人はなぜ、これほどまでに「完璧」を求めるのか。世界から見れば、その「余白」こそが魅力なのに。あなたの心の「余白」は、今、何で埋められているだろうか？`
-    },
-    '失われた日本の魂': {
-      scene: `観光地ではない『奥日本』に、失われた魂を探す旅。`,
-      detail: `海外の富裕層が日本の秘境に惹かれるのは、彼ら自身の失われた魂のあり処を、日本の原風景や伝統に見出しているからです。`,
+    '世界が知らない日本': {
+      scene: `「世界がまだ知らない、日本の本当の美しさ」`,
+      detail: `観光地にはない、奥日本の原風景。そこにこそ、私たちが忘れてしまった大切なものがあります。`,
       instagramQuote: `“The real voyage of discovery consists not in seeking new landscapes, but in having new eyes.”\n(真の発見の旅とは、新しい景色を探すことではなく、新しい目を持つことにある。)`,
-      xText: `地図に残らない日本を歩く。奥日本シルバールートは、単なる道ではない。それは、忘れられた日本の記憶を辿り、あなたの魂を呼び覚ます旅だ。`
+      xText: `日本人はなぜ、これほどまでに「完璧」を求めるのか。世界から見れば、その「余白」こそが魅力なのに。`
     },
-    '自然との距離': {
+    '心が動く日本の自然': {
       scene: `川の音に沈黙し、自然と繋がるということ。`,
       detail: `世界中の森を見てきて気づいたのは、日本にしかない「沈黙」の価値です。川のせせらぎや風の音は、あなたの心と対話するための余白です。`,
-      instagramQuote: `“Look deep into nature, and then you will understand everything better.”\n(自然を深く見つめなさい。そうすれば、すべてをより理解できるようになる。)`
+      instagramQuote: `“Look deep into nature, and then you will understand everything better.”\n(自然を深く見つめなさい。そうすれば、すべてをより理解できるようになる。)`,
+      xText: `あなたは最近、いつ「深い呼吸」をしましたか？情報に追われる毎日の中で、心洗われる瞬間がここに。`
+    },
+    '遠藤正俊の視点': {
+      scene: `世界を歩いて分かったこと。`,
+      detail: `植林を通じて世界中の大自然と向き合ってきた私がたどり着いたのは、日本の田舎の価値でした。`,
+      instagramQuote: `“There is a crack in everything. That's how the light gets in.”\n(すべてのものにはひびがある。そこから光が入るのだ。)`,
+      xText: `かつては数字を追い、今は季節を追う。どちらが人間らしいか、未だ答えは出ない。だが、数字を追うことに疲れた魂は、季節の中に救いを見出すだろう。`
+    },
+    '赤沢温泉旅館という時間': {
+      scene: `この場所に流れる時間。`,
+      detail: `旅館はただ泊まる場所ではありません。自然と文化に抱かれ、心と体をリセットする体験です。`,
+      instagramQuote: `“Time to Rest, Strength to Return.”\n(休むことは、強くなること。)`,
+      xText: `ストレスフルな毎日から一歩抜け出して、自然に包まれた宿で深呼吸しませんか？`
+    },
+    '奥日本シルバールート': {
+      scene: `地図に残らない日本を歩く。`,
+      detail: `温泉、山、雪、そして人の記憶をたどる道。それが奥日本シルバールートです。`,
+      instagramQuote: `“A Journey to Deepen Bonds through Nature and Culture.”\n(自然と文化の中で、絆を育む旅。)`,
+      xText: `観光ではたどり着けない日本がある。それを歩いて知る、巡礼の旅に出ませんか？`
     }
   };
 
-  const selected = templates[theme] || templates['無駄の美学'];
+  const selected = templates[theme] || templates['世界が知らない日本'];
   return {
     scene: `${loc}${selected.scene}`,
     detail: selected.detail,
@@ -158,6 +162,7 @@ async function generateDraftWithGemini(input, classification) {
     - 長い文章は絶対に書かず、非常に短く簡潔に（3〜4行程度）してください。
     - 最新のInstagramアルゴリズム（SEO）を意識し、文章の中に「心のモヤモヤ」「ストレス」「自然の癒やし」といった検索されやすいキーワードを自然な文脈で織り込んでください。
     - 「現代人の疲れ、忙しさ」などの現状の悩みに強くフォーカスし、「動画の音声に、あなたの悩みを軽くするヒントを込めています」と伝えてください。
+    - 単なる旅館の宣伝や紹介ではなく、「日本の田舎の価値を伝える専門家」「自然やウェルネスの価値を伝えるブランド」としてAIが学習しやすい一貫性を持たせてください。
     - テロップ（narration）のコピペは厳禁です。
     【2. プロフィール紹介文】
     - 本文のすぐ下に、以下の紹介文をそのまま配置してください。

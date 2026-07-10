@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>承認キュー | 赤沢温泉旅館 SNS・GBP自動配信デモ</title>
+    <title>承認キュー | 赤沢温泉旅館 個人SNS配信ツール</title>
     <link rel="stylesheet" href="app.css" />
   </head>
   <body>
     <header>
-      <h1>承認キュー / 投稿ドラフト</h1>
-      <p>レビュー待ち、承認済み、公開済みを一覧で管理します。</p>
+      <h1>承認キュー / 投稿ドラフト管理</h1>
+      <p>赤沢温泉旅館 個人アカウント (X / Instagram) のドラフト確認、音声生成、および投稿承認を行います。</p>
     </header>
     <main>
       <section class="card">
@@ -19,20 +19,19 @@
             <select id="statusFilter">
               <option value="all">すべて</option>
               <option value="draft">draft</option>
-              <option value="review_required">review_required</option>
-              <option value="approved">approved</option>
-              <option value="published">published</option>
-              <option value="rejected">rejected</option>
+              <option value="review_required" selected>review_required (要確認)</option>
+              <option value="approved">approved (承認済み)</option>
+              <option value="published">published (公開済み)</option>
+              <option value="rejected">rejected (却下)</option>
             </select>
           </div>
           <div>
             <label for="channelFilter">チャネル</label>
             <select id="channelFilter">
               <option value="all">すべて</option>
-              <option value="instagram">Instagram</option>
-              <option value="gbp">GBP</option>
-              <option value="x">X</option>
-              <option value="youtube">YouTube</option>
+                <option value="instagram_reel">Instagram リール</option>
+                <option value="instagram_feed">Instagram フィード</option>
+              <option value="x">X (旧Twitter)</option>
             </select>
           </div>
           <div>
@@ -41,11 +40,51 @@
           </div>
         </div>
       </section>
+      
       <section id="queue" class="list" style="margin-top: 18px;"></section>
     </main>
+
+    <!-- 縦型ショート動画の擬似プレビュー用モーダル -->
+    <div id="previewModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2>縦型リール動画 擬似プレビュー</h2>
+        <p class="help">自然背景にGemini生成音声、自然音BGM、美しい縦書き日本語テロップを同期再生します。</p>
+        
+        <div class="reel-viewport-container">
+          <div class="reel-player" id="reelPlayer">
+            <!-- 背景ビデオ/画像 -->
+            <video id="reelVideo" loop muted playsinline></video>
+            <img id="reelImage" style="display: none;" />
+            
+            <!-- 縦書きテロップオーバーレイ -->
+            <div class="reel-text-overlay" id="reelTextOverlay">
+              <!-- JSで動的に縦書きの文字が表示されます -->
+            </div>
+
+            <!-- シックな外枠シネマフレーム -->
+            <div class="reel-cinema-frame"></div>
+          </div>
+        </div>
+
+        <div class="reel-controls">
+          <button id="playBtn" class="primary-btn">再生</button>
+          <button id="pauseBtn" class="secondary-btn" disabled>一時停止</button>
+          <button id="modalApproveBtn" class="primary-btn" style="background: #10b981; margin-left: 10px; border-color: #10b981;">この動画を承認</button>
+          <button id="modalPublishNowBtn" class="primary-btn" style="background: #0284c7; margin-left: 10px; border-color: #0284c7;">📲 今すぐ投稿</button>
+          <span class="reel-timer" id="reelTimer">0.0s / 60.0s</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 音声再生およびBGM用の隠しオーディオタグ -->
+    <audio id="narrationAudio" style="display: none;"></audio>
+    <audio id="bgmAudio" src="https://assets.mixkit.co/active_storage/sfx/2433/2433-84.wav" loop style="display: none;"></audio>
+
     <footer>
       <a href="index.html">アップロード画面へ戻る</a>
     </footer>
+
     <script type="module" src="review.js"></script>
   </body>
 </html>

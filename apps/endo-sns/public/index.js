@@ -40,11 +40,46 @@ const ngMemo = document.getElementById('ngMemo');
 const mediaFilesInput = document.getElementById('mediaFiles');
 const postAttachFilesInput = document.getElementById('postAttachFiles');
 const voiceFileInput = document.getElementById('voiceFile');
+const generateRagBtn = document.getElementById('generateRagBtn');
 
 const setMessage = (text, isError = false) => {
   message.textContent = text;
   message.style.color = isError ? '#ef4444' : '#10b981';
 };
+
+// RAGからの自動生成機能
+if (generateRagBtn) {
+  generateRagBtn.addEventListener('click', async () => {
+    const theme = simpleTag.value;
+    if (!theme) {
+      alert('自動生成する前に「投稿テーマ」を選択してください。');
+      return;
+    }
+    generateRagBtn.textContent = '⏳ 生成中...';
+    generateRagBtn.disabled = true;
+    try {
+      const response = await fetch('/.netlify/functions/generate-script-from-rag', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme })
+      });
+      const data = await response.json();
+      if (response.ok && data) {
+        if (data.hook) hookText.value = data.hook;
+        if (data.script) ownerComment.value = data.script;
+        setMessage('思想RAGからフックと台本を自動生成しました。');
+      } else {
+        throw new Error(data.error || '生成に失敗しました');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('エラー: ' + err.message);
+    } finally {
+      generateRagBtn.textContent = '🤖 思想RAGから自動生成';
+      generateRagBtn.disabled = false;
+    }
+  });
+}
 
 // ファイルアップロードヘルパー
 async function uploadFiles(files, channel) {

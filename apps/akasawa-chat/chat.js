@@ -24,7 +24,7 @@
   };
 
   // HTML UI要素
-  let messagesContainer, voiceToggleBtn, micBtn, textForm, textInput, waveIndicator, footerTip, voiceStatus;
+  let messagesContainer, textForm, textInput, waveIndicator, footerTip, voiceStatus;
 
   // --- 初期化 ---
   document.addEventListener('DOMContentLoaded', () => {
@@ -173,26 +173,6 @@
     const userLang = langConfig[lang] ? lang : 'ja';
     return fallback[userLang][key] || fallback['ja'][key] || '';
   }
-
-  // --- 音声合成 (TTS) ---
-  function speak(text) {
-    if (!isVoiceEnabled || !text) return;
-    
-    stopSpeaking(); // 現在の発声をクリア
-    
-    // 話している間は認識を一時停止
-    const wasRecording = isRecording;
-    if (isRecording) {
-      stopRecording();
-    }
-
-    isSpeaking = true;
-    const currentLang = document.documentElement.lang || 'ja';
-    const config = langConfig[currentLang] || langConfig.ja;
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = config.code;
-
 
   // --- メッセージ処理フロー ---
   function handleUserMessage(text) {
@@ -345,12 +325,17 @@
     return data.candidates[0].content.parts[0].text;
   }
 
-  // システムインストラクションの定義
+// システムインストラクションの定義
   function getSystemInstruction(lang) {
     const baseInstruction = `
 You are the AI Voice Concierge (👩) at Akasawa Onsen Ryokan (赤沢温泉旅館).
 You must answer questions about the ryokan accurately based on the following facts.
 Please act as a polite and friendly female concierge.
+
+CRITICAL RULE:
+- If the user asks a specific question (e.g., "What time is breakfast?") and the exact answer is NOT in the Facts below, you MUST apologize, state that you do not have that information, and ask them to inquire at the front desk.
+- Do NOT provide irrelevant information to compensate (e.g., do NOT talk about dinner options if they asked about breakfast).
+- Be concise. Since this will be spoken aloud via TTS, keep answers short and natural.
 
 Facts:
 - Concept: A quiet wellness retreat nested by cats, lukewarm hot springs, and mountain streams.
@@ -368,6 +353,7 @@ Language specific rules:
       ja: baseInstruction + `
 - Answer in Japanese.
 - Use a polite, formal and helpful Japanese tone (e.g. "〜でございます", "〜いたします").
+- 短く簡潔に回答してください（音声で読み上げられるため）。
 `,
       en: baseInstruction + `
 - Answer in English.

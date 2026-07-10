@@ -8,6 +8,11 @@
   external_node_modules = ["firebase-admin", "googleapis"]
 
 [[redirects]]
+  from = "/endo-sns/*"
+  to = "/:splat"
+  status = 200
+
+[[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
@@ -15,3 +20,7 @@
 [[scheduled.functions]]
   name = "publish-approved"
   cron = "*/15 * * * *"
+
+[dev]
+  port = 8891
+  staticServerPort = 3996

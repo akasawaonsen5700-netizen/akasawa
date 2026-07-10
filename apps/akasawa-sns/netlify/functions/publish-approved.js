@@ -2,11 +2,73 @@ const dayjs = require('dayjs');
 const { getDb, admin } = require('./_lib/firebase-admin');
 const { ok, json } = require('./_lib/helpers');
 const { publishToChannel } = require('./_lib/publishers');
+const { getRenderProgress } = require('@remotion/lambda-client');
 
 exports.handler = async () => {
   try {
     const db = getDb();
     const now = dayjs().toISOString();
+
+    // ----------------------------------------------------
+    // 【動画生成の自動回収スイーパー（Cron見回り）】
+    // ----------------------------------------------------
+    console.log('[Cron] Checking for rendering videos on AWS...');
+    const renderingSnap = await db.collection('submissions')
+      .where('videoStatus', '==', 'rendering_video')
+      .limit(10)
+      .get();
+
+    for (const doc of renderingSnap.docs) {
+      const data = doc.data();
+      const awsRenderId = data.awsRenderId;
+      const awsBucketName = data.awsBucketName;
+      const awsRegion = data.awsRegion || 'ap-northeast-1';
+      
+      if (!awsRenderId || !awsBucketName) {
+        continue;
+      }
+
+      try {
+        const awsAccessKey = process.env.REMOTION_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+        const awsSecretKey = process.env.REMOTION_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+        const functionName = process.env.REMOTION_AWS_FUNCTION_NAME;
+
+        if (awsAccessKey && awsSecretKey && functionName) {
+          process.env.AWS_ACCESS_KEY_ID = awsAccessKey;
+          process.env.AWS_SECRET_ACCESS_KEY = awsSecretKey;
+
+          const progress = await getRenderProgress({
+            region: awsRegion,
+            bucketName: awsBucketName,
+            renderId: awsRenderId,
+            functionName
+          });
+
+          if (progress.done) {
+            console.log(`[Cron] Video completed for submission: ${doc.id}`);
+            await doc.ref.update({
+              videoUrl: progress.outputFile,
+              'channelSettings.instagram.videoUrl': progress.outputFile,
+              videoStatus: 'completed',
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+          } else if (progress.fatalErrorEncountered) {
+            console.error(`[Cron] Video render failed for submission: ${doc.id}`);
+            await doc.ref.update({
+              videoStatus: 'failed',
+              videoError: progress.errors?.[0]?.message || 'AWS render fatal error',
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        }
+      } catch (checkErr) {
+        console.error(`[Cron] Error checking progress for ${doc.id}:`, checkErr);
+      }
+    }
+
+    // ----------------------------------------------------
+    // 【通常のSNS自動配信処理】
+    // ----------------------------------------------------
     const snapshot = await db.collection('submissions')
       .where('status', 'in', ['approved', 'publishing'])
       .limit(10)

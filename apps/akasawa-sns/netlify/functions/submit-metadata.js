@@ -2,8 +2,10 @@ const { z } = require('zod');
 const { getDb, admin } = require('./_lib/firebase-admin');
 const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib/helpers');
 const { buildDraftPackage } = require('./_lib/ai');
+const { triggerAutoRenderFlow } = require('./_lib/auto-render-flow');
 
 const schema = z.object({
+  hookText: z.string().optional().default(''),
   ownerComment: z.string().optional().default(''),
   shotDate: z.string().nullable().optional(),
   location: z.string().optional().default(''),
@@ -20,7 +22,14 @@ const schema = z.object({
     storagePath: z.string(),
     url: z.string().url()
   })).optional(),
-  channelSettings: z.record(z.object({
+  postAttachAssets: z.array(z.object({
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+    storagePath: z.string(),
+    url: z.string().url()
+  })).optional(),
+  channelSettings: z.record(z.string(), z.object({
     assets: z.array(z.object({
       name: z.string(),
       type: z.string(),
@@ -31,11 +40,13 @@ const schema = z.object({
     publishAt: z.string().nullable().optional()
   })).optional(),
   brandSnapshot: z.object({
+    ownerName: z.string().optional(),
     hotelName: z.string().optional(),
     officialSite: z.string().optional(),
     phone: z.string().optional(),
     brandCopy: z.string().optional()
-  }).optional()
+  }).optional(),
+  voiceUrl: z.string().url().nullable().optional()
 });
 
 exports.handler = async (event) => {
@@ -53,7 +64,11 @@ exports.handler = async (event) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
+
     await ref.set(data);
+
+    // 動画生成キックはフロントエンドからの非同期呼び出し(generate-assets-background)に委譲するため、ここではスキップします
+
     return ok({ id: ref.id, status: draftPackage.status, publishAt: draftPackage.publishAt });
   } catch (error) {
     console.error(error);

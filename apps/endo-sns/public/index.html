@@ -35,8 +35,11 @@
             </div>
 
             <div style="margin-top: 16px;">
-              <label for="ownerComment" style="font-weight: bold; color: var(--brand);">オーナーの投稿メモ / 動画台本 (必須)</label>
-              <textarea id="ownerComment" required placeholder="ここに投稿したい台本やインサイトメモを入力してください。例：立ち止まることは、後退ではないと私は思っています。海外で仕事をしていた頃、前に進むことが正しいとずっと思っていました……。" style="min-height: 120px;"></textarea>
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <label for="ownerComment" style="font-weight: bold; color: var(--brand);">オーナーの投稿メモ / 動画台本 (必須)</label>
+                <button type="button" id="generateRagBtn" class="primary-btn" style="background: var(--brand); font-size: 12px; padding: 4px 10px;">🤖 思想RAGから自動生成</button>
+              </div>
+              <textarea id="ownerComment" required placeholder="ここに投稿したい台本やインサイトメモを入力してください。例：立ち止まることは、後退ではないと私は思っています。海外で仕事をしていた頃、前に進むことが正しいとずっと思っていました……。" style="min-height: 120px; margin-top: 8px;"></textarea>
             </div>
 
             <div style="margin-top: 16px;">
@@ -60,15 +63,11 @@
               <div>
                 <label for="simpleTag">投稿テーマ</label>
                 <select id="simpleTag">
-                  <option value="">AIに自動判定させる</option>
-                  <option value="無駄の美学">無駄の美学</option>
-                  <option value="完璧という呪縛">完璧という呪縛</option>
-                  <option value="失われた日本の魂">失われた日本の魂</option>
-                  <option value="自然との距離">自然との距離</option>
-                  <option value="成功の定義">成功の定義</option>
-                  <option value="情報過多の疲弊">情報過多の疲弊</option>
-                  <option value="日本の未来への不安">日本の未来への不安</option>
-                  <option value="自己肯定感の低さ">自己肯定感の低さ</option>
+                  <option value="世界が知らない日本">世界が知らない日本</option>
+                  <option value="心が動く日本の自然">心が動く日本の自然</option>
+                  <option value="遠藤正俊の視点">遠藤正俊の視点</option>
+                  <option value="赤沢温泉旅館という時間">赤沢温泉旅館という時間</option>
+                  <option value="奥日本シルバールート">奥日本シルバールート</option>
                 </select>
               </div>
               <div>

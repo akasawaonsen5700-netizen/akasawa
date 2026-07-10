@@ -9,9 +9,10 @@ window.AKASAWA_CONFIG = {
   },
   apiBase: "/api",
   defaults: {
+    ownerName: "赤沢温泉旅館",
     hotelName: "赤沢温泉旅館",
     officialSite: "https://akasawaonsen.com/",
     phone: "0287-46-5700",
-    brandCopy: "塩原温泉の猫と源泉長湯にほどける、静養型ウェルネスの小宿 赤沢温泉旅館"
+    brandCopy: "世界を植林してきた博士が、日本の『枯れ葉』に見た、失われた魂の救済"
   }
 };

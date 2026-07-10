@@ -3,102 +3,73 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>赤沢温泉旅館 SNS・GBP自動配信デモ</title>
+    <title>赤沢温泉旅館 SNS・GBP自動配信</title>
     <link rel="stylesheet" href="app.css" />
   </head>
   <body>
     <header>
-      <h1>赤沢温泉旅館 SNS・GBP自動配信デモ</h1>
-      <p>猫 × ぬる湯 × 渓流 × 静養 を軸に、アップロード → 下書き生成 → 承認 → 自動投稿までを一気通貫。</p>
+      <h1>赤沢温泉旅館 SNS・GBP自動配信</h1>
+      <p>【登録 ➔ 生成 ➔ 投稿】の3ステップで、直観的にSNS運用を完結します</p>
     </header>
 
     <main>
-      <section class="hero">
-        <div class="card">
-          <h2>今回のデモ構成</h2>
-          <p>
-            デモは <strong>Googleスプレッドシート＋Firebase＋Netlify Functions</strong> を中核にしています。
-            画像/動画はWeb画面から簡単に登録し、承認キューと投稿スケジュールはSheetでも追える設計です。
-          </p>
-          <div>
-            <span class="pill">ブランド統一</span>
-            <span class="pill">自動分類</span>
-            <span class="pill">AI下書き</span>
-            <span class="pill">レビュー待ち判定</span>
-            <span class="pill">SNS/GBP配信</span>
+      <div class="dashboard-layout">
+        <!-- 左側：登録エリア (ステップ①) -->
+        <section class="card registration-section">
+          <div class="section-title">
+            <span class="step-badge">1</span>
+            <h2>登録：台本と背景の入力</h2>
           </div>
-          <div class="note" style="margin-top: 12px;">
-            公式ブランド表現は「塩原温泉の猫と源泉長湯にほどける、静養型ウェルネスの小宿 赤沢温泉旅館」を基準に固定しています。
-          </div>
-        </div>
-        <div class="card">
-          <h2>運用KPI</h2>
-          <div class="kpis">
-            <div class="kpi"><strong>週3</strong>Instagram推奨</div>
-            <div class="kpi"><strong>週1-2</strong>GBP推奨</div>
-            <div class="kpi"><strong>48h</strong>口コミ返信</div>
-            <div class="kpi"><strong>15分</strong>自動公開バッチ</div>
-          </div>
-          <p class="help">公開バッチは Netlify Scheduled Function で15分ごとに実行されます。</p>
-        </div>
-      </section>
-
-      <section class="grid-2">
-        <div class="card">
-          <h2>① 赤沢温泉旅館投稿登録</h2>
           <form id="uploadForm">
             <div class="channel-selection-card">
-              <label class="form-label-bold">投稿先チャンネル</label>
+              <label class="form-label-bold">投稿先チャネル</label>
               <div class="channel-grid">
-                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="instagram" checked /> Instagram</label>
-                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="gbp" checked /> GBP</label>
+                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="instagram_reel" checked /> Instagram リール</label>
+                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="instagram_feed" checked /> Instagram フィード</label>
+                <label class="channel-cb-label"><input type="checkbox" name="channelSelect" value="x" checked /> X (旧Twitter)</label>
               </div>
             </div>
 
             <div style="margin-top: 16px;">
-              <label for="mediaFiles">画像・動画</label>
-              <input id="mediaFiles" type="file" accept="image/*,video/*" multiple required />
-              <div class="help">投稿するファイルをアップロード（複数選択可）</div>
+              <label for="hookText" style="font-weight: bold; color: var(--accent);">🎣 動画の冒頭フック (任意)</label>
+              <textarea id="hookText" placeholder="動画の最初の画像に大きく表示する惹きつけ文章を入力してください。例：【必見】温泉に行く前に知っておくべき3つのこと" style="min-height: 80px;"></textarea>
             </div>
 
             <div style="margin-top: 16px;">
-              <label for="publishAt">希望公開日時</label>
-              <input id="publishAt" type="datetime-local" />
-              <div class="help">未指定時はAIの自動提案スケジュールが適用されます</div>
+              <label for="ownerComment" style="font-weight: bold; color: var(--brand);">オーナーの投稿メモ / 動画台本 (必須)</label>
+              <textarea id="ownerComment" required placeholder="ここに投稿したい台本やインサイトメモを入力してください。例：立ち止まることは、後退ではないと私は思っています。海外で仕事をしていた頃、前に進むことが正しいとずっと思っていました……。" style="min-height: 120px;"></textarea>
             </div>
 
             <div style="margin-top: 16px;">
-              <label for="ownerComment">コメント / 投稿メモ</label>
-              <textarea id="ownerComment" placeholder="例：今朝の露天は38〜39度。川音が静かで、猫のハナも玄関でのんびりしていました。"></textarea>
+              <label for="mediaFiles" style="font-weight: bold;">🎥 動画制作用の背景 (画像または動画)</label>
+              <input id="mediaFiles" type="file" accept="image/*,video/*" multiple />
+              <div class="help" style="margin-top: 4px; font-size: 11px; color: #94a3b8;">Instagram用の自動生成動画の背景として使用されます。</div>
             </div>
 
-            <div class="grid-3" style="margin-top: 16px;">
-              <div>
-                <label for="shotDate">撮影日</label>
-                <input id="shotDate" type="date" />
-              </div>
-              <div>
-                <label for="location">撮影場所</label>
-                <input id="location" type="text" placeholder="露天風呂 / ロビー / 客室 など" />
-              </div>
-              <div>
-                <label for="catName">猫の名前</label>
-                <input id="catName" type="text" placeholder="任意" />
-              </div>
+            <div style="margin-top: 16px;">
+              <label for="postAttachFiles" style="font-weight: bold;">📷 SNS直接投稿用の添付画像 (写真など)</label>
+              <input id="postAttachFiles" type="file" accept="image/*" multiple />
+              <div class="help" style="margin-top: 4px; font-size: 11px; color: #94a3b8;">XやInstagramに画像投稿として直接添付する画像ファイルです。</div>
+            </div>
+
+            <div style="margin-top: 16px;">
+              <label for="voiceFile">自身の録音音声ファイル (任意)</label>
+              <input id="voiceFile" type="file" accept="audio/*" />
             </div>
 
             <div class="grid-2" style="margin-top: 16px;">
               <div>
-                <label for="simpleTag">簡易タグ</label>
+                <label for="simpleTag">投稿テーマ</label>
                 <select id="simpleTag">
-                  <option value="">自動判定に任せる</option>
-                  <option value="猫">猫</option>
-                  <option value="ぬる湯">ぬる湯</option>
-                  <option value="渓流">渓流</option>
-                  <option value="静養">静養</option>
-                  <option value="料理">料理</option>
-                  <option value="客室">客室</option>
-                  <option value="アクセス">アクセス</option>
+                  <option value="">AIに自動判定させる</option>
+                  <option value="無駄の美学">無駄の美学</option>
+                  <option value="完璧という呪縛">完璧という呪縛</option>
+                  <option value="失われた日本の魂">失われた日本の魂</option>
+                  <option value="自然との距離">自然との距離</option>
+                  <option value="成功の定義">成功の定義</option>
+                  <option value="情報過多の疲弊">情報過多の疲弊</option>
+                  <option value="日本の未来への不安">日本の未来への不安</option>
+                  <option value="自己肯定感の低さ">自己肯定感の低さ</option>
                 </select>
               </div>
               <div>
@@ -111,42 +82,93 @@
             </div>
 
             <div style="margin-top: 16px;">
-              <label for="ngMemo">公開NGメモ / 注意事項</label>
-              <textarea id="ngMemo" placeholder="例：人物の顔は使わない、湯船全景のみ、送迎情報を末尾に入れる"></textarea>
+              <label for="ngMemo">公開NGメモ / 注意事項 (任意)</label>
+              <textarea id="ngMemo" placeholder="例：人物の顔は使用不可。"></textarea>
             </div>
 
-            <div class="actions">
-              <button type="submit">Firebaseへ登録して下書き生成</button>
-              <a href="review.html"><button type="button" class="secondary">承認キューを見る</button></a>
+            <div class="actions" style="margin-top: 24px;">
+              <button type="submit" class="submit-btn" style="width: 100%;">台本を登録して自動生成 ➔</button>
             </div>
             <p id="formMessage" class="help"></p>
           </form>
-        </div>
+        </section>
 
-        <div class="card">
-          <h2>② Googleスプレッドシート連携</h2>
-          <p>
-            このデモは Web入力を基本にしつつ、<strong>Googleスプレッドシートを承認台帳・投稿予定表</strong>として使えるようにしています。
-            Sheetから直接登録したい場合は、同梱の Apps Script を貼り付けると、行追加 → Netlify Webhook送信 で同じキューに入ります。
-          </p>
-          <div class="note">
-            ファイルそのものは Firebase Storage に保存します。理由は、画像/動画の扱いがGoogle Sheets単体より安定し、Netlifyとの相性が良いからです。
+        <!-- 右側：生成・投稿エリア (ステップ②＆③) -->
+        <section class="card queue-section">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--brand); padding-bottom: 12px; margin-bottom: 20px;">
+            <div class="section-title" style="border: none; padding: 0; margin: 0;">
+              <span class="step-badge" style="background: var(--accent);">2 & 3</span>
+              <h2>生成と投稿：AIドラフトの確認と配信</h2>
+            </div>
+            <button id="refreshBtn" class="primary-btn" style="padding: 6px 12px; font-size: 13px; background-color: var(--brand); border-color: var(--brand); border-radius: 6px;">🔄 更新</button>
           </div>
-          <ul>
-            <li>Sheet列: mediaUrl / ownerComment / location / catName / simpleTag / publishAt / channels</li>
-            <li>Apps Scriptで「新規行をWebhook送信」</li>
-            <li>承認後は publish-approved 関数が各配信先WebhookへPOST</li>
-          </ul>
-        </div>
-      </section>
+
+          <!-- フィルターコントロール -->
+          <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; background: rgba(30, 41, 59, 0.4); padding: 10px; border-radius: 10px; border: 1px solid var(--line);">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label for="statusFilter" style="font-size: 12px; font-weight: bold; color: #94a3b8;">ステータス:</label>
+              <select id="statusFilter" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); font-size: 12px; background: #0f172a; width: auto; color: white;">
+                <option value="all">すべて</option>
+                <option value="draft">draft (下書き)</option>
+                <option value="review_required" selected>review_required (要確認)</option>
+                <option value="approved">approved (承認済み)</option>
+                <option value="published">published (公開済み)</option>
+                <option value="rejected">rejected (却下)</option>
+              </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label for="channelFilter" style="font-size: 12px; font-weight: bold; color: #94a3b8;">チャネル:</label>
+              <select id="channelFilter" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); font-size: 12px; background: #0f172a; width: auto; color: white;">
+                <option value="all">すべて</option>
+                <option value="instagram_reel">Instagram リール</option>
+                <option value="instagram_feed">Instagram フィード</option>
+                <option value="x">X</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 投稿キュー一覧表示エリア -->
+          <div id="queue" class="queue-container">
+            <div class="card">データを読み込み中…</div>
+          </div>
+        </section>
+      </div>
     </main>
 
+    <!-- プレビュー用モーダル (シミュレーションおよび完成動画再生) -->
+    <div id="previewModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2>動画プレビュー</h2>
+        
+        <div class="reel-preview-area">
+          <video id="reelVideo" src="" controls style="width: 100%; height: 100%; border-radius: 12px; display: none; object-fit: cover; background: #000;"></video>
+          
+          <div class="reel-mock-screen" id="reelMockScreen">
+            <img id="reelImage" class="reel-bg-image" src="about:blank" alt="" style="display: none;" />
+            <div class="reel-text-overlay" id="reelTextOverlay"></div>
+          </div>
+          
+          <div class="reel-controls" id="reelMockControls">
+            <button id="playBtn" class="primary-btn">再生</button>
+            <button id="pauseBtn" class="secondary-btn" disabled>一時停止</button>
+            <button id="modalApproveBtn" class="primary-btn" style="background: #10b981; margin-left: 10px; border-color: #10b981;">この動画を承認</button>
+            <button id="modalPublishNowBtn" class="primary-btn" style="background: #0284c7; margin-left: 10px; border-color: #0284c7;">📲 今すぐ投稿</button>
+            <span class="reel-timer" id="reelTimer">0.0s / 60.0s</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 音声同期シミュレーション用オーディオ要素 -->
+    <audio id="narrationAudio" style="display: none;"></audio>
+    <audio id="bgmAudio" style="display: none;"></audio>
+
     <footer>
-      Demo build for Akasawa Onsen Ryokan / Netlify + Firebase + Google Sheets.
+      赤沢温泉旅館 SNS・GBP自動配信 - Powered by Netlify + Firebase.
     </footer>
 
     <script src="runtime-config.js"></script>
-    <script type="module" src="firebase-init.js"></script>
     <script type="module" src="index.js"></script>
   </body>
 </html>
