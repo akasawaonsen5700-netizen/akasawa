@@ -103,6 +103,13 @@ el.seedBtn.addEventListener('click', seedCustomers);
 el.clearBtn.addEventListener('click', clearAll);
 el.downloadSampleBtn.addEventListener('click', downloadSampleCsv);
 
+el.customerTableBody.addEventListener('click', e => {
+  if (e.target.classList.contains('delete-customer-btn')) {
+    const id = e.target.dataset.id;
+    deleteCustomer(id);
+  }
+});
+
 function preview() {
   const targets = getTargets();
   if (!targets.length) {
@@ -202,6 +209,7 @@ function renderCustomers() {
       <td>${escapeHtml(fmtDate(customer.checkInDate))} ~ ${escapeHtml(fmtDate(customer.checkOutDate))}</td>
       <td>${customer.tags.map(tag => `<span class="badge">${escapeHtml(tag)}</span>`).join(' ')}</td>
       <td>${Number(customer.stayCount || 0)}</td>
+      <td><button class="danger delete-customer-btn" data-id="${customer.id}" style="padding: 2px 8px; font-size: 11px; margin: 0;">削除</button></td>
     </tr>
   `).join('');
 }
@@ -395,6 +403,13 @@ function mapJapaneseHeaders(row) {
   }
 
   return normalizedRow;
+}
+
+function deleteCustomer(id) {
+  if (!confirm('この顧客データを削除しますか？')) return;
+  state.customers = state.customers.filter(c => c.id !== id);
+  persist();
+  render();
 }
 
 render();
