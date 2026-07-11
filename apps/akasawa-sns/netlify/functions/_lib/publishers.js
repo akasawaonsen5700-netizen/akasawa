@@ -199,6 +199,54 @@ async function publishToInstagramFeed(imageUrl, caption) {
   return publishResponse.json();
 }
 
+// Googleビジネスプロフィール (GBP) への直接投稿
+async function publishToGBPDirect(text, imageUrl) {
+  const accessToken = process.env.GBP_ACCESS_TOKEN;
+  const accountId = process.env.GBP_ACCOUNT_ID;
+  const locationId = process.env.GBP_LOCATION_ID;
+
+  if (!accessToken || !accountId || !locationId) {
+    throw new Error('GBP API keys (GBP_ACCESS_TOKEN, GBP_ACCOUNT_ID, GBP_LOCATION_ID) are not configured');
+  }
+
+  const url = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/localPosts`;
+  
+  const postBody = {
+    languageCode: 'ja',
+    summary: text,
+    topicType: 'STANDARD',
+    callToAction: {
+      actionType: 'LEARN_MORE',
+      url: 'https://akasawaonsen.com/'
+    }
+  };
+
+  if (imageUrl) {
+    postBody.media = [
+      {
+        mediaFormat: 'PHOTO',
+        sourceUrl: imageUrl
+      }
+    ];
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(postBody)
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`GBP API error: ${response.status} - ${errorText}`);
+  }
+
+  return response.json();
+}
+
 async function publishToChannel(channel, submission) {
   const chSetting = submission.channelSettings?.[channel] || {};
   const text = submission.drafts?.[channel]?.text || '';
@@ -219,6 +267,14 @@ async function publishToChannel(channel, submission) {
         imageUrl = assets[0].url;
       }
       const result = await publishToInstagramFeed(imageUrl, text);
+      return { channel, mode: 'live', publishedAt: new Date().toISOString(), result };
+    } else if (channel === 'gbp') {
+      const assets = chSetting.assets || submission.assets || [];
+      let imageUrl = null;
+      if (assets.length > 0) {
+        imageUrl = assets[0].url;
+      }
+      const result = await publishToGBPDirect(text, imageUrl);
       return { channel, mode: 'live', publishedAt: new Date().toISOString(), result };
     }
   } catch (err) {

@@ -370,6 +370,24 @@ function renderChannelSettings(row) {
           </div>
         `;
       }
+    } else if (channel === 'gbp') {
+      const attachAssets = setting.assets || row.postAttachAssets || row.assets || [];
+      if (attachAssets.length > 0) {
+        mediaPreviewHtml = `
+          <div style="margin: 8px 0;">
+            <span style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">📷 GBP投稿に添付される画像:</span>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              ${attachAssets.slice(0, 1).map(renderAsset).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        mediaPreviewHtml = `
+          <div style="margin: 8px 0; padding: 6px; font-size: 12px; color: #94a3b8; text-align: left;">
+            📝 テキストのみの投稿（画像添付なし）
+          </div>
+        `;
+      }
     }
 
     return `
