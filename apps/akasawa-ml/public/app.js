@@ -138,6 +138,10 @@ async function dispatchMessages() {
         body: JSON.stringify(payload)
       });
       const result = await res.json();
+      if (!res.ok || !result.ok) {
+        console.error('API Dispatch Error Details:', result);
+        alert(`送信エラーが発生しました。\n詳細: ${result.error || JSON.stringify(result)}`);
+      }
       state.logs.unshift({
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
@@ -173,7 +177,11 @@ function getTargets() {
 
 function buildMessage(customer) {
   const tpl = templates[state.scenario];
-  const body = `${tpl.message(customer)}${el.customMessage.value ? `\n\n${el.customMessage.value}` : ''}`;
+  const customerWithFullName = {
+    ...customer,
+    name: fullName(customer)
+  };
+  const body = `${tpl.message(customerWithFullName)}${el.customMessage.value ? `\n\n${el.customMessage.value}` : ''}`;
   return { subject: tpl.emailSubject, body };
 }
 

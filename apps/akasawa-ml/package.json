@@ -2,7 +2,6 @@
   "name": "akasawa-mail-line-demo",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "dev": "netlify dev",
     "start": "netlify dev",
