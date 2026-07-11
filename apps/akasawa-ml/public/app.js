@@ -81,7 +81,10 @@ el.csvFile.addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
   const text = await file.text();
-  const rows = parseCsv(text).map(normalizeCustomer).filter(x => x.lastName || x.email || x.lineUserId);
+  const rows = parseCsv(text).map(row => {
+    const mapped = mapJapaneseHeaders(row);
+    return normalizeCustomer(mapped);
+  }).filter(x => x.lastName || x.email || x.lineUserId);
   state.customers = [...rows, ...state.customers];
   persist();
   render();
@@ -336,6 +339,54 @@ function labelScenario(key) {
 }
 function escapeHtml(str) {
   return String(str).replace(/[&<>\"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
+}
+
+function mapJapaneseHeaders(row) {
+  const mapping = {
+    lastName: ['姓', '名字', '苗字', '氏', 'お名前(姓)', 'last name', 'lastname'],
+    firstName: ['名', '名前', 'お名前(名)', 'first name', 'firstname'],
+    email: ['メールアドレス', 'メール', 'e-mail', 'email', 'アドレス'],
+    phone: ['電話番号', '電話', 'tel', 'phone'],
+    lineUserId: ['line', 'lineid', 'lineユーザーid', 'line_user_id'],
+    checkInDate: ['チェックイン日', 'チェックイン', 'check-in', 'checkin', '宿泊日', 'ご宿泊日', '宿泊日(開始)', 'ご宿泊日(開始)', 'ご宿泊日(開始日)'],
+    checkOutDate: ['チェックアウト日', 'チェックアウト', 'check-out', 'checkout', '宿泊日(終了)', 'ご宿泊日(終了)', '宿泊日(終了日)'],
+    reservationId: ['予約番号', '予約id', '予約no', '受付番号', 'reservation_id', 'reservationid'],
+    stayCount: ['宿泊回数', '宿泊回数(累計)', '利用回数', '回数', 'stay_count', 'staycount'],
+    tags: ['タグ', '属性', 'tags', 'tag'],
+    source: ['流入元', '予約経路', 'source']
+  };
+
+  const normalizedRow = {};
+  
+  for (const [engKey, jpKeys] of Object.entries(mapping)) {
+    const foundKey = Object.keys(row).find(k => {
+      const kl = k.trim().toLowerCase();
+      return jpKeys.some(jpKey => kl === jpKey.toLowerCase() || kl.includes(jpKey.toLowerCase()));
+    });
+    normalizedRow[engKey] = foundKey ? row[foundKey] : '';
+  }
+  
+  // 姓名が「名前」「氏名」として1つのカラムに入っている場合のフォールバック分割処理
+  if (!normalizedRow.lastName && !normalizedRow.firstName) {
+    const nameKeys = ['お名前', '名前', '氏名', '顧客名', 'name'];
+    const foundNameKey = Object.keys(row).find(k => {
+      const kl = k.trim().toLowerCase();
+      return nameKeys.some(nk => kl === nk.toLowerCase() || kl.includes(nk.toLowerCase()));
+    });
+    if (foundNameKey && row[foundNameKey]) {
+      const fullNameVal = row[foundNameKey].trim();
+      const parts = fullNameVal.split(/[\s　]+/);
+      if (parts.length >= 2) {
+        normalizedRow.lastName = parts[0];
+        normalizedRow.firstName = parts.slice(1).join(' ');
+      } else {
+        normalizedRow.lastName = fullNameVal;
+        normalizedRow.firstName = '';
+      }
+    }
+  }
+
+  return normalizedRow;
 }
 
 render();
