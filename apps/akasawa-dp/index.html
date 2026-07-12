@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>赤沢温泉旅館 自動価格調整ダッシュボード</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #05120c;
+      --card: rgba(13,31,23,0.7);
+      --card-solid: #0d1f17;
+      --border: rgba(212,175,55,0.25);
+      --gold: #d4af37;
+      --gold-dim: rgba(212,175,55,0.15);
+      --text: #f5f2eb;
+      --sub: #a4b3ab;
+      --green: #52c41a;
+      --red: #ff4d4f;
+      --orange: #faad14;
+      --blue: #1890ff;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Serif JP', serif;
+      min-height: 100vh;
+      background-image: radial-gradient(circle at 50% -20%, #173625 0%, var(--bg) 75%);
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 2rem;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(5,18,12,0.92);
+    }
+    .header-left { display: flex; align-items: center; gap: 1rem; }
+    .header h1 { font-size: 1.3rem; font-weight: 600; letter-spacing: 0.08em; }
+    .header .brand { font-family: 'Cinzel', serif; color: var(--gold); font-size: 0.85rem; letter-spacing: 0.2em; }
+    .header-right { display: flex; gap: 0.8rem; align-items: center; }
+    .header-date { color: var(--sub); font-size: 0.85rem; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border);
+      padding: 0 1rem; overflow-x: auto;
+      background: rgba(5,18,12,0.6);
+      position: sticky; top: 60px; z-index: 99;
+    }
+    .tab {
+      padding: 0.9rem 1.4rem; cursor: pointer;
+      color: var(--sub); font-size: 0.9rem; font-weight: 400;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap; transition: all 0.2s;
+      letter-spacing: 0.03em;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 600; }
+
+    /* ── Main ── */
+    .main { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+      margin-bottom: 1.2rem;
+    }
+    .card-title {
+      font-size: 1.1rem; font-weight: 600; color: var(--gold);
+      margin-bottom: 1rem; padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    /* ── KPI Grid ── */
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+    .kpi {
+      background: rgba(13,31,23,0.5);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      text-align: center;
+    }
+    .kpi-label { font-size: 0.8rem; color: var(--sub); margin-bottom: 0.3rem; }
+    .kpi-value { font-size: 1.8rem; font-weight: 700; }
+    .kpi-value.up { color: var(--green); }
+    .kpi-value.down { color: var(--red); }
+    .kpi-value.neutral { color: var(--gold); }
+    .kpi-sub { font-size: 0.75rem; color: var(--sub); margin-top: 0.2rem; }
+
+    /* ── Tables ── */
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th { background: rgba(212,175,55,0.08); color: var(--gold); font-weight: 600;
+         padding: 0.7rem 0.6rem; text-align: left; white-space: nowrap;
+         border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+    td { padding: 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+         vertical-align: middle; }
+    tr:hover td { background: rgba(212,175,55,0.04); }
+    .rank-a { border-left: 3px solid var(--gold); }
+    .rank-b { border-left: 3px solid var(--sub); }
+
+    /* ── Forms ── */
+    input[type="number"], input[type="text"], select {
+      background: rgba(13,31,23,0.8); border: 1px solid var(--border);
+      color: var(--text); padding: 0.45rem 0.6rem;
+      border-radius: 6px; font-size: 0.85rem; width: 100%;
+      font-family: inherit;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--gold); }
+    input[type="number"] { width: 90px; text-align: right; }
+    .input-sm { width: 70px !important; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 0.5rem 1.2rem; border-radius: 8px; border: 1px solid var(--border);
+      background: rgba(212,175,55,0.12); color: var(--gold);
+      cursor: pointer; font-size: 0.85rem; font-weight: 600;
+      transition: all 0.2s; font-family: inherit;
+    }
+    .btn:hover { background: rgba(212,175,55,0.25); }
+    .btn-primary { background: var(--gold); color: #0a1a10; border-color: var(--gold); }
+    .btn-primary:hover { background: #c9a530; }
+    .btn-sm { padding: 0.3rem 0.8rem; font-size: 0.8rem; }
+    .btn-danger { background: rgba(255,77,79,0.15); color: var(--red); border-color: rgba(255,77,79,0.3); }
+    .btn-success { background: rgba(82,196,26,0.15); color: var(--green); border-color: rgba(82,196,26,0.3); }
+
+    .btn-row { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem; }
+
+    /* ── AI Proposal ── */
+    .proposal {
+      background: rgba(13,31,23,0.5);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .proposal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
+    .proposal-room { font-weight: 600; font-size: 0.95rem; }
+    .proposal-tag {
+      font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 20px;
+      font-weight: 600;
+    }
+    .tag-up { background: rgba(82,196,26,0.15); color: var(--green); }
+    .tag-down { background: rgba(255,77,79,0.15); color: var(--red); }
+    .tag-hold { background: rgba(212,175,55,0.15); color: var(--gold); }
+    .tag-urgent { background: rgba(255,77,79,0.25); color: var(--red); border: 1px solid var(--red); }
+    .proposal-body { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 0.8rem; }
+    .proposal-metric { text-align: center; }
+    .proposal-metric-label { font-size: 0.75rem; color: var(--sub); }
+    .proposal-metric-value { font-size: 1.2rem; font-weight: 700; }
+    .proposal-reason { font-size: 0.85rem; color: var(--sub); line-height: 1.6; margin-bottom: 0.8rem;
+      padding: 0.6rem; background: rgba(212,175,55,0.05); border-radius: 6px; }
+    .proposal-actions { display: flex; gap: 0.5rem; }
+
+    /* ── Event Calendar ── */
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      gap: 2px; font-size: 0.8rem;
+    }
+    .cal-header { text-align: center; padding: 0.4rem; color: var(--gold); font-weight: 600; font-size: 0.75rem; }
+    .cal-day {
+      background: rgba(13,31,23,0.4); border: 1px solid transparent;
+      padding: 0.4rem; min-height: 60px; border-radius: 4px;
+      cursor: pointer; transition: border-color 0.2s;
+    }
+    .cal-day:hover { border-color: var(--gold); }
+    .cal-day.today { border-color: var(--gold); background: rgba(212,175,55,0.08); }
+    .cal-day.weekend { background: rgba(212,175,55,0.05); }
+    .cal-day .day-num { font-weight: 600; margin-bottom: 0.2rem; }
+    .cal-day .day-num.sat { color: var(--blue); }
+    .cal-day .day-num.sun { color: var(--red); }
+    .cal-event {
+      font-size: 0.65rem; padding: 0.1rem 0.3rem;
+      border-radius: 3px; margin-top: 0.15rem;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .ev-high { background: rgba(255,77,79,0.2); color: var(--red); }
+    .ev-mid { background: rgba(250,173,20,0.2); color: var(--orange); }
+    .ev-low { background: rgba(82,196,26,0.15); color: var(--green); }
+    .cal-empty { visibility: hidden; }
+
+    /* ── Misc ── */
+    .flex { display: flex; }
+    .gap-1 { gap: 1rem; }
+    .mt-1 { margin-top: 1rem; }
+    .mb-1 { margin-bottom: 1rem; }
+    .text-gold { color: var(--gold); }
+    .text-sub { color: var(--sub); }
+    .text-sm { font-size: 0.8rem; }
+    .text-xs { font-size: 0.75rem; }
+    .fw-600 { font-weight: 600; }
+    .badge { display: inline-block; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 10px; }
+    .badge-a { background: rgba(212,175,55,0.2); color: var(--gold); }
+    .badge-b { background: rgba(164,179,171,0.2); color: var(--sub); }
+    .vacancy-ok { color: var(--green); }
+    .vacancy-few { color: var(--orange); }
+    .vacancy-no { color: var(--red); }
+
+    .notice-bar {
+      background: rgba(212,175,55,0.1); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.8rem 1.2rem;
+      font-size: 0.85rem; margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+
+    @media (max-width: 768px) {
+      .header { padding: 0.8rem 1rem; flex-wrap: wrap; }
+      .main { padding: 0.8rem; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .proposal-body { grid-template-columns: 1fr; }
+      .tabs { padding: 0 0.5rem; }
+      .tab { padding: 0.7rem 0.8rem; font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div>
+      <div class="brand">AKASAWA ONSEN</div>
+      <h1>自動価格調整ダッシュボード</h1>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="header-date" id="headerDate"></span>
+    <button class="btn btn-sm" onclick="exportCSV()">📤 CSV出力</button>
+    <button class="btn btn-sm btn-primary" onclick="generateProposals()">🤖 AI提案を更新</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview')">📊 概要</div>
+  <div class="tab" onclick="switchTab('own')">🏨 自館状況</div>
+  <div class="tab" onclick="switchTab('comp')">🔍 近隣比較</div>
+  <div class="tab" onclick="switchTab('ota')">📱 OTA比較</div>
+  <div class="tab" onclick="switchTab('events')">📅 イベント</div>
+  <div class="tab" onclick="switchTab('ai')">💡 AI提案</div>
+</div>
+
+<div class="main">
+
+  <!-- ========== 概要パネル ========== -->
+  <div class="panel active" id="panel-overview">
+    <div class="notice-bar" id="noticeBar">
+      💡 <span>データを入力すると、AIが価格調整を自動提案します。まず「自館状況」タブから空室数を入力してください。</span>
+    </div>
+
+    <div class="kpi-grid mb-1">
+      <div class="kpi">
+        <div class="kpi-label">本日の販売価格（平均）</div>
+        <div class="kpi-value neutral" id="kpiAvgPrice">-</div>
+        <div class="kpi-sub">7部屋タイプの平均</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">本日の空室数</div>
+        <div class="kpi-value" id="kpiVacancy">-</div>
+        <div class="kpi-sub">/ 10室中</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">予約率</div>
+        <div class="kpi-value" id="kpiOccRate">-</div>
+        <div class="kpi-sub">目標: 70%</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">ADR（平均客室単価）</div>
+        <div class="kpi-value neutral" id="kpiADR">-</div>
+        <div class="kpi-sub">売上 / 販売室数</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">RevPAR</div>
+        <div class="kpi-value neutral" id="kpiRevPAR">-</div>
+        <div class="kpi-sub">ADR × 予約率</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">近隣平均価格</div>
+        <div class="kpi-value" id="kpiCompAvg">-</div>
+        <div class="kpi-sub">A10施設の平均</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">価格差</div>
+        <div class="kpi-value" id="kpiPriceDiff">-</div>
+        <div class="kpi-sub">近隣平均との差</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">AI提案数</div>
+        <div class="kpi-value neutral" id="kpiProposals">0</div>
+        <div class="kpi-sub">未承認の提案</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💡 本日のAI提案サマリー</div>
+      <div id="overviewProposals"><span class="text-sub">AI提案を生成するには、自館の空室数と近隣施設の価格データを入力してください。</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📅 今後7日間の見通し</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>日付</th><th>曜日</th><th>イベント</th><th>自館平均</th><th>空室</th><th>予約率</th><th>近隣平均</th><th>判定</th>
+          </tr></thead>
+          <tbody id="outlook7Body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 自館状況パネル ========== -->
+  <div class="panel" id="panel-own">
+    <div class="card">
+      <div class="card-title">🏨 自館の販売価格・空室状況</div>
+      <div class="btn-row">
+        <button class="btn btn-sm" onclick="copyYesterday('own')">📋 昨日のデータをコピー</button>
+        <button class="btn btn-sm btn-primary" onclick="saveOwnData()">💾 保存</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>部屋タイプ</th><th>室数</th>
+            <th>平日基本</th><th>休前日基本</th>
+            <th>本日販売価格</th><th>空室数</th>
+            <th>素泊まり価格</th><th>メモ</th>
+          </tr></thead>
+          <tbody id="ownRoomsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 RevPAR計算結果</div>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">総室数</div>
+          <div class="kpi-value neutral">10</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">空室合計</div>
+          <div class="kpi-value" id="ownTotalVacancy">-</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">予約率</div>
+          <div class="kpi-value" id="ownOccRate">-</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">ADR</div>
+          <div class="kpi-value neutral" id="ownADR">-</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">RevPAR</div>
+          <div class="kpi-value neutral" id="ownRevPAR">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 近隣比較パネル ========== -->
+  <div class="panel" id="panel-comp">
+    <div class="card">
+      <div class="card-title">🔍 近隣旅館 価格・空室比較（16施設）</div>
+      <div class="btn-row">
+        <button class="btn btn-sm" onclick="copyYesterday('comp')">📋 昨日のデータをコピー</button>
+        <button class="btn btn-sm btn-primary" onclick="saveCompData()">💾 保存</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>ランク</th><th>施設名</th>
+            <th>1泊2食</th><th>素泊まり</th>
+            <th>空室</th><th>クーポン</th>
+            <th>口コミ点</th><th>口コミ件数</th>
+            <th>人気プラン</th>
+          </tr></thead>
+          <tbody id="compBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 近隣比較サマリー</div>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">A10施設 平均（1泊2食）</div>
+          <div class="kpi-value neutral" id="compAvgA">-</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">B5施設 平均（1泊2食）</div>
+          <div class="kpi-value neutral" id="compAvgB">-</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">全体平均（1泊2食）</div>
+          <div class="kpi-value neutral" id="compAvgAll">-</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">赤沢との価格差</div>
+          <div class="kpi-value" id="compDiff">-</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">空室率（周辺）</div>
+          <div class="kpi-value" id="compVacRate">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== OTA比較パネル ========== -->
+  <div class="panel" id="panel-ota">
+    <div class="card">
+      <div class="card-title">📱 OTA掲載状況（自館）</div>
+      <div class="btn-row">
+        <button class="btn btn-sm" onclick="copyYesterday('ota')">📋 昨日のデータをコピー</button>
+        <button class="btn btn-sm btn-primary" onclick="saveOtaData()">💾 保存</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>OTA</th><th>表示順位</th><th>最安値</th>
+            <th>1泊2食 最安</th><th>素泊まり最安</th>
+            <th>クーポン</th><th>キャンペーン</th>
+            <th>口コミ点</th><th>口コミ件数</th>
+          </tr></thead>
+          <tbody id="otaBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== イベントカレンダー ========== -->
+  <div class="panel" id="panel-events">
+    <div class="card">
+      <div class="card-title">📅 2026年7月 イベントカレンダー</div>
+      <div id="calJuly"></div>
+    </div>
+    <div class="card mt-1">
+      <div class="card-title">📅 2026年8月 イベントカレンダー</div>
+      <div id="calAugust"></div>
+    </div>
+    <div class="card mt-1">
+      <div class="card-title">➕ カスタムイベント追加</div>
+      <div class="flex gap-1" style="flex-wrap:wrap;align-items:end;">
+        <div>
+          <label class="text-xs text-sub">日付</label>
+          <input type="text" id="evDate" placeholder="2026-07-25" style="width:140px;">
+        </div>
+        <div>
+          <label class="text-xs text-sub">イベント名</label>
+          <input type="text" id="evName" placeholder="塩原花火大会" style="width:200px;">
+        </div>
+        <div>
+          <label class="text-xs text-sub">需要影響</label>
+          <select id="evImpact" style="width:100px;">
+            <option value="high">⬆⬆ 特高</option>
+            <option value="mid" selected>⬆ 高</option>
+            <option value="low">→ 通常</option>
+          </select>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="addEvent()">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== AI提案パネル ========== -->
+  <div class="panel" id="panel-ai">
+    <div class="card">
+      <div class="card-title">🤖 AI価格提案</div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="generateProposals()">🔄 提案を再生成</button>
+      </div>
+      <div id="proposalsContainer">
+        <span class="text-sub">自館の空室データと近隣施設の価格データを入力した後、「AI提案を更新」ボタンを押してください。</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ================================================================
+// DATA DEFINITIONS
+// ================================================================
+
+const TOTAL_ROOMS = 10;
+const ROOM_TYPES = [
+  { id:'premium-suite', name:'プレミアムスイート（ペット不可）', rooms:1, weekday:28000, weekend:36000, min:22000, max:48000 },
+  { id:'petit-suite', name:'プチスイート202号室（ペット可・バス付）', rooms:1, weekday:22000, weekend:29000, min:18000, max:38000 },
+  { id:'compact-room', name:'コンパクトルーム（ペット不可）', rooms:1, weekday:16000, weekend:21000, min:12000, max:28000 },
+  { id:'riverview-bath', name:'リバービュー和室10畳（バス付）', rooms:2, weekday:18000, weekend:24000, min:14000, max:32000 },
+  { id:'japanese-toilet', name:'和室10畳（トイレ付・ペット不可）', rooms:2, weekday:16000, weekend:21000, min:12000, max:28000 },
+  { id:'japanese-pet', name:'和室10畳（ペットOK）', rooms:2, weekday:18000, weekend:24000, min:14000, max:32000 },
+  { id:'japanese-bedroom', name:'和室10畳ベッドルーム（1階）', rooms:1, weekday:16000, weekend:21000, min:12000, max:28000 }
+];
+
+const COMPETITORS = [
+  { id:'yutoriro', name:'ゆとりろ那須塩原', rank:'A' },
+  { id:'oku-kogen', name:'奥塩原高原ホテル', rank:'A' },
+  { id:'shimofujiya', name:'やまの宿 下藤屋', rank:'A' },
+  { id:'motoizumikan', name:'秘湯の宿 元泉館', rank:'A' },
+  { id:'myogaya', name:'明賀屋本館', rank:'A' },
+  { id:'kamiaizuya', name:'上会津屋', rank:'A' },
+  { id:'tokiwa', name:'常盤ホテル', rank:'A' },
+  { id:'new-momiji', name:'ホテルニューもみぢ', rank:'A' },
+  { id:'itoen', name:'伊東園ホテル塩原', rank:'A' },
+  { id:'green-village', name:'塩原グリーンビレッジ', rank:'A' },
+  { id:'taoya', name:'TAOYA那須塩原', rank:'B' },
+  { id:'kamenoi', name:'亀の井ホテル 塩原', rank:'B' },
+  { id:'shofuro', name:'松楓楼 松屋', rank:'B' },
+  { id:'ayatsumugi', name:'彩つむぎ', rank:'B' },
+  { id:'tanakaya', name:'湯守田中屋', rank:'B' }
+];
+
+const OTAS = [
+  { id:'rakuten', name:'楽天トラベル' },
+  { id:'jalan', name:'じゃらんnet' },
+  { id:'booking', name:'Booking.com' }
+];
+
+const PRESET_EVENTS = [
+  { date:'2026-07-18', name:'海の日三連休', impact:'high' },
+  { date:'2026-07-19', name:'海の日三連休', impact:'high' },
+  { date:'2026-07-20', name:'海の日', impact:'high' },
+  { date:'2026-07-25', name:'塩原花火大会（要確認）', impact:'mid' },
+  { date:'2026-08-01', name:'夏休み本格化', impact:'mid' },
+  { date:'2026-08-10', name:'お盆期間開始', impact:'high' },
+  { date:'2026-08-11', name:'山の日', impact:'high' },
+  { date:'2026-08-12', name:'お盆期間', impact:'high' },
+  { date:'2026-08-13', name:'お盆', impact:'high' },
+  { date:'2026-08-14', name:'お盆', impact:'high' },
+  { date:'2026-08-15', name:'お盆', impact:'high' },
+  { date:'2026-08-16', name:'お盆最終日', impact:'high' }
+];
+
+const NEARBY_ATTRACTIONS = [
+  { name:'那須ハイランドパーク', impact:'mid', note:'通年集客' },
+  { name:'千本松牧場', impact:'mid', note:'通年集客' },
+  { name:'ハンターマウンテンゆりパーク', impact:'mid', note:'7〜9月' }
+];
+
+// ================================================================
+// STATE
+// ================================================================
+
+let state = {
+  ownData: {},     // { roomId: { price, vacancy, domitoryPrice, memo } }
+  compData: {},    // { compId: { price2meals, priceDomitory, vacancy, coupon, reviewScore, reviewCount, popularPlan } }
+  otaData: {},     // { otaId: { rank, cheapest, price2meals, priceDomitory, coupon, campaign, reviewScore, reviewCount } }
+  events: [],      // [{ date, name, impact }]
+  proposals: [],   // [{ roomId, currentPrice, proposedPrice, direction, reason, status }]
+  history: {}      // { 'YYYY-MM-DD': { own, comp, ota } }
+};
+
+function todayKey() { return new Date().toISOString().slice(0,10); }
+function yesterdayKey() {
+  const d = new Date(); d.setDate(d.getDate()-1);
+  return d.toISOString().slice(0,10);
+}
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('akasawa_dp_state');
+    if (s) {
+      const parsed = JSON.parse(s);
+      state = { ...state, ...parsed };
+    }
+    if (!state.events || state.events.length === 0) {
+      state.events = [...PRESET_EVENTS];
+    }
+  } catch(e) { console.error('loadState error', e); }
+}
+
+function saveState() {
+  try { localStorage.setItem('akasawa_dp_state', JSON.stringify(state)); } catch(e) {}
+}
+
+// ================================================================
+// TAB SWITCHING
+// ================================================================
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const tabNames = ['overview','own','comp','ota','events','ai'];
+  const idx = tabNames.indexOf(id);
+  if (idx >= 0) {
+    document.querySelectorAll('.tab')[idx].classList.add('active');
+    document.getElementById('panel-' + id).classList.add('active');
+  }
+}
+
+// ================================================================
+// RENDER: OWN DATA
+// ================================================================
+
+function renderOwnRooms() {
+  const today = new Date();
+  const isWeekend = today.getDay() === 5 || today.getDay() === 6;
+  const tbody = document.getElementById('ownRoomsBody');
+  tbody.innerHTML = '';
+
+  ROOM_TYPES.forEach(room => {
+    const d = state.ownData[room.id] || {};
+    const defaultPrice = isWeekend ? room.weekend : room.weekday;
+    const price = d.price || defaultPrice;
+    const vacancy = d.vacancy !== undefined ? d.vacancy : room.rooms;
+    const domPrice = d.domitoryPrice || Math.round(defaultPrice * 0.6 / 100) * 100;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="max-width:200px">${room.name}</td>
+      <td style="text-align:center">${room.rooms}</td>
+      <td class="text-sub">¥${room.weekday.toLocaleString()}</td>
+      <td class="text-sub">¥${room.weekend.toLocaleString()}</td>
+      <td><input type="number" class="input-sm" value="${price}" step="100"
+           onchange="updateOwn('${room.id}','price',this.value)"></td>
+      <td><input type="number" class="input-sm" value="${vacancy}" min="0" max="${room.rooms}"
+           onchange="updateOwn('${room.id}','vacancy',this.value)" style="width:50px"></td>
+      <td><input type="number" class="input-sm" value="${domPrice}" step="100"
+           onchange="updateOwn('${room.id}','domitoryPrice',this.value)"></td>
+      <td><input type="text" value="${d.memo||''}" style="width:100px"
+           onchange="updateOwn('${room.id}','memo',this.value)"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  updateOwnKPIs();
+}
+
+function updateOwn(roomId, field, value) {
+  if (!state.ownData[roomId]) state.ownData[roomId] = {};
+  state.ownData[roomId][field] = field === 'memo' ? value : Number(value);
+}
+
+function saveOwnData() {
+  saveState();
+  updateOwnKPIs();
+  updateOverviewKPIs();
+  alert('自館データを保存しました');
+}
+
+function updateOwnKPIs() {
+  let totalVacancy = 0, totalRooms = 0, weightedPrice = 0, soldRooms = 0;
+
+  ROOM_TYPES.forEach(room => {
+    const d = state.ownData[room.id] || {};
+    const isWeekend = new Date().getDay() === 5 || new Date().getDay() === 6;
+    const price = d.price || (isWeekend ? room.weekend : room.weekday);
+    const vacancy = d.vacancy !== undefined ? d.vacancy : room.rooms;
+    totalVacancy += vacancy;
+    totalRooms += room.rooms;
+    const sold = room.rooms - vacancy;
+    soldRooms += sold;
+    weightedPrice += price * sold;
+  });
+
+  const occRate = totalRooms > 0 ? (totalRooms - totalVacancy) / totalRooms : 0;
+  const adr = soldRooms > 0 ? Math.round(weightedPrice / soldRooms) : 0;
+  const revpar = Math.round(adr * occRate);
+
+  setKPI('ownTotalVacancy', totalVacancy, totalVacancy > 5 ? 'down' : totalVacancy > 2 ? 'neutral' : 'up');
+  setKPI('ownOccRate', (occRate*100).toFixed(0) + '%', occRate > 0.7 ? 'up' : occRate > 0.4 ? 'neutral' : 'down');
+  setKPI('ownADR', '¥' + adr.toLocaleString(), 'neutral');
+  setKPI('ownRevPAR', '¥' + revpar.toLocaleString(), 'neutral');
+}
+
+// ================================================================
+// RENDER: COMPETITORS
+// ================================================================
+
+function renderCompetitors() {
+  const tbody = document.getElementById('compBody');
+  tbody.innerHTML = '';
+
+  // Self row
+  const selfPrice = getOwnAvgPrice();
+  const selfTr = document.createElement('tr');
+  selfTr.style.background = 'rgba(212,175,55,0.08)';
+  selfTr.innerHTML = `
+    <td><span class="badge" style="background:rgba(212,175,55,0.3);color:var(--gold)">自館</span></td>
+    <td class="fw-600 text-gold">赤沢温泉旅館</td>
+    <td class="fw-600">¥${selfPrice.toLocaleString()}</td>
+    <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+  `;
+  tbody.appendChild(selfTr);
+
+  COMPETITORS.forEach(comp => {
+    const d = state.compData[comp.id] || {};
+    const tr = document.createElement('tr');
+    tr.className = comp.rank === 'A' ? 'rank-a' : 'rank-b';
+    const vacClass = d.vacancy === '○' ? 'vacancy-ok' : d.vacancy === '△' ? 'vacancy-few' : d.vacancy === '×' ? 'vacancy-no' : '';
+    tr.innerHTML = `
+      <td><span class="badge ${comp.rank==='A'?'badge-a':'badge-b'}">${comp.rank}</span></td>
+      <td>${comp.name}</td>
+      <td><input type="number" class="input-sm" value="${d.price2meals||''}" step="100" placeholder="-"
+           onchange="updateComp('${comp.id}','price2meals',this.value)"></td>
+      <td><input type="number" class="input-sm" value="${d.priceDomitory||''}" step="100" placeholder="-"
+           onchange="updateComp('${comp.id}','priceDomitory',this.value)"></td>
+      <td><select onchange="updateComp('${comp.id}','vacancy',this.value)" style="width:50px">
+            <option value="" ${!d.vacancy?'selected':''}>-</option>
+            <option value="○" ${d.vacancy==='○'?'selected':''}>○</option>
+            <option value="△" ${d.vacancy==='△'?'selected':''}>△</option>
+            <option value="×" ${d.vacancy==='×'?'selected':''}>×</option>
+          </select></td>
+      <td><select onchange="updateComp('${comp.id}','coupon',this.value)" style="width:50px">
+            <option value="" ${!d.coupon?'selected':''}>-</option>
+            <option value="有" ${d.coupon==='有'?'selected':''}>有</option>
+            <option value="無" ${d.coupon==='無'?'selected':''}>無</option>
+          </select></td>
+      <td><input type="number" class="input-sm" value="${d.reviewScore||''}" step="0.1" min="0" max="5" placeholder="-" style="width:55px"
+           onchange="updateComp('${comp.id}','reviewScore',this.value)"></td>
+      <td><input type="number" class="input-sm" value="${d.reviewCount||''}" placeholder="-" style="width:60px"
+           onchange="updateComp('${comp.id}','reviewCount',this.value)"></td>
+      <td><input type="text" value="${d.popularPlan||''}" placeholder="-" style="width:150px"
+           onchange="updateComp('${comp.id}','popularPlan',this.value)"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  updateCompKPIs();
+}
+
+function updateComp(compId, field, value) {
+  if (!state.compData[compId]) state.compData[compId] = {};
+  state.compData[compId][field] = (field === 'vacancy' || field === 'coupon' || field === 'popularPlan') ? value : Number(value);
+}
+
+function saveCompData() {
+  saveState();
+  updateCompKPIs();
+  updateOverviewKPIs();
+  alert('近隣比較データを保存しました');
+}
+
+function updateCompKPIs() {
+  let sumA = 0, cntA = 0, sumB = 0, cntB = 0;
+  let vacOk = 0, vacTotal = 0;
+
+  COMPETITORS.forEach(comp => {
+    const d = state.compData[comp.id] || {};
+    if (d.price2meals && d.price2meals > 0) {
+      if (comp.rank === 'A') { sumA += d.price2meals; cntA++; }
+      else { sumB += d.price2meals; cntB++; }
+    }
+    if (d.vacancy) {
+      vacTotal++;
+      if (d.vacancy === '○' || d.vacancy === '△') vacOk++;
+    }
+  });
+
+  const avgA = cntA > 0 ? Math.round(sumA / cntA) : 0;
+  const avgB = cntB > 0 ? Math.round(sumB / cntB) : 0;
+  const avgAll = (cntA+cntB) > 0 ? Math.round((sumA+sumB)/(cntA+cntB)) : 0;
+  const selfPrice = getOwnAvgPrice();
+  const diff = avgA > 0 && selfPrice > 0 ? selfPrice - avgA : 0;
+
+  setKPI('compAvgA', avgA > 0 ? '¥'+avgA.toLocaleString() : '-', 'neutral');
+  setKPI('compAvgB', avgB > 0 ? '¥'+avgB.toLocaleString() : '-', 'neutral');
+  setKPI('compAvgAll', avgAll > 0 ? '¥'+avgAll.toLocaleString() : '-', 'neutral');
+  setKPI('compDiff', diff !== 0 ? (diff > 0 ? '+' : '') + '¥'+diff.toLocaleString() : '-',
+    diff > 0 ? 'down' : diff < 0 ? 'up' : 'neutral');
+  setKPI('compVacRate', vacTotal > 0 ? Math.round(vacOk/vacTotal*100)+'%' : '-', 'neutral');
+}
+
+// ================================================================
+// RENDER: OTA
+// ================================================================
+
+function renderOTA() {
+  const tbody = document.getElementById('otaBody');
+  tbody.innerHTML = '';
+
+  OTAS.forEach(ota => {
+    const d = state.otaData[ota.id] || {};
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="fw-600">${ota.name}</td>
+      <td><input type="number" class="input-sm" value="${d.rank||''}" min="1" placeholder="-" style="width:50px"
+           onchange="updateOta('${ota.id}','rank',this.value)"></td>
+      <td><input type="number" class="input-sm" value="${d.cheapest||''}" step="100" placeholder="-"
+           onchange="updateOta('${ota.id}','cheapest',this.value)"></td>
+      <td><input type="number" class="input-sm" value="${d.price2meals||''}" step="100" placeholder="-"
+           onchange="updateOta('${ota.id}','price2meals',this.value)"></td>
+      <td><input type="number" class="input-sm" value="${d.priceDomitory||''}" step="100" placeholder="-"
+           onchange="updateOta('${ota.id}','priceDomitory',this.value)"></td>
+      <td><select onchange="updateOta('${ota.id}','coupon',this.value)" style="width:60px">
+            <option value="" ${!d.coupon?'selected':''}>-</option>
+            <option value="有" ${d.coupon==='有'?'selected':''}>有</option>
+            <option value="無" ${d.coupon==='無'?'selected':''}>無</option>
+          </select></td>
+      <td><input type="text" value="${d.campaign||''}" placeholder="-" style="width:120px"
+           onchange="updateOta('${ota.id}','campaign',this.value)"></td>
+      <td><input type="number" class="input-sm" value="${d.reviewScore||''}" step="0.1" min="0" max="5" placeholder="-" style="width:55px"
+           onchange="updateOta('${ota.id}','reviewScore',this.value)"></td>
+      <td><input type="number" class="input-sm" value="${d.reviewCount||''}" placeholder="-" style="width:60px"
+           onchange="updateOta('${ota.id}','reviewCount',this.value)"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateOta(otaId, field, value) {
+  if (!state.otaData[otaId]) state.otaData[otaId] = {};
+  state.otaData[otaId][field] = (field === 'coupon' || field === 'campaign') ? value : Number(value);
+}
+
+function saveOtaData() { saveState(); alert('OTAデータを保存しました'); }
+
+// ================================================================
+// EVENTS CALENDAR
+// ================================================================
+
+function renderCalendar(year, month, containerId) {
+  const container = document.getElementById(containerId);
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay = new Date(year, month, 0);
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  let html = '<div class="cal-grid">';
+  ['日','月','火','水','木','金','土'].forEach(d => html += `<div class="cal-header">${d}</div>`);
+
+  for (let i = 0; i < firstDay.getDay(); i++) html += '<div class="cal-day cal-empty"></div>';
+
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const date = new Date(year, month - 1, d);
+    const dateKey = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = date.getTime() === today.getTime();
+    const isSat = date.getDay() === 6;
+    const isSun = date.getDay() === 0;
+    const isWeekend = isSat || isSun;
+    const dayEvents = state.events.filter(e => e.date === dateKey);
+
+    let cls = 'cal-day';
+    if (isToday) cls += ' today';
+    if (isWeekend) cls += ' weekend';
+
+    let evHtml = '';
+    dayEvents.forEach(ev => {
+      const evCls = ev.impact === 'high' ? 'ev-high' : ev.impact === 'mid' ? 'ev-mid' : 'ev-low';
+      evHtml += `<div class="cal-event ${evCls}" title="${ev.name}">${ev.name}</div>`;
+    });
+    if (isWeekend && dayEvents.length === 0) {
+      evHtml += `<div class="cal-event ev-mid">週末需要</div>`;
+    }
+
+    const numCls = isSat ? 'sat' : isSun ? 'sun' : '';
+    html += `<div class="${cls}"><div class="day-num ${numCls}">${d}</div>${evHtml}</div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function addEvent() {
+  const date = document.getElementById('evDate').value.trim();
+  const name = document.getElementById('evName').value.trim();
+  const impact = document.getElementById('evImpact').value;
+  if (!date || !name) { alert('日付とイベント名を入力してください'); return; }
+  state.events.push({ date, name, impact });
+  saveState();
+  renderCalendar(2026, 7, 'calJuly');
+  renderCalendar(2026, 8, 'calAugust');
+  document.getElementById('evDate').value = '';
+  document.getElementById('evName').value = '';
+}
+
+// ================================================================
+// AI PROPOSALS
+// ================================================================
+
+function generateProposals() {
+  const proposals = [];
+  const compAvg = getCompAvgPrice();
+  const isWeekend = new Date().getDay() === 5 || new Date().getDay() === 6;
+  const todayEvents = state.events.filter(e => e.date === todayKey());
+  const hasHighEvent = todayEvents.some(e => e.impact === 'high');
+  const hasMidEvent = todayEvents.some(e => e.impact === 'mid');
+
+  ROOM_TYPES.forEach(room => {
+    const d = state.ownData[room.id] || {};
+    const currentPrice = d.price || (isWeekend ? room.weekend : room.weekday);
+    const vacancy = d.vacancy !== undefined ? d.vacancy : room.rooms;
+    const occRate = (room.rooms - vacancy) / room.rooms;
+
+    let direction = 'hold';
+    let proposedPrice = currentPrice;
+    let reason = '';
+
+    // ルール1: 近隣より安く、予約率が高い → 値上げ
+    if (compAvg > 0 && currentPrice < compAvg * 0.95 && occRate >= 0.6) {
+      const increase = Math.min(Math.round((compAvg - currentPrice) * 0.6 / 100) * 100, 3000);
+      proposedPrice = currentPrice + increase;
+      direction = 'up';
+      reason = `近隣平均¥${compAvg.toLocaleString()}に対し自館¥${currentPrice.toLocaleString()}（${Math.round((1-currentPrice/compAvg)*100)}%安）。予約率${Math.round(occRate*100)}%と好調のため、¥${increase.toLocaleString()}の値上げ余地があります。`;
+    }
+    // ルール2: 価格が同等で予約率が低い → 値下げ
+    else if (compAvg > 0 && currentPrice >= compAvg * 0.9 && occRate < 0.3) {
+      const decrease = Math.min(Math.round(currentPrice * 0.1 / 100) * 100, 3000);
+      proposedPrice = currentPrice - decrease;
+      direction = 'down';
+      reason = `予約率${Math.round(occRate*100)}%と低迷中。近隣平均¥${compAvg.toLocaleString()}とほぼ同額のため、¥${decrease.toLocaleString()}の値下げとOTAクーポン発行を推奨します。`;
+    }
+    // ルール3: イベント日なのに空室 → 緊急
+    else if (hasHighEvent && vacancy > 0 && occRate < 0.5) {
+      const decrease = Math.round(currentPrice * 0.08 / 100) * 100;
+      proposedPrice = currentPrice - decrease;
+      direction = 'down';
+      reason = `🚨 本日はイベント日（${todayEvents.map(e=>e.name).join('・')}）ですが空室${vacancy}室。¥${decrease.toLocaleString()}値下げ + SNS緊急告知を推奨。`;
+    }
+    // ルール4: 予約率が非常に高い → 値上げ
+    else if (occRate >= 0.85) {
+      const increase = Math.round(currentPrice * 0.05 / 100) * 100;
+      proposedPrice = currentPrice + increase;
+      direction = 'up';
+      reason = `予約率${Math.round(occRate*100)}%と非常に好調。小幅な値上げ（¥${increase.toLocaleString()}）でRevPAR向上を狙えます。`;
+    }
+    // ルール5: イベント日で好調 → さらに値上げ
+    else if ((hasHighEvent || hasMidEvent) && occRate >= 0.6) {
+      const increase = Math.round(currentPrice * 0.08 / 100) * 100;
+      proposedPrice = currentPrice + increase;
+      direction = 'up';
+      reason = `イベント日（${todayEvents.map(e=>e.name).join('・')}）で予約率${Math.round(occRate*100)}%。需要が高いため¥${increase.toLocaleString()}の値上げを推奨。`;
+    }
+    // ルール6: 特に変更不要
+    else {
+      direction = 'hold';
+      reason = `現在の価格¥${currentPrice.toLocaleString()}は適正範囲内です。予約率${Math.round(occRate*100)}%。引き続き監視を継続してください。`;
+    }
+
+    // クランプ
+    proposedPrice = Math.max(room.min, Math.min(room.max, proposedPrice));
+
+    proposals.push({ roomId: room.id, roomName: room.name, currentPrice, proposedPrice, direction, reason, status: 'pending' });
+  });
+
+  state.proposals = proposals;
+  saveState();
+  renderProposals();
+  updateOverviewKPIs();
+}
+
+function renderProposals() {
+  const container = document.getElementById('proposalsContainer');
+  if (state.proposals.length === 0) {
+    container.innerHTML = '<span class="text-sub">AI提案がありません。データを入力してから「AI提案を更新」を押してください。</span>';
+    return;
+  }
+
+  container.innerHTML = '';
+  state.proposals.forEach((p, idx) => {
+    if (p.status !== 'pending') return;
+    const tagCls = p.direction === 'up' ? 'tag-up' : p.direction === 'down' ? 'tag-down' : 'tag-hold';
+    const tagText = p.direction === 'up' ? '⬆ 値上げ' : p.direction === 'down' ? '⬇ 値下げ' : '→ 維持';
+    const diff = p.proposedPrice - p.currentPrice;
+
+    const div = document.createElement('div');
+    div.className = 'proposal';
+    div.innerHTML = `
+      <div class="proposal-header">
+        <span class="proposal-room">${p.roomName}</span>
+        <span class="proposal-tag ${tagCls}">${tagText}</span>
+      </div>
+      <div class="proposal-body">
+        <div class="proposal-metric">
+          <div class="proposal-metric-label">現在価格</div>
+          <div class="proposal-metric-value">¥${p.currentPrice.toLocaleString()}</div>
+        </div>
+        <div class="proposal-metric">
+          <div class="proposal-metric-label">→ 推奨価格</div>
+          <div class="proposal-metric-value" style="color:${p.direction==='up'?'var(--green)':p.direction==='down'?'var(--red)':'var(--gold)'}">¥${p.proposedPrice.toLocaleString()}</div>
+        </div>
+        <div class="proposal-metric">
+          <div class="proposal-metric-label">変動額</div>
+          <div class="proposal-metric-value">${diff >= 0 ? '+' : ''}¥${diff.toLocaleString()}</div>
+        </div>
+      </div>
+      <div class="proposal-reason">${p.reason}</div>
+      <div class="proposal-actions">
+        <button class="btn btn-sm btn-success" onclick="approveProposal(${idx})">✅ 承認する</button>
+        <button class="btn btn-sm btn-danger" onclick="rejectProposal(${idx})">❌ 却下</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+
+  // Overview summary
+  renderOverviewProposals();
+}
+
+function approveProposal(idx) {
+  const p = state.proposals[idx];
+  p.status = 'approved';
+  if (!state.ownData[p.roomId]) state.ownData[p.roomId] = {};
+  state.ownData[p.roomId].price = p.proposedPrice;
+  saveState();
+  renderProposals();
+  renderOwnRooms();
+  updateOverviewKPIs();
+}
+
+function rejectProposal(idx) {
+  state.proposals[idx].status = 'rejected';
+  saveState();
+  renderProposals();
+}
+
+function renderOverviewProposals() {
+  const container = document.getElementById('overviewProposals');
+  const pending = state.proposals.filter(p => p.status === 'pending');
+  if (pending.length === 0) {
+    container.innerHTML = '<span class="text-sub">未承認のAI提案はありません。</span>';
+    return;
+  }
+  let html = '';
+  pending.slice(0, 3).forEach(p => {
+    const tagCls = p.direction === 'up' ? 'tag-up' : p.direction === 'down' ? 'tag-down' : 'tag-hold';
+    const tagText = p.direction === 'up' ? '⬆ 値上げ' : p.direction === 'down' ? '⬇ 値下げ' : '→ 維持';
+    const diff = p.proposedPrice - p.currentPrice;
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+      <span>${p.roomName}</span>
+      <span><span class="proposal-tag ${tagCls}">${tagText}</span> ¥${p.currentPrice.toLocaleString()} → ¥${p.proposedPrice.toLocaleString()} (${diff>=0?'+':''}¥${diff.toLocaleString()})</span>
+    </div>`;
+  });
+  if (pending.length > 3) html += `<div class="text-sub mt-1">他 ${pending.length-3} 件の提案あり → 「AI提案」タブへ</div>`;
+  container.innerHTML = html;
+}
+
+// ================================================================
+// OVERVIEW KPIs
+// ================================================================
+
+function getOwnAvgPrice() {
+  const isWeekend = new Date().getDay() === 5 || new Date().getDay() === 6;
+  let sum = 0;
+  ROOM_TYPES.forEach(room => {
+    const d = state.ownData[room.id] || {};
+    sum += d.price || (isWeekend ? room.weekend : room.weekday);
+  });
+  return Math.round(sum / ROOM_TYPES.length);
+}
+
+function getCompAvgPrice() {
+  let sum = 0, cnt = 0;
+  COMPETITORS.filter(c => c.rank === 'A').forEach(comp => {
+    const d = state.compData[comp.id] || {};
+    if (d.price2meals && d.price2meals > 0) { sum += d.price2meals; cnt++; }
+  });
+  return cnt > 0 ? Math.round(sum / cnt) : 0;
+}
+
+function updateOverviewKPIs() {
+  const isWeekend = new Date().getDay() === 5 || new Date().getDay() === 6;
+  let totalVacancy = 0, weightedPrice = 0, soldRooms = 0;
+
+  ROOM_TYPES.forEach(room => {
+    const d = state.ownData[room.id] || {};
+    const price = d.price || (isWeekend ? room.weekend : room.weekday);
+    const vacancy = d.vacancy !== undefined ? d.vacancy : room.rooms;
+    totalVacancy += vacancy;
+    const sold = room.rooms - vacancy;
+    soldRooms += sold;
+    weightedPrice += price * sold;
+  });
+
+  const occRate = (TOTAL_ROOMS - totalVacancy) / TOTAL_ROOMS;
+  const adr = soldRooms > 0 ? Math.round(weightedPrice / soldRooms) : 0;
+  const revpar = Math.round(adr * occRate);
+  const avgPrice = getOwnAvgPrice();
+  const compAvg = getCompAvgPrice();
+  const priceDiff = compAvg > 0 ? avgPrice - compAvg : 0;
+  const pendingCount = state.proposals.filter(p => p.status === 'pending').length;
+
+  setKPI('kpiAvgPrice', '¥' + avgPrice.toLocaleString(), 'neutral');
+  setKPI('kpiVacancy', totalVacancy, totalVacancy > 5 ? 'down' : totalVacancy > 2 ? 'neutral' : 'up');
+  setKPI('kpiOccRate', (occRate*100).toFixed(0) + '%', occRate > 0.7 ? 'up' : occRate > 0.4 ? 'neutral' : 'down');
+  setKPI('kpiADR', adr > 0 ? '¥' + adr.toLocaleString() : '-', 'neutral');
+  setKPI('kpiRevPAR', revpar > 0 ? '¥' + revpar.toLocaleString() : '-', 'neutral');
+  setKPI('kpiCompAvg', compAvg > 0 ? '¥' + compAvg.toLocaleString() : '-', 'neutral');
+  setKPI('kpiPriceDiff', priceDiff !== 0 ? (priceDiff > 0 ? '+' : '') + '¥' + priceDiff.toLocaleString() : '-',
+    priceDiff > 0 ? 'down' : priceDiff < 0 ? 'up' : 'neutral');
+  setKPI('kpiProposals', pendingCount, pendingCount > 0 ? 'neutral' : 'up');
+
+  renderOutlook7();
+}
+
+function setKPI(id, value, colorClass) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.textContent = value;
+    el.className = 'kpi-value ' + (colorClass || '');
+  }
+}
+
+// ================================================================
+// 7-DAY OUTLOOK
+// ================================================================
+
+function renderOutlook7() {
+  const tbody = document.getElementById('outlook7Body');
+  tbody.innerHTML = '';
+  const days = ['日','月','火','水','木','金','土'];
+  const compAvg = getCompAvgPrice();
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() + i);
+    const dateKey = date.toISOString().slice(0,10);
+    const dayName = days[date.getDay()];
+    const isWeekend = date.getDay() === 5 || date.getDay() === 6;
+    const evts = state.events.filter(e => e.date === dateKey);
+    const evtText = evts.length > 0 ? evts.map(e => e.name).join(', ') : '-';
+
+    let totalVacancy = 0, avgP = 0;
+    ROOM_TYPES.forEach(room => {
+      const d = state.ownData[room.id] || {};
+      avgP += d.price || (isWeekend ? room.weekend : room.weekday);
+      totalVacancy += d.vacancy !== undefined ? d.vacancy : room.rooms;
+    });
+    avgP = Math.round(avgP / ROOM_TYPES.length);
+    const occ = ((TOTAL_ROOMS - totalVacancy) / TOTAL_ROOMS * 100).toFixed(0);
+
+    let judgment = '-';
+    if (compAvg > 0 && avgP < compAvg * 0.9 && parseInt(occ) > 60) judgment = '<span style="color:var(--green)">⬆ 値上げ余地</span>';
+    else if (parseInt(occ) < 30) judgment = '<span style="color:var(--red)">⬇ 要対策</span>';
+    else if (evts.some(e => e.impact === 'high')) judgment = '<span style="color:var(--gold)">📈 イベント需要</span>';
+    else judgment = '<span class="text-sub">→ 適正</span>';
+
+    const dayColor = date.getDay() === 0 ? 'color:var(--red)' : date.getDay() === 6 ? 'color:var(--blue)' : '';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${dateKey.slice(5)}</td>
+      <td style="${dayColor}">${dayName}</td>
+      <td class="text-xs">${evtText}</td>
+      <td>¥${avgP.toLocaleString()}</td>
+      <td>${totalVacancy}</td>
+      <td>${occ}%</td>
+      <td>${compAvg > 0 ? '¥'+compAvg.toLocaleString() : '-'}</td>
+      <td>${judgment}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+// ================================================================
+// COPY YESTERDAY
+// ================================================================
+
+function copyYesterday(section) {
+  const yk = yesterdayKey();
+  const hist = state.history[yk];
+  if (!hist) { alert('昨日のデータが見つかりません。'); return; }
+  if (section === 'own' && hist.own) { state.ownData = JSON.parse(JSON.stringify(hist.own)); renderOwnRooms(); }
+  if (section === 'comp' && hist.comp) { state.compData = JSON.parse(JSON.stringify(hist.comp)); renderCompetitors(); }
+  if (section === 'ota' && hist.ota) { state.otaData = JSON.parse(JSON.stringify(hist.ota)); renderOTA(); }
+  saveState();
+  alert('昨日のデータをコピーしました。差分を修正してください。');
+}
+
+// ================================================================
+// CSV EXPORT
+// ================================================================
+
+function exportCSV() {
+  let csv = '\uFEFF'; // BOM for Excel
+  csv += '赤沢温泉旅館 価格調整データ,' + todayKey() + '\n\n';
+
+  // 自館
+  csv += '【自館状況】\n';
+  csv += '部屋タイプ,室数,販売価格,空室数,素泊まり価格\n';
+  ROOM_TYPES.forEach(room => {
+    const d = state.ownData[room.id] || {};
+    const isWeekend = new Date().getDay() === 5 || new Date().getDay() === 6;
+    csv += `${room.name},${room.rooms},${d.price||(isWeekend?room.weekend:room.weekday)},${d.vacancy!==undefined?d.vacancy:room.rooms},${d.domitoryPrice||''}\n`;
+  });
+
+  csv += '\n【近隣比較】\n';
+  csv += 'ランク,施設名,1泊2食,素泊まり,空室,クーポン,口コミ点,口コミ件数,人気プラン\n';
+  COMPETITORS.forEach(comp => {
+    const d = state.compData[comp.id] || {};
+    csv += `${comp.rank},${comp.name},${d.price2meals||''},${d.priceDomitory||''},${d.vacancy||''},${d.coupon||''},${d.reviewScore||''},${d.reviewCount||''},${d.popularPlan||''}\n`;
+  });
+
+  csv += '\n【OTA状況】\n';
+  csv += 'OTA,表示順位,最安値,1泊2食最安,素泊まり最安,クーポン,キャンペーン,口コミ点,口コミ件数\n';
+  OTAS.forEach(ota => {
+    const d = state.otaData[ota.id] || {};
+    csv += `${ota.name},${d.rank||''},${d.cheapest||''},${d.price2meals||''},${d.priceDomitory||''},${d.coupon||''},${d.campaign||''},${d.reviewScore||''},${d.reviewCount||''}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `akasawa_pricing_${todayKey()}.csv`;
+  link.click();
+}
+
+// ================================================================
+// DAILY SNAPSHOT
+// ================================================================
+
+function saveDailySnapshot() {
+  const key = todayKey();
+  state.history[key] = {
+    own: JSON.parse(JSON.stringify(state.ownData)),
+    comp: JSON.parse(JSON.stringify(state.compData)),
+    ota: JSON.parse(JSON.stringify(state.otaData))
+  };
+  // Keep only 30 days of history
+  const keys = Object.keys(state.history).sort();
+  while (keys.length > 30) { delete state.history[keys.shift()]; }
+  saveState();
+}
+
+// ================================================================
+// INIT
+// ================================================================
+
+function init() {
+  document.getElementById('headerDate').textContent = new Date().toLocaleDateString('ja-JP', {
+    year:'numeric', month:'long', day:'numeric', weekday:'long'
+  });
+
+  loadState();
+  renderOwnRooms();
+  renderCompetitors();
+  renderOTA();
+  renderCalendar(2026, 7, 'calJuly');
+  renderCalendar(2026, 8, 'calAugust');
+  renderProposals();
+  updateOverviewKPIs();
+  saveDailySnapshot();
+}
+
+init();
+</script>
+</body>
+</html>

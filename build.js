@@ -72,21 +72,24 @@ copyFolderSync(path.join(__dirname, 'apps', 'akasawa-ml', 'public'), path.join(d
 console.log('Copying akasawa-sns...');
 copyFolderSync(path.join(__dirname, 'apps', 'akasawa-sns', 'public'), path.join(distDir, 'akasawa-sns'));
 
-// 6. apps/akasawa.dp のビルドとコピー
-console.log('Building akasawa.dp React app...');
-const dpPath = path.join(__dirname, 'apps', 'akasawa.dp');
-const adminPath = path.join(dpPath, 'apps', 'admin');
-try {
-  console.log('Running npm install in apps/akasawa.dp (monorepo root)...');
-  execSync('npm install', { cwd: dpPath, stdio: 'inherit' });
-  console.log('Building apps/akasawa.dp/apps/admin...');
-  // npx が node_modules 階層を辿って正しい vite を見つけて実行する
-  execSync('npx vite build', { cwd: adminPath, stdio: 'inherit' });
-  console.log('Copying build files to dist/akasawa-dp...');
-  copyFolderSync(path.join(adminPath, 'dist'), path.join(distDir, 'akasawa-dp'));
-} catch (err) {
-  console.error('Failed to build akasawa.dp:', err.message);
-  process.exit(1);
+// 6. apps/akasawa-dp のコピー（簡易版ダイナミックプライシング）
+console.log('Copying akasawa-dp (standalone dashboard)...');
+const dpSimplePath = path.join(__dirname, 'apps', 'akasawa-dp');
+if (fs.existsSync(dpSimplePath)) {
+  copyFolderSync(dpSimplePath, path.join(distDir, 'akasawa-dp'));
+} else {
+  // フォールバック: 旧React版をビルド
+  console.log('Falling back to akasawa.dp React build...');
+  const dpPath = path.join(__dirname, 'apps', 'akasawa.dp');
+  const adminPath = path.join(dpPath, 'apps', 'admin');
+  try {
+    execSync('npm install', { cwd: dpPath, stdio: 'inherit' });
+    execSync('npx vite build', { cwd: adminPath, stdio: 'inherit' });
+    copyFolderSync(path.join(adminPath, 'dist'), path.join(distDir, 'akasawa-dp'));
+  } catch (err) {
+    console.error('Failed to build akasawa.dp:', err.message);
+    process.exit(1);
+  }
 }
 
 // 7. Netlify Functions のマージ
