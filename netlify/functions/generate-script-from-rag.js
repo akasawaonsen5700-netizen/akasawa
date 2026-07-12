@@ -18,10 +18,10 @@ exports.handler = async (event) => {
       return { statusCode: 500, body: JSON.stringify({ error: 'GEMINI_API_KEY is not configured' }) };
     }
 
-    const ragPath = path.join(__dirname, '_lib', 'endo-philosophy.md');
     let ragContent = '';
     try {
-      ragContent = fs.readFileSync(ragPath, 'utf8');
+      const { PHILOSOPHY } = require('./_lib-endo/endo-philosophy');
+      ragContent = PHILOSOPHY;
     } catch (err) {
       console.error('Failed to read RAG corpus:', err);
       return { statusCode: 500, body: JSON.stringify({ error: 'RAGコーパスの読み込みに失敗しました。' }) };

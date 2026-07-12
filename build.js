@@ -183,6 +183,34 @@ if (fs.existsSync(reviewFuncsSrc)) {
   });
 }
 
+// 7.7. apps/akasawa-blog のコピーと関数マージ
+console.log('Copying akasawa-blog...');
+copyFolderSync(path.join(__dirname, 'apps', 'akasawa-blog', 'public'), path.join(distDir, 'akasawa-blog'));
+
+const blogFuncsSrc = path.join(__dirname, 'apps', 'akasawa-blog', 'netlify', 'functions');
+if (fs.existsSync(blogFuncsSrc)) {
+  fs.readdirSync(blogFuncsSrc).forEach(file => {
+    const filePath = path.join(blogFuncsSrc, file);
+    if (fs.lstatSync(filePath).isFile()) {
+      fs.copyFileSync(filePath, path.join(functionsDir, file));
+    }
+  });
+}
+
+// 7.8. apps/akasawa-ota のコピーと関数マージ
+console.log('Copying akasawa-ota...');
+copyFolderSync(path.join(__dirname, 'apps', 'akasawa-ota', 'public'), path.join(distDir, 'akasawa-ota'));
+
+const otaFuncsSrc = path.join(__dirname, 'apps', 'akasawa-ota', 'netlify', 'functions');
+if (fs.existsSync(otaFuncsSrc)) {
+  fs.readdirSync(otaFuncsSrc).forEach(file => {
+    const filePath = path.join(otaFuncsSrc, file);
+    if (fs.lstatSync(filePath).isFile()) {
+      fs.copyFileSync(filePath, path.join(functionsDir, file));
+    }
+  });
+}
+
 // 8. APIキーの書き出し (akasawa-ml用)
 console.log('Writing API Key to dist/akasawa-ml/key.txt...');
 const apiKey = process.env.GEMINI_API_KEY || '';

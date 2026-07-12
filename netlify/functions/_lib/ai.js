@@ -235,6 +235,7 @@ async function buildDraftPackage(input) {
     if (channels.includes('instagram_feed')) drafts.instagram_feed = { text: geminiDraft.instagram.text, narration: geminiDraft.instagram.narration };
     if (channels.includes('instagram_reel')) drafts.instagram_reel = { text: geminiDraft.instagram.text, narration: geminiDraft.instagram.narration };
     if (channels.includes('x')) drafts.x = { text: geminiDraft.x.text, narration: geminiDraft.x.narration };
+    if (channels.includes('gbp')) drafts.gbp = { text: geminiDraft.instagram.text, narration: geminiDraft.instagram.narration };
     
     altText = geminiDraft.altText || `${BRAND.ownerName}個人アカウントの投稿用ビジュアル`;
     // ハッシュタグの抽出（なければデフォルト）

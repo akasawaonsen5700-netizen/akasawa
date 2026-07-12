@@ -14,6 +14,7 @@ const schema = z.object({
   publishAt: z.string().nullable().optional(),
   visibility: z.enum(['review', 'auto_if_safe']).default('review'),
   ngMemo: z.string().optional().default(''),
+  instagramType: z.enum(['reels', 'feed']).optional().default('reels'),
   channels: z.array(z.string()).min(1),
   assets: z.array(z.object({
     name: z.string(),
