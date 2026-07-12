@@ -101,11 +101,19 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">市場調査データ入力（手動モード）</h2>
-        <p className="text-sm text-gray-600 mb-6">
-          仕様書に基づき、指定された対象日の価格と空室状況をOTAから転記します。<br/>
-          ※9月の正式版リリース以降は、この入力作業はシステムによって自動化されます。
-        </p>
+        <h2 className="text-xl font-bold mb-4 text-gray-800">市場調査データ入力（2026夏・簡易版）</h2>
+        
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+          <p className="text-sm text-blue-800 font-medium mb-2">
+            遠藤オーナー、いつもお疲れ様です。
+          </p>
+          <p className="text-sm text-blue-800 leading-relaxed">
+            ここは9月に完成する「自動価格調整システム」へ繋ぐための、この夏限定のデータ蓄積画面です。<br/>
+            日々の業務でお忙しい中恐縮ですが、毎朝以下の「調査対象日」から特定の日付を選び、楽天やじゃらんを見ながら10施設の販売状況（空室・価格）をご入力ください。<br/>
+            ここで集めたデータが、お盆や週末の単価（RevPAR）を最大化するための重要な判断材料となります。<br/>
+            <span className="font-bold text-blue-900">（※9月以降は、この面倒な入力作業はすべてAIプログラムが自動で代行しますのでご安心ください！）</span>
+          </p>
+        </div>
 
         <div className="flex space-x-4 mb-6 bg-gray-50 p-4 rounded-md">
           <div>
