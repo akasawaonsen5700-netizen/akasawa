@@ -1,19 +1,19 @@
-// OTA最適化用のデモデータ
+// 各OTAのリアルな初期サンプルデータ（プレロード用）
 const DEMO_DATA = {
   rakuten: {
     catchCopy: "塩原温泉 赤沢温泉旅館　猫とぬるゆに癒される昔ながらの一軒宿",
     description: "那須塩原温泉郷の箒川沿いに佇む宿です。当館名物の源泉掛け流し100%のぬるゆ温泉や、看板猫たちがお出迎えします。お料理は地元の食材を使った手作り和食をお楽しみください。無料の駐車場も完備しております。",
-    plans: "【スタンダード】赤沢のぬる湯と旬の味覚プラン 16,500円〜\n【猫好き必見】看板猫と遊べる特別室プラン 18,700円〜"
+    plans: "【スタンダード】赤沢のぬる湯と旬の味覚プラン 16,500円〜"
   },
   jalan: {
     catchCopy: "【猫と温泉の宿】のんびり、ぬる湯と地場食材の料理を満喫する休日",
-    plans: "1泊2食付スタンダード和食プラン 16,500円〜\n【直前割】空室限定で1,000円引プラン 15,500円〜\n【ポイント10%】早期予約30日前プラン 17,600円〜",
-    points: "基本ポイント設定（2%）。現在じゃらんクーポンフェスなどの販促特集への参画はほぼしていない。"
+    description: "箒川の渓流沿いに静かに佇む温泉宿。名物ぬる湯の露天風呂と大浴場は一晩中入浴可能！看板猫たちがロビーでお出迎えします。ご夕食は地場の山菜や川魚、手作りの蒸し餃子などをアツアツでお届けします。",
+    points: "基本ポイント2%設定のみ。特設クーポンやクーポンフェスには現在不参画。"
   },
   booking: {
     description: "Located in Nasushiobara, Akasawa Onsen Ryokan has a hot spring, garden and free parking. The property is traditional Japanese style. We serve Japanese dinner and breakfast.",
-    inboundInfo: "インバウンド利用は現在全体の10%程度。アジア系のファミリーやカップルが稀に来る。英語の案内や説明が足りていない。",
-    policy: "現地決済または事前決済。キャンセルポリシーは3日前から100%課金。"
+    inboundInfo: "インバウンド利用は現在全体の10%程度。アジア系のファミリーやカップルが稀に来るが、英語の案内がほぼ無くミスマッチが不安。",
+    policy: "現地決済または事前決済。当日キャンセルは100%課金。"
   },
   review: {
     reviews: "・内湯はとてもいいお湯で何時間でも入っていられそうでしたが、露天風呂がぬるすぎて寒くてすぐに出ました。(40代男性)\n・ロビーで可愛い猫ちゃんが膝の上に乗ってくれて感動しました！ただ、部屋のテーブルを動かした時に、下に少しホコリが溜まっていたのが気になりました。(30代女性)\n・従業員の方が皆さん外国人で、一生懸命対応してくれて温かい気持ちになりました。ただ、食事の際、まだ食べている途中に天ぷらや次の料理がどんどん運ばれてきて、少し急かされているように感じて残念でした。(50代夫婦)"
@@ -24,17 +24,18 @@ const DEMO_DATA = {
   plan: {
     planName: "【スタンダード】赤沢のぬる湯と旬の創作和食プラン",
     description: "源泉掛け流しのぬる湯をお楽しみいただいた後は、当館オリジナルの創作和食をお召し上がりください。のんびりとお寛ぎいただけます。和室のお部屋になります。",
-    details: "1泊2食付き 16,500円〜、特典なし、チェックアウト10:00"
+    details: "1-2名利用時 16,500円〜、特典なし、チェックアウト10:00"
   },
   rank_ad: {
     rankings: "・「那須塩原 温泉」で検索順位48位（ほぼ表示されない）\n・「那須塩原 ぬる湯」で4位\n・「那須塩原 猫の宿」で2位",
-    adSpend: "現在、楽天キーワード広告やじゃらん販促パックなどの有料広告は一切行っていない（月0円）。",
+    adSpend: "現在、有料広告（楽天ITCキーワード広告やじゃらん販促パックなど）は一切行っていない（月0円）。",
     couponSpend: "じゃらんや楽天で時々思い出したように割引クーポンを少量発行している（月2万円分程度）。"
   }
 };
 
 // UIステート
 let activeTab = 'rakuten';
+let uploadedImageData = null; // { mimeType, data (Base64) }
 
 // DOM要素
 const el = {
@@ -48,14 +49,42 @@ const el = {
   placeholderView: document.getElementById('placeholder-view'),
   reportContent: document.getElementById('report-content'),
 
+  // 画像アップロード用
+  imageUploadZone: document.getElementById('image-upload-zone'),
+  imageFileInput: document.getElementById('image-file-input'),
+  imagePreviewContainer: document.getElementById('image-preview-container'),
+  imagePreview: document.getElementById('image-preview'),
+  removeImageBtn: document.getElementById('remove-image-btn'),
+
   // レポート出力要素
   reportIssues: document.getElementById('report-issues'),
-  reportRevised: document.getElementById('report-revised'),
+  reportBefore: document.getElementById('report-before'),
+  reportAfter: document.getElementById('report-after'),
+  reportManual: document.getElementById('report-manual'),
   reportPromotion: document.getElementById('report-promotion'),
-  reportActions: document.getElementById('report-actions')
+  reportActions: document.getElementById('report-actions'),
+  promoPanelTitle: document.getElementById('promo-panel-title')
 };
 
-// 1. タブ切り替え処理
+// 1. 起動時の初期サンプルデータのプレロード（空欄を作らない）
+function preloadInitialData() {
+  loadOtaData('rakuten');
+}
+
+function loadOtaData(tab) {
+  const data = DEMO_DATA[tab];
+  if (!data) return;
+
+  const formContainer = document.getElementById(`form-${tab}`);
+  for (const [key, val] of Object.entries(data)) {
+    const input = formContainer.querySelector(`[name="${key}"]`);
+    if (input) {
+      input.value = val;
+    }
+  }
+}
+
+// 2. タブ切り替え処理
 function initTabs() {
   el.navItems.forEach(item => {
     item.addEventListener('click', () => {
@@ -72,6 +101,25 @@ function initTabs() {
       document.querySelectorAll('.form-container').forEach(form => form.classList.add('hidden'));
       document.getElementById(`form-${activeTab}`).classList.remove('hidden');
 
+      // データロード（プレロード）
+      loadOtaData(activeTab);
+
+      // 写真タブ以外では画像アップロードデータをクリア
+      if (activeTab !== 'photo') {
+        clearImage();
+      }
+
+      // プロモーションパネルのタイトル名調整
+      if (activeTab === 'review') {
+        el.promoPanelTitle.textContent = '🛠️ ハード・設備投資アドバイス';
+      } else if (activeTab === 'photo') {
+        el.promoPanelTitle.textContent = '🎨 画像生成AI用プロンプト';
+      } else if (activeTab === 'rank_ad') {
+        el.promoPanelTitle.textContent = '📊 予算 ＆ 値引きクーポン原資の最適配分シート';
+      } else {
+        el.promoPanelTitle.textContent = '🎁 クーポン・プロモーション最適化パラメータ設定値';
+      }
+
       // 右側の出力エリアを初期化（プレースホルダーに戻す）
       el.placeholderView.classList.remove('hidden');
       el.reportContent.classList.add('hidden');
@@ -81,24 +129,93 @@ function initTabs() {
   });
 }
 
-// 2. デモデータのロード
+// 3. デモデータのロード（手動クリック用）
 function initDemoLoader() {
   el.loadDemoBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    const data = DEMO_DATA[activeTab];
-    if (!data) return;
-
-    const formContainer = document.getElementById(`form-${activeTab}`);
-    for (const [key, val] of Object.entries(data)) {
-      const input = formContainer.querySelector(`[name="${key}"]`);
-      if (input) {
-        input.value = val;
-      }
-    }
+    loadOtaData(activeTab);
   });
 }
 
-// 3. 簡易マークダウンパーサー
+// 4. 画像アップロード・ドラッグ＆ドロップ制御
+function initImageUpload() {
+  const zone = el.imageUploadZone;
+  const input = el.imageFileInput;
+
+  // クリックでファイル選択を開く
+  zone.addEventListener('click', () => {
+    input.click();
+  });
+
+  input.addEventListener('change', e => {
+    handleFiles(e.target.files);
+  });
+
+  // ドラッグ＆ドロップイベント
+  ['dragenter', 'dragover'].forEach(eventName => {
+    zone.addEventListener(eventName, e => {
+      e.preventDefault();
+      zone.style.borderColor = 'var(--brand)';
+      zone.style.background = 'rgba(226, 194, 153, 0.08)';
+    }, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    zone.addEventListener(eventName, e => {
+      e.preventDefault();
+      zone.style.borderColor = 'rgba(226, 194, 153, 0.3)';
+      zone.style.background = 'rgba(15, 23, 42, 0.4)';
+    }, false);
+  });
+
+  zone.addEventListener('drop', e => {
+    const dt = e.dataTransfer;
+    handleFiles(dt.files);
+  });
+
+  el.removeImageBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    clearImage();
+  });
+}
+
+function handleFiles(files) {
+  if (files.length === 0) return;
+  const file = files[0];
+
+  if (!file.type.startsWith('image/')) {
+    alert('画像ファイルを選択してください。');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = () => {
+    const base64Data = reader.result;
+    
+    // プレビュー表示
+    el.imagePreview.src = base64Data;
+    el.imagePreviewContainer.classList.remove('hidden');
+    el.imageUploadZone.classList.add('hidden');
+
+    // API送信用データ作成 (プレフィックス "data:image/jpeg;base64," を除外)
+    const splitIndex = base64Data.indexOf(',') + 1;
+    uploadedImageData = {
+      mimeType: file.type,
+      data: base64Data.substring(splitIndex)
+    };
+  };
+}
+
+function clearImage() {
+  el.imageFileInput.value = '';
+  el.imagePreview.src = '';
+  el.imagePreviewContainer.classList.add('hidden');
+  el.imageUploadZone.classList.remove('hidden');
+  uploadedImageData = null;
+}
+
+// 5. 簡易マークダウンパーサー
 function parseMarkdown(md) {
   if (!md) return '';
   let html = md.trim();
@@ -123,7 +240,6 @@ function parseMarkdown(md) {
     if (block.startsWith('<h') || block.startsWith('<li>')) {
       return block;
     }
-    // 箇条書きリストを <ul> で包む簡易処理
     if (block.includes('<li>')) {
       return `<ul>${block}</ul>`;
     }
@@ -133,11 +249,10 @@ function parseMarkdown(md) {
   return html;
 }
 
-// 4. API呼び出しとレポートレンダリング
+// 6. 分析API呼び出しとレンダリング
 async function runAnalysis(e) {
   e.preventDefault();
 
-  // 現在のアクティブなフォーム内のデータを収集
   const formContainer = document.getElementById(`form-${activeTab}`);
   const inputs = formContainer.querySelectorAll('input, textarea, select');
   const payload = {};
@@ -148,16 +263,16 @@ async function runAnalysis(e) {
     if (input.value.trim()) hasValue = true;
   });
 
-  if (!hasValue) {
-    alert('分析対象のデータを入力するか、デモデータを読み込んでください。');
+  if (!hasValue && !uploadedImageData) {
+    alert('分析対象のデータを入力するか、画像をアップロードしてください。');
     return;
   }
 
-  // UIをローディングに切り替え
+  // UIをローディングに
   el.analyzeBtn.disabled = true;
   el.loader.style.display = 'block';
-  el.reportStatus.textContent = '分析中...';
-  el.reportStatus.classList.remove('active');
+  el.statusBadge.textContent = '分析中...';
+  el.statusBadge.classList.remove('active');
 
   try {
     const response = await fetch('/api/analyze-ota', {
@@ -165,7 +280,11 @@ async function runAnalysis(e) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ type: activeTab, payload })
+      body: JSON.stringify({ 
+        type: activeTab, 
+        payload, 
+        imageData: uploadedImageData 
+      })
     });
 
     const data = await response.json();
@@ -174,35 +293,20 @@ async function runAnalysis(e) {
       throw new Error(data.error || '分析中にサーバーエラーが発生しました。');
     }
 
-    // 分析結果をUIに反映
+    // 各カードへの描画
     el.reportIssues.textContent = data.issues || '特になし';
+    el.reportBefore.textContent = data.beforeText || '現在の設定（未指定）';
     
-    // タイトルの調整
-    const revisedTitleEl = document.getElementById('panel-revised-title');
-    if (activeTab === 'plan') {
-      revisedTitleEl.textContent = '🏷️ 改善されたプラン設計案';
-      el.reportRevised.innerHTML = `
-        <p><strong>改善後のプラン名:</strong></p>
-        <div class="meta-row" style="background:#07090e; padding:8px; border-radius:6px; margin-bottom:12px; color:var(--brand); font-weight:bold;">${data.revisedPlanName}</div>
-        <p><strong>リライトされたプラン説明文:</strong></p>
-        <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; margin-bottom:12px; white-space:pre-wrap;">${data.revisedDescription}</div>
-        <p><strong>推奨される付加価値特典:</strong></p>
-        <div style="margin-bottom:12px;">${parseMarkdown(data.valueAddProps)}</div>
-        <p><strong>メインターゲット:</strong></p>
-        <div>${data.targetAudience}</div>
-      `;
-      // プラン改善時はクーポンパネルを非表示または別のアドバイスを格納
-      document.getElementById('promotion-panel').classList.add('hidden');
-    } else {
-      revisedTitleEl.textContent = '📝 改善テキスト・ビジュアル案';
-      el.reportRevised.innerHTML = parseMarkdown(data.revisedText || data.body);
-      document.getElementById('promotion-panel').classList.remove('hidden');
-      
-      // クーポン・プロモーションのアドバイスのレンダリング
-      el.reportPromotion.innerHTML = parseMarkdown(data.promotionAdvice || '該当のプロモーション設定アドバイスを分析できませんでした。');
-    }
+    // 改善後（After）
+    el.reportAfter.innerHTML = parseMarkdown(data.afterText);
+    
+    // 入稿マニュアル
+    el.reportManual.innerHTML = parseMarkdown(data.manual || '管理画面の該当箇所に入稿してください。');
 
-    // アクションプランの描画
+    // クーポン・プロモーションパラメータ
+    el.reportPromotion.innerHTML = parseMarkdown(data.promotionParams);
+
+    // アクションリスト
     const actions = data.actionPlan || [];
     el.reportActions.innerHTML = actions.map(act => `
       <li>${act}</li>
@@ -225,7 +329,7 @@ async function runAnalysis(e) {
   }
 }
 
-// 5. コピー機能
+// 7. コピー機能
 function initCopyButtons() {
   document.addEventListener('click', async e => {
     const btn = e.target.closest('.copy-btn');
@@ -233,15 +337,7 @@ function initCopyButtons() {
 
     const targetId = btn.dataset.target;
     const targetEl = document.getElementById(targetId);
-    let textToCopy = '';
-
-    if (targetId === 'report-revised' && activeTab === 'plan') {
-      // プラン改善時のカスタムテキスト抽出
-      const rawTextarea = targetEl.textContent; // ここはHTMLプレビューになっているのでInnerTextを使用
-      textToCopy = targetEl.innerText;
-    } else {
-      textToCopy = targetEl.innerText || targetEl.textContent;
-    }
+    let textToCopy = targetEl.innerText || targetEl.textContent;
 
     try {
       await navigator.clipboard.writeText(textToCopy);
@@ -266,6 +362,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initDemoLoader();
   initCopyButtons();
+  initImageUpload();
+
+  // 初回起動データプレロード
+  preloadInitialData();
 
   el.otaForm.addEventListener('submit', runAnalysis);
 });
