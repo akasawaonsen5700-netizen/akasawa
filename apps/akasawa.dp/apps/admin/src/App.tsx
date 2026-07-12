@@ -8,7 +8,8 @@ import {
   HistoryEntry,
   PmsActual,
   ConnectionSettings,
-  ConnectionLog
+  ConnectionLog,
+  MarketResearchData
 } from "./types";
 import Sidebar from "./components/Sidebar";
 import DashboardTab from "./components/DashboardTab";
@@ -18,11 +19,12 @@ import HistoryTab from "./components/HistoryTab";
 import SettingsTab from "./components/SettingsTab";
 import ConnectionTab from "./components/ConnectionTab";
 import CsvTab from "./components/CsvTab";
+import MarketResearchTab from "./components/MarketResearchTab";
 
 const startKey = new Date().toISOString().slice(0, 10);
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>("dashboard");
+  const [activeTab, setActiveTab] = useState<string>("market_research"); // デフォルトを市場調査に
   const [loading, setLoading] = useState<boolean>(false);
   const [busy, setBusy] = useState<boolean>(false);
   const [notice, setNotice] = useState<string>("デモ環境が起動しました");
@@ -35,9 +37,11 @@ export default function App() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [pmsActuals, setPmsActuals] = useState<PmsActual[]>([]);
   const [pricingRules, setPricingRules] = useState<PricingRules>(defaultRules);
+  const [marketResearchData, setMarketResearchData] = useState<MarketResearchData[]>([]);
 
   // 外部システム連携ステート
   const [connectionSettings, setConnectionSettings] = useState<ConnectionSettings>({
+
     stayseeApiKey: "",
     stayseeHotelId: "",
     stayseeConnected: false,
@@ -171,12 +175,34 @@ export default function App() {
         localStorage.setItem("demo_connection_logs", JSON.stringify(initialLogs));
       }
 
+      // 9. 市場調査データの取得
+      const savedMarketData = localStorage.getItem("demo_market_research");
+      if (savedMarketData) {
+        setMarketResearchData(JSON.parse(savedMarketData));
+      }
+
     } catch (e) {
       console.error(e);
       setNotice("データのロード中にエラーが発生しました");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveMarketResearchData = (newData: MarketResearchData[]) => {
+    // 既存データとマージ（IDで一意に上書き）
+    const merged = [...marketResearchData];
+    newData.forEach(newItem => {
+      const idx = merged.findIndex(d => d.id === newItem.id);
+      if (idx >= 0) {
+        merged[idx] = newItem;
+      } else {
+        merged.push(newItem);
+      }
+    });
+    setMarketResearchData(merged);
+    localStorage.setItem("demo_market_research", JSON.stringify(merged));
+    setNotice("市場調査データを保存しました");
   };
 
   // 基盤カレンダー初期価格生成 (45日分)
@@ -916,6 +942,13 @@ export default function App() {
             onAddPmsActual={handleAddPmsActual}
             onClearPmsActuals={handleClearPmsActuals}
             onImportCsv={handleImportCsv}
+          />
+        );
+      case "market_research":
+        return (
+          <MarketResearchTab
+            researchData={marketResearchData}
+            onSaveData={handleSaveMarketResearchData}
           />
         );
       default:

@@ -137,3 +137,20 @@ export const defaultRules: PricingRules = {
     "61+": { weekday: 0.28, weekend: 0.46 }
   }
 };
+
+export type MarketResearchData = {
+  id: string;                // Uniquely identifies the record (e.g. "2026-08-13-rakuten-majimaso")
+  dateKey: string;           // Target date (e.g., "2026-08-13")
+  ota: "rakuten" | "jalan";  // The OTA used
+  hotelId: string;           // Competitor ID (e.g., "majimaso", "oku-kogen")
+  price: number;             // Selling price (taxes included) for 1 room 2 adults
+  status: "available" | "full" | "no_sales"; // Vacancy status
+  planName: string;          // Name of the plan
+  roomType: string;          // Room type name
+  meals: string;             // Meals condition
+  hasCoupon: boolean;        // Whether coupon exists
+  hasCampaign: boolean;      // Whether OTA campaign exists
+  hasPetPlan: boolean;       // Pet plan availability
+  features: string[];        // Array of features (e.g., early_bird, last_minute)
+  updatedAt: string;         // Timestamp of data collection
+};

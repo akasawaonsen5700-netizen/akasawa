@@ -19,6 +19,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const menuItems = [
     { id: "dashboard", label: "ダッシュボード", icon: "fas fa-tachometer-alt" },
+    { id: "market_research", label: "市場調査 (簡易版)", icon: "fas fa-search-dollar" },
     { id: "proposals", label: "価格提案", icon: "fas fa-lightbulb", badge: pendingProposalsCount },
     { id: "calendar", label: "カレンダー", icon: "fas fa-calendar-alt" },
     { id: "history", label: "承認履歴", icon: "fas fa-history" },
