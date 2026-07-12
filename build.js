@@ -211,6 +211,20 @@ if (fs.existsSync(otaFuncsSrc)) {
   });
 }
 
+// 7.9. apps/akasawa-plan のコピーと関数マージ
+console.log('Copying akasawa-plan...');
+copyFolderSync(path.join(__dirname, 'apps', 'akasawa-plan', 'public'), path.join(distDir, 'akasawa-plan'));
+
+const planFuncsSrc = path.join(__dirname, 'apps', 'akasawa-plan', 'netlify', 'functions');
+if (fs.existsSync(planFuncsSrc)) {
+  fs.readdirSync(planFuncsSrc).forEach(file => {
+    const filePath = path.join(planFuncsSrc, file);
+    if (fs.lstatSync(filePath).isFile()) {
+      fs.copyFileSync(filePath, path.join(functionsDir, file));
+    }
+  });
+}
+
 // 8. APIキーの書き出し (akasawa-ml用)
 console.log('Writing API Key to dist/akasawa-ml/key.txt...');
 const apiKey = process.env.GEMINI_API_KEY || '';

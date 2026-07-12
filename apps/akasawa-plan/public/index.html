@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>宿泊プラン作成エージェント | 赤沢温泉旅館</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600;700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="glass-bg"></div>
+
+  <div class="app-container">
+    <header class="app-header animate-fade-in">
+      <div class="eyebrow">Akasawa Strategy Agent</div>
+      <h1>宿泊プラン作成エージェント</h1>
+      <p class="subtitle">楽天トラベル等のAI検索（スキャンキーワード）と、人間の宿泊動機（情緒的ストーリー）の双方に最適化された売れるプランを自律設計します。</p>
+    </header>
+
+    <main class="grid-container">
+      <!-- 左側：プラン設計セクション -->
+      <section class="card control-section animate-slide-up">
+        <h2>1. 企画の方向性（テーマ）を選ぶ</h2>
+        
+        <div class="quick-directions">
+          <label class="section-sub-label">💡 宿の強み・時期に合わせたおまかせテーマ選択</label>
+          <div class="direction-grid" id="direction-buttons">
+            <!-- JSで動的にボタンを生成 -->
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="direction-input" class="form-label">🎯 企画の意図・ターゲット (自動入力されます) <span class="required">必須</span></label>
+          <textarea id="direction-input" placeholder="例: 秋の平日の空室を埋めるため、愛犬と同伴できてのんびり客室で過ごせる高単価なご夫婦向けプランを作りたい..."></textarea>
+        </div>
+
+        <hr class="divider">
+
+        <h2>2. 補足条件・こだわり（任意）</h2>
+        <div class="input-group">
+          <label for="custom-notes" class="form-label">✍️ 盛り込みたい特典や価格の希望などがあれば記入</label>
+          <textarea id="custom-notes" placeholder="例: チェックアウトを1時間延長し11:00にしたい。夕食に特製の蒸し餃子のおかわり自由特典を付けたい、など..."></textarea>
+        </div>
+
+        <button id="generate-btn" class="generate-btn">
+          <span class="btn-text">🛡️ AI ＆ 人間最適化プランを新規生成</span>
+          <div class="loader" id="loader" style="display: none;"></div>
+        </button>
+      </section>
+
+      <!-- 右側：完成プラン原稿・レポートセクション -->
+      <section class="card output-section animate-slide-up" style="animation-delay: 0.1s;">
+        <div class="output-header">
+          <h2>プラン企画 ＆ 原稿書面</h2>
+          <span class="status-badge" id="status-badge">未生成</span>
+        </div>
+
+        <div class="placeholder-view" id="placeholder-view">
+          <div class="placeholder-icon">🏨</div>
+          <p>左側のテーマを選択して「AI ＆ 人間最適化プランを新規生成」ボタンを押してください。<br>市場調査ポジショニング分析、仕込みキーワード、情緒的説明文がここに自動作成されます。</p>
+        </div>
+
+        <div class="output-content hidden" id="output-content">
+          <!-- 1. ポジショニング＆価格戦略レポート -->
+          <div class="output-card accent-border">
+            <div class="output-card-head">
+              <h3>📈 AIによる市場分析 ＆ 差別化ポジショニング</h3>
+            </div>
+            <div class="output-card-body">
+              <div class="analysis-block" id="market-analysis"></div>
+              <hr class="inner-divider">
+              <div class="price-strategy-block">
+                <span class="sub-label">💰 推奨販売単価・価格戦略:</span>
+                <p id="pricing-strategy"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. AI検索最適化プラン名 -->
+          <div class="output-card">
+            <div class="output-card-head">
+              <h3>📛 【AI・人間ハイブリッド】推奨プラン名</h3>
+              <button class="copy-btn" data-target="plan-name">コピー</button>
+            </div>
+            <p class="card-desc">※楽天トラベル等の文字数制限（50字）に対応しつつ、AIと人間の双方を惹きつけるタイトルです。</p>
+            <div class="output-card-body">
+              <div class="title-preview" id="plan-name"></div>
+            </div>
+          </div>
+
+          <!-- 3. AI検索用仕込みキーワード -->
+          <div class="output-card">
+            <div class="output-card-head">
+              <h3>🤖 AI検索エンジンがインデックスする「仕込みタグ」</h3>
+            </div>
+            <p class="card-desc">※楽天トラベルの検索AI等がプランを引っ掛けるために、説明文内に自然に配置された具体的キーワードです。</p>
+            <div class="output-card-body">
+              <div class="keyword-tags" id="ai-keywords">
+                <!-- 動的にスパンを生成 -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. プランキャッチコピー -->
+          <div class="output-card">
+            <div class="output-card-head">
+              <h3>✍️ プラン一覧用キャッチコピー</h3>
+              <button class="copy-btn" data-target="plan-catch">コピー</button>
+            </div>
+            <div class="output-card-body">
+              <p class="catch-preview" id="plan-catch"></p>
+            </div>
+          </div>
+
+          <!-- 5. 情緒的プラン説明文 -->
+          <div class="output-card">
+            <div class="output-card-head">
+              <h3>📖 【人間向け】情緒的プラン説明文 (詳細)</h3>
+              <div class="tab-actions">
+                <button class="tab-btn active" data-tab="preview">プレビュー</button>
+                <button class="tab-btn" data-tab="raw">テキスト</button>
+                <button class="copy-btn" data-target="plan-desc">本文をコピー</button>
+              </div>
+            </div>
+            <p class="card-desc">※お客様が宿での時間を生き生きと想像できるストーリー仕立てになっています。</p>
+            <div class="output-card-body body-container">
+              <div id="plan-desc-preview" class="markdown-preview"></div>
+              <textarea id="plan-desc" class="raw-textarea hidden" readonly></textarea>
+            </div>
+          </div>
+
+          <!-- 6. 管理者向け設定シート -->
+          <div class="output-card">
+            <div class="output-card-head">
+              <h3>⚙️ 管理者向け：OTA登録設定指示書</h3>
+            </div>
+            <div class="settings-sheet">
+              <div class="sheet-row">
+                <span class="sheet-label">推奨客室:</span>
+                <span class="sheet-val" id="sheet-room"></span>
+              </div>
+              <div class="sheet-row">
+                <span class="sheet-label">食事設定:</span>
+                <span class="sheet-val" id="sheet-meal"></span>
+              </div>
+              <div class="sheet-row">
+                <span class="sheet-label">設定特典:</span>
+                <span class="sheet-val" id="sheet-perks"></span>
+              </div>
+              <div class="sheet-row">
+                <span class="sheet-label">推奨クーポン・プロモ:</span>
+                <span class="sheet-val" id="sheet-coupon"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

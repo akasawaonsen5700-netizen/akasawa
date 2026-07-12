@@ -16,7 +16,8 @@
     "dev:chat": "npm run dev --workspace=apps/akasawa-chat",
     "dev:review": "netlify dev --port=8895 --staticServerPort=3995 --filter=akasawa-review -d apps/akasawa-review/public",
     "dev:blog": "npm run dev --workspace=apps/akasawa-blog",
-    "dev:ota": "npm run dev --workspace=apps/akasawa-ota"
+    "dev:ota": "npm run dev --workspace=apps/akasawa-ota",
+    "dev:plan": "npm run dev --workspace=apps/akasawa-plan"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
