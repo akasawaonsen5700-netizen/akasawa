@@ -1,0 +1,8 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[dev]
+  port = 8897
+  targetPort = 3993
+  staticServerPort = 3993
