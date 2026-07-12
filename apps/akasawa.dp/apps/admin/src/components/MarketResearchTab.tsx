@@ -115,7 +115,22 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
           </p>
         </div>
 
-        <div className="flex space-x-4 mb-6 bg-gray-50 p-4 rounded-md">
+        <div className="bg-gray-50 border border-gray-200 rounded-md p-4 mb-6">
+          <h3 className="text-sm font-bold text-gray-800 mb-2">💡 なぜこの10施設を調べるのか？（選定の根拠）</h3>
+          <ul className="text-xs text-gray-700 space-y-2 list-disc pl-5">
+            <li>
+              <strong className="text-blue-700">直接比較（5施設）</strong>：旅館まじま荘、山口屋旅館など。赤沢温泉旅館と同じ「小〜中規模」の旅館です。この5施設の平均価格や最安値が、赤沢の基本となる<strong className="text-red-600">「基準価格」</strong>のベースになります。
+            </li>
+            <li>
+              <strong className="text-gray-700">相場参考（3施設）</strong>：奥塩原高原ホテルなど。塩原温泉の「中〜上位価格帯」の宿です。連休やお盆で塩原エリア全体がどこまで高騰しているか（強気に攻められるか）の<strong className="text-red-600">「天井」</strong>を見るための指標です。
+            </li>
+            <li>
+              <strong className="text-purple-700">個性/ペット需要（2施設）</strong>：秘湯の宿 元泉館、わんわんパラダイス。赤沢の強みである「ペット同伴」「猫宿」という独自需要が活きる日に、一般旅館よりどれだけ高いプレミアム価格（付加価値）で売れているかの<strong className="text-red-600">「強気ライン」</strong>を探るための参考です。
+            </li>
+          </ul>
+        </div>
+
+        <div className="flex space-x-4 mb-6 bg-white p-4 rounded-md border border-gray-100 shadow-sm">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">調査対象日</label>
             <select 
