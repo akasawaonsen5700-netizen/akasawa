@@ -20,6 +20,7 @@ import SettingsTab from "./components/SettingsTab";
 import ConnectionTab from "./components/ConnectionTab";
 import CsvTab from "./components/CsvTab";
 import MarketResearchTab from "./components/MarketResearchTab";
+import { MOCK_MARKET_DATA } from "./mockMarketData";
 
 const startKey = new Date().toISOString().slice(0, 10);
 
@@ -68,118 +69,54 @@ export default function App() {
     setLoading(true);
     try {
       // 1. 部屋タイプの取得
-      const savedRooms = localStorage.getItem("demo_room_types");
-      let rooms: RoomType[] = [];
-      if (savedRooms) {
-        rooms = JSON.parse(savedRooms);
-      } else {
-        rooms = [
-          { id: "premium-suite", name: "【禁煙】プレミアムスイート（ペット不可）", inventory: 1, capacity: 6, baseRateWeekday: 28000, baseRateWeekend: 36000, minPrice: 22000, maxPrice: 48000 },
-          { id: "petit-suite", name: "【禁煙】プチスイート２０２号室（ペット可・バス付）", inventory: 1, capacity: 4, baseRateWeekday: 22000, baseRateWeekend: 29000, minPrice: 18000, maxPrice: 38000 },
-          { id: "compact-room", name: "【禁煙】おしゃれなコンパクトルーム（ペット不可）", inventory: 1, capacity: 2, baseRateWeekday: 16000, baseRateWeekend: 21000, minPrice: 12000, maxPrice: 28000 },
-          { id: "riverview-bath", name: "【禁煙】リバービューが素敵な和室１０畳（バス付）", inventory: 2, capacity: 5, baseRateWeekday: 18000, baseRateWeekend: 24000, minPrice: 14000, maxPrice: 32000 },
-          { id: "japanese-toilet", name: "【禁煙】和室１０畳（トイレ付・ペット不可）", inventory: 2, capacity: 5, baseRateWeekday: 16000, baseRateWeekend: 21000, minPrice: 12000, maxPrice: 28000 },
-          { id: "japanese-pet", name: "【禁煙】和室１０畳（ペットと泊まろう♪）", inventory: 2, capacity: 5, baseRateWeekday: 18000, baseRateWeekend: 24000, minPrice: 14000, maxPrice: 32000 },
-          { id: "japanese-bedroom", name: "【禁煙】和室１０畳ベッドルーム（１階）", inventory: 1, capacity: 4, baseRateWeekday: 16000, baseRateWeekend: 21000, minPrice: 12000, maxPrice: 28000 }
-        ];
-        localStorage.setItem("demo_room_types", JSON.stringify(rooms));
-      }
+      const rooms: RoomType[] = [
+        { id: "premium-suite", name: "【禁煙】プレミアムスイート（ペット不可）", inventory: 1, capacity: 6, baseRateWeekday: 28000, baseRateWeekend: 36000, minPrice: 22000, maxPrice: 48000 },
+        { id: "petit-suite", name: "【禁煙】プチスイート２０２号室（ペット可・バス付）", inventory: 1, capacity: 4, baseRateWeekday: 22000, baseRateWeekend: 29000, minPrice: 18000, maxPrice: 38000 },
+        { id: "compact-room", name: "【禁煙】おしゃれなコンパクトルーム（ペット不可）", inventory: 1, capacity: 2, baseRateWeekday: 16000, baseRateWeekend: 21000, minPrice: 12000, maxPrice: 28000 },
+        { id: "riverview-bath", name: "【禁煙】リバービューが素敵な和室１０畳（バス付）", inventory: 2, capacity: 5, baseRateWeekday: 18000, baseRateWeekend: 24000, minPrice: 14000, maxPrice: 32000 },
+        { id: "japanese-toilet", name: "【禁煙】和室１０畳（トイレ付・ペット不可）", inventory: 2, capacity: 5, baseRateWeekday: 16000, baseRateWeekend: 21000, minPrice: 12000, maxPrice: 28000 },
+        { id: "japanese-pet", name: "【禁煙】和室１０畳（ペットと泊まろう♪）", inventory: 2, capacity: 5, baseRateWeekday: 18000, baseRateWeekend: 24000, minPrice: 14000, maxPrice: 32000 },
+        { id: "japanese-bedroom", name: "【禁煙】和室１０畳ベッドルーム（１階）", inventory: 1, capacity: 4, baseRateWeekday: 16000, baseRateWeekend: 21000, minPrice: 12000, maxPrice: 28000 }
+      ];
       setRoomTypes(rooms);
 
       // 2. 価格設定ルールの取得
-      const savedRules = localStorage.getItem("demo_pricing_rules");
-      let rules = defaultRules;
-      if (savedRules) {
-        rules = JSON.parse(savedRules);
-      } else {
-        localStorage.setItem("demo_pricing_rules", JSON.stringify(defaultRules));
-      }
+      const rules = defaultRules;
       setPricingRules(rules);
 
       // 3. カレンダー算出価格の取得
-      const savedPrices = localStorage.getItem("demo_calendar_prices");
-      let pricesList: CalendarPrice[] = [];
-      if (savedPrices) {
-        pricesList = JSON.parse(savedPrices);
-      } else {
-        // カレンダー初期化シミュレーション
-        pricesList = generateBaseCalendarPrices(rooms, rules);
-        localStorage.setItem("demo_calendar_prices", JSON.stringify(pricesList));
-      }
+      const pricesList = generateBaseCalendarPrices(rooms, rules);
       setPrices(pricesList);
 
       // 4. 価格提案の取得
-      const savedProposals = localStorage.getItem("demo_proposals");
-      let proposalsList: Proposal[] = [];
-      if (savedProposals) {
-        proposalsList = JSON.parse(savedProposals);
-      } else {
-        // 提案の初期生成
-        proposalsList = generateMockProposals(rooms, pricesList);
-        localStorage.setItem("demo_proposals", JSON.stringify(proposalsList));
-      }
+      const proposalsList = generateMockProposals(rooms, pricesList);
       setProposals(proposalsList);
 
       // 5. 承認履歴の取得
-      const savedHistory = localStorage.getItem("demo_history");
-      if (savedHistory) {
-        setHistory(JSON.parse(savedHistory));
-      }
+      setHistory([]);
 
       // 6. PMS実績データの取得
-      const savedActuals = localStorage.getItem("demo_pms_actuals");
-      if (savedActuals) {
-        setPmsActuals(JSON.parse(savedActuals));
-      }
+      setPmsActuals([]);
 
       // 最終更新時間
-      const savedTime = localStorage.getItem("demo_last_calc_time");
-      if (savedTime) {
-        setLastCalcTime(savedTime);
-      } else {
-        const timeStr = new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
-        setLastCalcTime(timeStr);
-        localStorage.setItem("demo_last_calc_time", timeStr);
-      }
+      const timeStr = new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+      setLastCalcTime(timeStr);
 
       // 7. 外部システム連携設定の取得
-      const savedConnection = localStorage.getItem("demo_connection_settings");
-      if (savedConnection) {
-        setConnectionSettings(JSON.parse(savedConnection));
-      }
+      setConnectionSettings({
+        stayseeApiKey: "", stayseeHotelId: "", stayseeConnected: false,
+        neppanAuthId: "", neppanPassword: "", neppanConnected: false
+      });
 
       // 8. 外部同期ログの取得
-      const savedConnLogs = localStorage.getItem("demo_connection_logs");
-      if (savedConnLogs) {
-        setConnectionLogs(JSON.parse(savedConnLogs));
-      } else {
-        const initialLogs: ConnectionLog[] = [
-          {
-            id: "conn-log-1",
-            timestamp: new Date(Date.now() - 1000 * 60 * 30).toLocaleString("ja-JP"),
-            system: "staysee",
-            action: "接続テスト",
-            status: "success",
-            detail: "Staysee PMS API 疎通テスト成功。接続を維持しています。"
-          },
-          {
-            id: "conn-log-2",
-            timestamp: new Date(Date.now() - 1000 * 60 * 15).toLocaleString("ja-JP"),
-            system: "neppan",
-            action: "XML接続確認",
-            status: "success",
-            detail: "ねっぱん！ サイトコントローラー双方向通信接続疎通成功。"
-          }
-        ];
-        setConnectionLogs(initialLogs);
-        localStorage.setItem("demo_connection_logs", JSON.stringify(initialLogs));
-      }
+      const initialLogs: ConnectionLog[] = [
+        { id: "conn-log-1", timestamp: new Date(Date.now() - 1000 * 60 * 30).toLocaleString("ja-JP"), system: "staysee", action: "接続テスト", status: "success", detail: "Staysee PMS API 疎通テスト成功。接続を維持しています。" },
+        { id: "conn-log-2", timestamp: new Date(Date.now() - 1000 * 60 * 15).toLocaleString("ja-JP"), system: "neppan", action: "XML接続確認", status: "success", detail: "ねっぱん！ サイトコントローラー双方向通信接続疎通成功。" }
+      ];
+      setConnectionLogs(initialLogs);
 
       // 9. 市場調査データの取得
-      const savedMarketData = localStorage.getItem("demo_market_research");
-      if (savedMarketData) {
-        setMarketResearchData(JSON.parse(savedMarketData));
-      }
+      setMarketResearchData(MOCK_MARKET_DATA);
 
     } catch (e) {
       console.error(e);
@@ -201,7 +138,11 @@ export default function App() {
       }
     });
     setMarketResearchData(merged);
-    localStorage.setItem("demo_market_research", JSON.stringify(merged));
+    try {
+      localStorage.setItem("demo_market_research", JSON.stringify(merged));
+    } catch (e) {
+      console.warn("Storage access blocked", e);
+    }
     setNotice("市場調査データを保存しました");
   };
 
