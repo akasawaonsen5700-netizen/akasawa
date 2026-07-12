@@ -1,0 +1,10 @@
+{
+  "name": "akasawa-blog-generator",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "netlify dev",
+    "start": "netlify dev",
+    "build": "echo 'Static app build not required'"
+  }
+}

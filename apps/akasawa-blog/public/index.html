@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>公式HPブログ自動生成システム | 赤沢温泉旅館</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="glass-bg"></div>
+  
+  <div class="app-container">
+    <header class="app-header animate-fade-in">
+      <div class="eyebrow">Akasawa Retreater Agent</div>
+      <h1>公式ブログ自動生成システム</h1>
+      <p class="subtitle">Googleクチコミの「一次情報」と宿の「思想RAG」を融合させ、SEO・LLMO（AI検索最適化）に特化した記事を作成します。</p>
+    </header>
+
+    <main class="grid-container">
+      <!-- 左側：設定・入力セクション -->
+      <section class="card control-section animate-slide-up">
+        <h2>1. 元ネタ（クチコミ）を選択・入力</h2>
+        
+        <div class="quick-examples">
+          <label class="section-sub-label">💡 過去のクチコミ事例からクイック選択</label>
+          <div class="example-grid" id="example-buttons">
+            <!-- JSで動的にボタンを生成します -->
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="review-input" class="form-label">📝 クチコミテキスト (手動コピペも可) <span class="required">必須</span></label>
+          <textarea id="review-input" placeholder="ここにお客様から頂いたクチコミや、最新情報の元データを貼り付けてください..."></textarea>
+        </div>
+
+        <hr class="divider">
+
+        <h2>2. ブレンドする思想・テーマ</h2>
+        <div class="input-group">
+          <label for="theme-select" class="form-label">📌 宿のこだわり・哲学</label>
+          <select id="theme-select">
+            <option value="【ぬる湯の美学】時間を忘れて長湯する、究極の心身の静養とリセット">ぬる湯の美学（長湯と心身の静養）</option>
+            <option value="【看板猫たちの余白】気まぐれな猫たちが教えてくれる、目的のない無駄な時間の豊かさ">看板猫たちの余白（気まぐれな癒やしと無駄）</option>
+            <option value="【多国籍スタッフとのおもてなし】一生懸命で温かい、多国籍な仲間たちとのできたて配膳">多国籍スタッフとのおもてなし（できたて配膳・共生）</option>
+            <option value="【地産食材と生野菜サラダへのこだわり】身体が喜ぶ新鮮な川魚・薬膳中華・山盛りのサラダ">食事へのこだわり（地産食材・健康・蒸し餃子）</option>
+            <option value="【奥日本シルバールートの旅】塩原から会津、新潟の魚沼へ抜ける大自然のドライブ拠点">奥日本シルバールート（広域周遊ドライブの提案）</option>
+            <option value="【完璧という呪縛からの解放】古民家リノベーションの歪みや余白を楽しむ不完全さの美">完璧という呪縛からの解放（不完全さの美学）</option>
+          </select>
+        </div>
+
+        <hr class="divider">
+
+        <h2>3. 配信設定</h2>
+        <div class="settings-grid">
+          <div class="input-group">
+            <label for="target-select" class="form-label">🎯 ターゲット読者</label>
+            <select id="target-select">
+              <option value="日々の仕事や家事の忙しさに追われ、真のリフレッシュを求めている現代人">忙しい現代人</option>
+              <option value="猫に癒やされたい猫好きの旅行者、ひとり旅を愛する女性">猫好き・ひとり旅層</option>
+              <option value="大切なパートナーと二人で静かな温泉時間を楽しみたいご夫婦・カップル">ご夫婦・カップル</option>
+              <option value="愛犬と一緒に源泉かけ流しの温泉や自然を楽しみたい愛犬家ファミリー">愛犬同伴の旅行者</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="tone-select" class="form-label">🎭 文章のトーン</label>
+            <select id="tone-select">
+              <option value="温かく情緒的で、旅情をそそるエッセイ風の語り口（宿主の一人称『私』）">温かいエッセイ風（一人称「私」）</option>
+              <option value="客観的で信頼性が高く、上品に魅力を伝える宿泊ルポルタージュ風">上品な宿泊ルポルタージュ風</option>
+              <option value="親しみやすく軽やかで、気軽な温泉旅行を後押しするトーン">親しみやすい旅行ガイド風</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="length-select" class="form-label">📏 目安文字数</label>
+            <select id="length-select">
+              <option value="1000">1000文字程度 (標準的)</option>
+              <option value="1500">1500文字程度 (読み応えあり)</option>
+              <option value="800">800文字程度 (簡潔)</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="generate-btn" class="generate-btn">
+          <span class="btn-text">✨ AIブログ記事を自動生成</span>
+          <div class="loader" id="loader" style="display: none;"></div>
+        </button>
+      </section>
+
+      <!-- 右側：生成された成果物セクション -->
+      <section class="card output-section animate-slide-up" style="animation-delay: 0.1s;">
+        <div class="output-header">
+          <h2>生成されたブログ記事</h2>
+          <span class="status-badge" id="status-badge">未生成</span>
+        </div>
+
+        <div class="placeholder-view" id="placeholder-view">
+          <div class="placeholder-icon">✍️</div>
+          <p>左側の設定を行い、「AIブログ記事を自動生成」ボタンを押してください。<br>SEO・LLMOに最適化されたホームページ用原稿がここに作成されます。</p>
+        </div>
+
+        <div class="output-content hidden" id="output-content">
+          <!-- 1. ブログタイトル -->
+          <div class="output-card">
+            <div class="output-card-head">
+              <h3>📝 推奨ブログタイトル</h3>
+              <button class="copy-btn" data-target="blog-title">コピー</button>
+            </div>
+            <div class="output-card-body">
+              <div class="title-preview" id="blog-title"></div>
+            </div>
+          </div>
+
+          <!-- 2. アイキャッチプロンプト -->
+          <div class="output-card">
+            <div class="output-card-head">
+              <h3>📷 アイキャッチ画像生成用プロンプト</h3>
+              <button class="copy-btn" data-target="image-prompt">コピー</button>
+            </div>
+            <p class="card-desc">※MidjourneyやDALL-E3などの画像生成AIに入力すると、美しいアイキャッチ画像が作成できます。</p>
+            <div class="output-card-body">
+              <pre id="image-prompt"></pre>
+            </div>
+          </div>
+
+          <!-- 3. 本文プレビュー -->
+          <div class="output-card">
+            <div class="output-card-head">
+              <h3>📖 記事本文 (HTML/Markdown)</h3>
+              <div class="tab-actions">
+                <button class="tab-btn active" data-tab="preview">プレビュー</button>
+                <button class="tab-btn" data-tab="raw">プレーンテキスト</button>
+                <button class="copy-btn" data-target="blog-body">本文をコピー</button>
+              </div>
+            </div>
+            <div class="output-card-body body-container">
+              <div id="blog-body-preview" class="markdown-preview"></div>
+              <textarea id="blog-body" class="raw-textarea hidden" readonly></textarea>
+            </div>
+          </div>
+
+          <!-- 4. SEOメタデータ -->
+          <div class="output-card">
+            <div class="output-card-head">
+              <h3>🔍 SEOメタ情報</h3>
+            </div>
+            <div class="seo-grid">
+              <div>
+                <label>メタタイトル</label>
+                <div class="meta-row">
+                  <span id="meta-title"></span>
+                  <button class="copy-btn mini" data-target="meta-title">コピー</button>
+                </div>
+              </div>
+              <div>
+                <label>メタディスクリプション (紹介文)</label>
+                <div class="meta-row">
+                  <span id="meta-desc"></span>
+                  <button class="copy-btn mini" data-target="meta-desc">コピー</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. LLMO用構造化データ -->
+          <div class="output-card">
+            <div class="output-card-head">
+              <h3>🤖 LLMO最適化（JSON-LD構造化データ）</h3>
+              <button class="copy-btn" data-target="json-ld">コピー</button>
+            </div>
+            <p class="card-desc">※このコードをホームページのHTML（&lt;head&gt;内）に埋め込むことで、AI検索エンジンがブログ内容を正確に学習し、検索回答に引用されやすくなります。</p>
+            <div class="output-card-body">
+              <pre id="json-ld" class="json-pre"></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
