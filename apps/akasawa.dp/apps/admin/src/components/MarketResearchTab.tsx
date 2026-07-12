@@ -133,8 +133,8 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
         <div className="mb-6 bg-white p-4 rounded-md border border-gray-100 shadow-sm">
           <div className="flex flex-wrap items-center justify-between mb-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">📅 調査対象日をカレンダーから選択</label>
-              <p className="text-xs text-gray-500">色が付いている日が、仕様書で指定された「必ず調査すべき代表日」です。</p>
+              <label className="block text-sm font-bold text-gray-700 mb-1">📅 調査対象日を選択</label>
+              <p className="text-xs text-gray-500">仕様書で定められた代表日のみを表示しています。</p>
             </div>
             <div className="flex items-center space-x-4 bg-gray-50 p-2 rounded">
               <div>
@@ -159,66 +159,24 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
             </div>
           </div>
 
-          <div className="flex space-x-8 justify-center border-t border-gray-100 pt-4">
-            {[
-              { year: 2026, month: 7, days: 31, startDay: 3 }, // 水曜始まり
-              { year: 2026, month: 8, days: 31, startDay: 6 }, // 土曜始まり
-            ].map(m => {
-              const blanks = Array(m.startDay).fill(null);
-              const dates = Array.from({length: m.days}, (_, i) => {
-                  const d = i + 1;
-                  const mm = String(m.month).padStart(2, '0');
-                  const dd = String(d).padStart(2, '0');
-                  return `${m.year}-${mm}-${dd}`;
-              });
-
+          <div className="flex flex-wrap gap-3 pt-2">
+            {TARGET_DATES.map(t => {
+              const isSelected = selectedDate === t.date;
               return (
-                <div key={m.month} className="w-64">
-                  <h4 className="text-center font-bold text-gray-700 mb-2">{m.month}月</h4>
-                  <div className="grid grid-cols-7 gap-1 text-center text-xs">
-                    <div className="text-red-500 font-bold">日</div><div className="font-bold">月</div><div className="font-bold">火</div><div className="font-bold">水</div><div className="font-bold">木</div><div className="font-bold">金</div><div className="text-blue-500 font-bold">土</div>
-                    {blanks.map((_, i) => <div key={`b-${i}`}></div>)}
-                    {dates.map(date => {
-                      const target = TARGET_DATES.find(t => t.date === date);
-                      const isTarget = !!target;
-                      const isSelected = selectedDate === date;
-                      
-                      let btnClass = "p-1 rounded cursor-pointer transition-all border border-transparent ";
-                      if (isSelected) {
-                        btnClass += "bg-amber-600 text-white font-bold shadow-md transform scale-110 border-amber-700";
-                      } else if (isTarget) {
-                        btnClass += "bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200 font-bold";
-                      } else {
-                        btnClass += "text-gray-600 hover:bg-gray-100 border-gray-100";
-                      }
-
-                      return (
-                        <div 
-                          key={date} 
-                          onClick={() => setSelectedDate(date)}
-                          className={btnClass}
-                          title={target ? target.label : ""}
-                        >
-                          {parseInt(date.split('-')[2])}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                <button
+                  key={t.date}
+                  onClick={() => setSelectedDate(t.date)}
+                  className={`px-4 py-2 rounded-md text-sm font-bold border transition-colors flex flex-col items-center justify-center ${
+                    isSelected 
+                      ? "bg-amber-600 text-white border-amber-700 shadow-md" 
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-amber-50"
+                  }`}
+                >
+                  <span>{t.date.substring(5)}</span>
+                  <span className={`text-xs mt-1 ${isSelected ? "text-amber-100" : "text-gray-500"}`}>{t.label}</span>
+                </button>
               );
             })}
-          </div>
-          
-          <div className="mt-4 text-center">
-            {TARGET_DATES.find(t => t.date === selectedDate) ? (
-              <span className="inline-block bg-amber-100 text-amber-900 px-3 py-1 rounded-full text-sm font-bold border border-amber-300 shadow-sm">
-                📌 現在選択中: {selectedDate} 【{TARGET_DATES.find(t => t.date === selectedDate)?.label}】
-              </span>
-            ) : (
-              <span className="inline-block bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium border border-gray-300">
-                選択中: {selectedDate} (通常日)
-              </span>
-            )}
           </div>
         </div>
 
