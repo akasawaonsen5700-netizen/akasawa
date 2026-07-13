@@ -37,17 +37,65 @@ const METRICS: { id: MetricType, label: string, icon: string }[] = [
   { id: "full_count", label: "満室施設", icon: "🈵" },
   { id: "coupon_count", label: "クーポン実施", icon: "🎫" },
   { id: "pet_range", label: "ペット可施設の価格", icon: "🐾" },
-  { id: "event_increase", label: "通常日比の上昇幅", icon: "🚀" }
+  { id: "event_increase", label: "通常日比の上昇幅", icon: "🚀" },
+  { id: "stats", label: "分析サマリー", icon: "📋" }
 ];
 
 interface Props {
   researchData: MarketResearchData[];
+  onSaveData?: (data: MarketResearchData[]) => void;
 }
 
-export default function MarketResearchTab({ researchData }: Props) {
+export default function MarketResearchTab({ researchData, onSaveData }: Props) {
   const [selectedDate, setSelectedDate] = useState<string>(TARGET_DATES[0].date);
   const [selectedMetric, setSelectedMetric] = useState<MetricType>("prices");
   const [selectedOta, setSelectedOta] = useState<"rakuten" | "jalan">("rakuten");
+  const [realOccRate, setRealOccRate] = useState<number | null>(null);
+  const [isFetchingOcc, setIsFetchingOcc] = useState<boolean>(false);
+  const TOTAL_SHIOBARA_HOTELS = 65; // 塩原温泉の推定総施設数
+
+  // リアルタイム市場データフェッチ
+  useEffect(() => {
+    let isMounted = true;
+    const fetchRealData = async () => {
+      setIsFetchingOcc(true);
+      setRealOccRate(null);
+
+      const dObj = new Date(selectedDate);
+      const year = dObj.getFullYear();
+      const month = String(dObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dObj.getDate()).padStart(2, '0');
+
+      // 楽天トラベルの空室検索URL（塩原温泉、大人2名、1室）
+      const targetUrl = `https://search.travel.rakuten.co.jp/ds/vacant/searchVacant?f_dai=japan&f_chu=tochigi&f_sho=nasu&f_sai=shiobara&f_otona_su=2&f_heya_su=1&f_nen1=${year}&f_tuki1=${month}&f_hi1=${day}`;
+      // CORS回避用プロキシ
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+
+      try {
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error("Network error");
+        const json = await response.json();
+        
+        if (json.contents && isMounted) {
+          // HTML内のJSオブジェクトから空室施設数(totalResults)を抽出
+          const match = json.contents.match(/"totalResults":\[(\d+)\]/);
+          if (match && match[1]) {
+            const vacantCount = parseInt(match[1], 10);
+            let occ = Math.round(((TOTAL_SHIOBARA_HOTELS - vacantCount) / TOTAL_SHIOBARA_HOTELS) * 100);
+            occ = Math.max(0, Math.min(100, occ));
+            setRealOccRate(occ);
+          }
+        }
+      } catch (error) {
+        console.error("Scraping failed:", error);
+      } finally {
+        if (isMounted) setIsFetchingOcc(false);
+      }
+    };
+
+    fetchRealData();
+    return () => { isMounted = false; };
+  }, [selectedDate]);
 
   // 現在選択されている日付のデータを取得（存在しない場合は自動生成してデモ表示する）
   const currentDateData = useMemo(() => {
@@ -219,6 +267,77 @@ export default function MarketResearchTab({ researchData }: Props) {
             ))}
           </div>
         );
+      case "stats":
+        return (
+          <div className="mr-stats-container">
+            <div className="mr-result-header">
+              <h3 className="mr-result-title">エリアサマリー</h3>
+              <div className="mr-result-date">指定日の相場分析</div>
+            </div>
+            
+            <div className="mr-stats-grid">
+              <div className="mr-stat-box primary">
+                <div className="mr-stat-label">直接比較 5施設の平均価格</div>
+                <div className="mr-stat-value">
+                  {directAvg ? `¥${directAvg.toLocaleString()}` : "---"}
+                </div>
+                {increaseRate !== null && increaseRate > 0 && (
+                  <div className="mr-stat-subtext text-danger font-bold mt-2">
+                    <i className="fas fa-arrow-up"></i> 平日比 +{increaseRate}% 高騰中
+                  </div>
+                )}
+              </div>
+              
+              <div className="mr-stat-box outline">
+                <div className="mr-stat-label">塩原全体の最安値 〜 最高値</div>
+                <div className="mr-stat-value sm">
+                  {allMin ? `¥${allMin.toLocaleString()}` : "---"} <span className="text-stone-400">〜</span> {allMax ? `¥${allMax.toLocaleString()}` : "---"}
+                </div>
+              </div>
+
+              <div className="mr-stat-box highlight">
+                <div className="mr-stat-label">ペット同伴プランの相場</div>
+                <div className="mr-stat-value sm">
+                  {petMin ? `¥${petMin.toLocaleString()}` : "---"} <span className="text-stone-400">〜</span> {petMax ? `¥${petMax.toLocaleString()}` : "---"}
+                </div>
+                <div className="mr-stat-subtext mt-1">※ 通常プランより高単価で推移</div>
+              </div>
+            </div>
+
+            <div className="mr-insights-section mt-8">
+              <h4 className="font-bold text-stone-800 mb-4 border-l-4 border-emerald-500 pl-3">AIによる特記事項</h4>
+              <ul className="space-y-3">
+                {fullFacilities.length > 0 && (
+                  <li className="flex items-start gap-2 bg-rose-50 p-3 rounded-lg text-rose-800">
+                    <span className="mt-0.5">⚠️</span>
+                    <div>
+                      <strong>{fullFacilities.length}施設が既に満室（または残りわずか）です。</strong><br/>
+                      <span className="text-sm">（{fullFacilities.map(f => f.facility.name).join('、')}）<br/>エリア全体の供給が不足しており、強気の価格設定（値上げ）が成功しやすい市況です。</span>
+                    </div>
+                  </li>
+                )}
+                {couponFacilities.length > 0 && (
+                  <li className="flex items-start gap-2 bg-amber-50 p-3 rounded-lg text-amber-800">
+                    <span className="mt-0.5">🎫</span>
+                    <div>
+                      <strong>競合がクーポンを発行中です。</strong><br/>
+                      <span className="text-sm">（{couponFacilities.map(f => f.facility.name).join('、')}）<br/>表面上の価格よりも実質価格が安くなっているため、価格差に注意が必要です。</span>
+                    </div>
+                  </li>
+                )}
+                {directAvg && normalDayAvgPrice > 0 && directAvg < normalDayAvgPrice && (
+                  <li className="flex items-start gap-2 bg-blue-50 p-3 rounded-lg text-blue-800">
+                    <span className="mt-0.5">📉</span>
+                    <div>
+                      <strong>相場が平日平均を下回っています。</strong><br/>
+                      <span className="text-sm">集客が鈍い可能性があります。直前割引などのキャンペーン発動を検討してください。</span>
+                    </div>
+                  </li>
+                )}
+              </ul>
+            </div>
+          </div>
+        );
       case "direct_avg":
         return (
           <div className="mr-kpi-view">
@@ -343,18 +462,30 @@ export default function MarketResearchTab({ researchData }: Props) {
           </p>
         </div>
 
-        {/* エリア全体宿泊率 */}
+        {/* エリア全体宿泊率（リアルタイム反映対応） */}
         {(() => {
-          const dObj = new Date(selectedDate);
-          const dayOfWeek = dObj.getDay();
-          const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
-          const isHolidaySeason = dObj.getMonth() === 7 || dObj.getMonth() === 3 || dObj.getMonth() === 4;
-          
-          let baseOcc = isWeekend ? 78 : 35;
-          if (isHolidaySeason) baseOcc += 15;
-          const seed = (dObj.getDate() * 11 + dObj.getMonth() * 3) % 20;
-          let occ = baseOcc - 10 + seed;
-          if (occ > 100) occ = 100;
+          let occ = 0;
+          let isSimulated = false;
+
+          if (isFetchingOcc) {
+            // ロード中は仮の値を表示しない
+            occ = -1;
+          } else if (realOccRate !== null) {
+            occ = realOccRate;
+          } else {
+            // リアルタイム取得失敗時はシミュレーションにフォールバック
+            const dObj = new Date(selectedDate);
+            const dayOfWeek = dObj.getDay();
+            const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+            const isHolidaySeason = dObj.getMonth() === 7 || dObj.getMonth() === 3 || dObj.getMonth() === 4;
+            
+            let baseOcc = isWeekend ? 78 : 35;
+            if (isHolidaySeason) baseOcc += 15;
+            const seed = (dObj.getDate() * 11 + dObj.getMonth() * 3) % 20;
+            occ = baseOcc - 10 + seed;
+            if (occ > 100) occ = 100;
+            isSimulated = true;
+          }
           
           return (
             <div style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', padding: '24px', borderRadius: '12px', marginBottom: '24px', border: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
@@ -363,16 +494,34 @@ export default function MarketResearchTab({ researchData }: Props) {
                   <span style={{ fontSize: '20px' }}>♨️</span> 塩原温泉エリア 全体宿泊率
                 </h3>
                 <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
-                  対象: 楽天トラベル・じゃらん掲載の塩原エリア全施設（約65軒）合算推計
+                  対象: 楽天トラベル掲載の塩原エリア全施設（約65軒）の空室状況
                 </p>
+                {occ !== -1 && !isSimulated && (
+                  <div style={{ marginTop: '8px', display: 'inline-block', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
+                    🟢 楽天トラベルよりリアルタイム取得済
+                  </div>
+                )}
+                {occ !== -1 && isSimulated && (
+                  <div style={{ marginTop: '8px', display: 'inline-block', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
+                    🟡 通信エラー：推計アルゴリズムにより算出
+                  </div>
+                )}
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '36px', fontWeight: 'bold', color: occ >= 85 ? '#ef4444' : occ >= 60 ? '#f59e0b' : '#3b82f6', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-                  {occ}%
-                </div>
-                <div style={{ fontSize: '12px', color: occ >= 85 ? '#fca5a5' : occ >= 60 ? '#fcd34d' : '#93c5fd', marginTop: '4px', fontWeight: 600 }}>
-                  {occ >= 85 ? '「超高需要（エリアほぼ満室）」' : occ >= 60 ? '「需要あり（強気の価格設定推奨）」' : '「通常期（集客重視推奨）」'}
-                </div>
+                {isFetchingOcc ? (
+                  <div style={{ color: '#94a3b8', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    取得中...
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '36px', fontWeight: 'bold', color: occ >= 85 ? '#ef4444' : occ >= 60 ? '#f59e0b' : '#3b82f6', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                      {occ}%
+                    </div>
+                    <div style={{ fontSize: '12px', color: occ >= 85 ? '#fca5a5' : occ >= 60 ? '#fcd34d' : '#93c5fd', marginTop: '4px', fontWeight: 600 }}>
+                      {occ >= 85 ? '「超高需要（エリアほぼ満室）」' : occ >= 60 ? '「需要あり（強気の価格設定推奨）」' : '「通常期（集客重視推奨）」'}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           );
