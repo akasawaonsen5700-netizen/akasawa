@@ -66,25 +66,19 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
       const month = String(dObj.getMonth() + 1).padStart(2, '0');
       const day = String(dObj.getDate()).padStart(2, '0');
 
-      // 楽天トラベルの空室検索URL（塩原温泉、大人2名、1室）
-      const targetUrl = `https://search.travel.rakuten.co.jp/ds/vacant/searchVacant?f_dai=japan&f_chu=tochigi&f_sho=nasu&f_sai=shiobara&f_otona_su=2&f_heya_su=1&f_nen1=${year}&f_tuki1=${month}&f_hi1=${day}`;
-      // CORS回避用プロキシ（corsproxy.io を使用）
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+      // Netlify Functions (自社サーバーサイド) を経由して楽天トラベルから取得（CORS完全回避）
+      const proxyUrl = `/api/scrape-rakuten?year=${year}&month=${month}&day=${day}`;
 
       try {
         const response = await fetch(proxyUrl);
         if (!response.ok) throw new Error(`Network error: ${response.status}`);
-        const html = await response.text();
+        const json = await response.json();
         
-        if (html && isMounted) {
-          // HTML内のJSオブジェクトから空室施設数(totalResults)を抽出
-          const match = html.match(/"totalResults":\[(\d+)\]/);
-          if (match && match[1]) {
-            const vacantCount = parseInt(match[1], 10);
-            let occ = Math.round(((TOTAL_SHIOBARA_HOTELS - vacantCount) / TOTAL_SHIOBARA_HOTELS) * 100);
-            occ = Math.max(0, Math.min(100, occ));
-            setRealOccRate(occ);
-          }
+        if (json.totalResults !== undefined && json.totalResults !== -1 && isMounted) {
+          const vacantCount = json.totalResults;
+          let occ = Math.round(((TOTAL_SHIOBARA_HOTELS - vacantCount) / TOTAL_SHIOBARA_HOTELS) * 100);
+          occ = Math.max(0, Math.min(100, occ));
+          setRealOccRate(occ);
         }
       } catch (error) {
         console.error("Scraping failed:", error);
