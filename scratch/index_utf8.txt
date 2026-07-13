@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>襍､豐｢貂ｩ豕画羅鬢ｨ 邨ｱ蜷�AI繧ｷ繧ｹ繝�繝繝昴�ｼ繧ｿ繝ｫ</title>
+  <!-- Google Fonts: Cinzel & Noto Serif JP -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #05120c; /* Deep modern wa-modern dark green */
+      --card-bg: rgba(13, 31, 23, 0.7);
+      --border-color: rgba(212, 175, 55, 0.25);
+      --accent-color: #d4af37; /* Gold */
+      --text-main: #f5f2eb;
+      --text-sub: #a4b3ab;
+      --success: #52c41a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Noto Serif JP', serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-x: hidden;
+      background-image: radial-gradient(circle at 50% -20%, #173625 0%, var(--bg-color) 75%);
+    }
+
+    header {
+      text-align: center;
+      padding: 5rem 1rem 3rem;
+    }
+
+    .brand-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.6rem;
+      letter-spacing: 0.35em;
+      color: var(--accent-color);
+      margin-bottom: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    .main-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--text-sub);
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.9;
+      font-weight: 300;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      width: 100%;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4rem;
+    }
+
+    /* Integration Benefits Section */
+    .benefit-section {
+      background: rgba(13, 31, 23, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 3rem;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    .section-title {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--accent-color);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid var(--border-color);
+      letter-spacing: 0.05em;
+    }
+
+    .benefit-lead {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      margin-bottom: 2rem;
+      font-weight: 400;
+    }
+
+    .benefit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+    }
+
+    .benefit-item h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .benefit-item p {
+      font-size: 0.95rem;
+      color: var(--text-sub);
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    /* App Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 2.5rem;
+      width: 100%;
+      margin-bottom: 4rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 3rem 2.2rem;
+      text-decoration: none;
+      color: var(--text-main);
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.65s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-10px);
+      border-color: rgba(212, 175, 55, 0.7);
+      box-shadow: 0 25px 50px rgba(212, 175, 55, 0.2);
+    }
+
+    .card:hover::before {
+      transform: translateX(100%);
+    }
+
+    .card-icon {
+      font-size: 2.8rem;
+      margin-bottom: 1.8rem;
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+    }
+
+    .card-desc {
+      font-size: 0.95rem;
+      color: var(--text-sub);
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+      font-weight: 300;
+    }
+
+    .card-benefit {
+      background: rgba(212, 175, 55, 0.08);
+      border-left: 3px solid var(--accent-color);
+      padding: 0.8rem 1rem;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      font-weight: 400;
+    }
+
+    .card-action {
+      margin-top: auto;
+      font-size: 0.9rem;
+      color: var(--accent-color);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: gap 0.3s ease;
+      letter-spacing: 0.1em;
+    }
+
+    .card:hover .card-action {
+      gap: 0.9rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--text-sub);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand-title">Akasawa Onsen Ryokan</div>
+    <h1 class    <p class="subtitle">
+      螳ｿ縺ｮ縺薙□繧上ｊ�ｼ亥憧蟄ｦ�ｼ峨→縺雁ｮ｢讒倥�ｮ繝ｪ繧｢繝ｫ縺ｪ螢ｰ�ｼ井ｸ谺｡諠�蝣ｱ�ｼ峨′縺吶∋縺ｦ縺ｮAI繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝磯俣縺ｧ繝ｪ繧｢繝ｫ繧ｿ繧､繝縺ｫ騾｣蜍輔�<br>
+      繝舌Λ繝舌Λ縺ｫ蜍輔￥縺ｮ縺ｧ縺ｯ縺ｪ縺上√♀莠偵＞縺ｫ繝�繝ｼ繧ｿ繧貞�ｱ譛峨＠繝舌ヨ繝ｳ繧呈ｸ｡縺吶％縺ｨ縺ｧ縲∬ｵ､豐｢貂ｩ豕画羅鬢ｨ縺ｮ繝悶Λ繝ｳ繝我ｾ｡蛟､縺ｨ髮�螳｢繝ｻ螢ｲ荳翫ｒ譛螟ｧ蛹悶＠縺ｾ縺吶�
+    </p>
+  </header>
+
+  <main class="container">
+    <!-- 繧ｷ繧ｹ繝�繝騾｣謳ｺ繝吶ロ繝輔ぅ繝�繝� -->
+    <section class="benefit-section">
+      <h2 class="section-title">縺ｪ縺懊窟I縺ｮ騾｣謳ｺ縲阪′驥崎ｦ√↑縺ｮ縺具ｼ滂ｼ医が繝ｼ繝翫�ｼ縺ｸ縺ｮ邏�譚滂ｼ�</h2>
+      <p class="benefit-lead">
+        荳闊ｬ逧�縺ｫAI繧偵ヰ繝ｩ繝舌Λ縺ｫ蟆主�･縺吶ｋ縺ｨ縲∫匱菫｡縺吶ｋ諠�蝣ｱ繧�螳ｿ縺ｮ繝｡繝�繧ｻ繝ｼ繧ｸ縺後メ繧ｰ繝上げ縺ｫ縺ｪ繧翫√°縺医▲縺ｦ繧ｪ繝ｼ繝翫�ｼ讒倥�ｮ菴懈･ｭ縺悟｢励∴縺ｦ縺励∪縺�縺ｾ縺吶�<br>
+        縺薙�ｮ繝昴�ｼ繧ｿ繝ｫ縺ｧ縺ｯ縲√☆縺ｹ縺ｦ縺ｮAI繧ｷ繧ｹ繝�繝縺�<strong>縲悟ｮｿ縺ｮ縺薙□繧上ｊ�ｼ医〓繧区ｹｯ縲∫賢縲√♀繧ゅ※縺ｪ縺暦ｼ峨阪→縲後♀螳｢讒倥�ｮ螢ｰ�ｼ医け繝√さ繝滂ｼ峨阪ｒ蜈ｱ騾壹�ｮ雋｡逕｣縺ｨ縺励※蜈ｱ譛峨＠縲∬�ｪ蜍輔〒繝舌ヨ繝ｳ繧呈ｸ｡縺励↑縺後ｉ騾｣謳ｺ縺励※蜍輔″縺ｾ縺吶�</strong><br>
+        縺薙ｌ縺ｫ繧医ｊ縲√が繝ｼ繝翫�ｼ讒倥�ｮ謇九ｒ辣ｩ繧上○繧九％縺ｨ縺ｪ縺上∝ｮ牙｣ｲ繧翫ｒ縺帙★縺ｫ縲悟ｹｳ譌･縺ｮ遨ｺ螳､隗｣豸医阪°繧峨後Μ繝斐�ｼ繧ｿ繝ｼ�ｼ医ヵ繧｡繝ｳ�ｼ牙喧縲阪∪縺ｧ縺ｮ髮�螳｢縺ｮ螂ｽ蠕ｪ迺ｰ繧定�ｪ蠕狗噪縺ｫ菴懊ｊ蜃ｺ縺励∪縺吶�
+      </p>
+      <div class="benefit-grid">
+        <div class="benefit-item">
+          <h3><span>､�</span> 1. 繝悶Λ繝ｳ繝臥匱菫｡縺ｮ荳雋ｫ諤ｧ�ｼ亥ｮｿ縺ｮ蜩ｲ蟄ｦ繧偵ヶ繝ｬ繝ｳ繝会ｼ�</h3>
+          <p>
+            SNS縲√ヶ繝ｭ繧ｰ縲∝ｮｿ豕翫�励Λ繝ｳ縲√♀遉ｼ繝｡繝ｼ繝ｫ縲√け繝√さ繝溯ｿ比ｿ｡縺ｮ縺吶∋縺ｦ縺悟酔縺倥悟ｮｿ縺ｮ蜩ｲ蟄ｦRAG縲阪ｒ蜈ｱ譛峨＠縺ｾ縺吶ゅ←縺薙°繧牙ｮｿ繧堤衍縺｣縺溘♀螳｢讒倥↓繧ゅ√〓繧区ｹｯ縺ｮ萓｡蛟､繧�迪ｫ縺ｨ縺ｮ譎る俣縺御ｸ雋ｫ縺励◆繝医�ｼ繝ｳ縺ｧ豺ｱ縺丈ｼ昴ｏ繧翫√ヵ繧｡繝ｳ�ｼ医Μ繝斐�ｼ繧ｿ繝ｼ�ｼ牙喧繧剃ｿ�縺励∪縺吶�
+          </p>
+        </div>
+        <div class="benefit-item">
+          <h3><span>売</span> 2. 繧ｯ繝√さ繝溘°繧蛾寔螳｢繝ｻ繝励Λ繝ｳ縺ｸ縺ｮ閾ｪ蠕狗噪縺ｪ繝�繝ｼ繧ｿ蠕ｪ迺ｰ</h3>
+          <p>
+            縺雁ｮ｢讒倥°繧牙ｱ翫＞縺溘後け繝√さ繝滂ｼ育函縺ｮ荳谺｡諠�蝣ｱ�ｼ峨阪ｒAI縺悟叉蠎ｧ縺ｫ蛻�譫舌ら樟蝣ｴ縺ｮ謾ｹ蝟�縺ｫ豢ｻ縺九☆縺縺代〒縺ｪ縺上√◎繧後ｒ蜈�繝阪ち縺ｫ縺励◆縲御ｽ馴ｨ薙ヶ繝ｭ繧ｰ縲阪�ｮ閾ｪ蜍募濤遲�繧�縲、I讀懃ｴ｢縺ｫ蠑輔▲縺九°繧九梧眠繝励Λ繝ｳ縺ｮ莨∫判縲阪∈縺ｨ閾ｪ蜍輔〒繝舌ヨ繝ｳ繧ｿ繝�繝√＆繧後∵ｬ｡縺ｮ莠育ｴ�縺ｸ郢九￡縺ｾ縺吶�
+          </p>
+        </div>
+        <div class="benefit-item">
+          <h3><span>識</span> 3. 蟷ｳ譌･縺ｮ遨ｺ螳､繧偵ヴ繝ｳ繝昴う繝ｳ繝医〒蝓九ａ繧玖�ｪ蠕九い繧ｯ繧ｷ繝ｧ繝ｳ</h3>
+          <p>
+            繧ｫ繝ｬ繝ｳ繝繝ｼ縺ｨ騾｣謳ｺ縺励※莠育ｴ�縺ｮ阮�縺�蟷ｳ譌･縺ｮ遨ｺ螳､繧但I縺梧､懃衍縲ゅ◎縺ｮ譎よ悄縺ｫ譛驕ｩ縺ｪ縲御ｾ｡譬ｼ縺ｨ迚ｹ蜈ｸ莉倥″縺ｮ髯仙ｮ壹�励Λ繝ｳ縲阪ｒ閾ｪ蜍輔〒險ｭ險医＠縲√Γ繝ｼ繝ｫ繧ЛINE縺ｧ繝斐Φ繝昴う繝ｳ繝医↓蟇ｾ雎｡鬘ｧ螳｢縺ｸ繝｡繝�繧ｻ繝ｼ繧ｸ驟堺ｿ｡縲る寔螳｢縺ｮ遨ｴ蝓九ａ繧定�ｪ蜍輔〒螳檎ｵ舌＆縺帙∪縺吶�
+          </p>
+        </div>
+      </div>
+    </section>ｒ蟇溽衍縺励※SNS繧ЖBP縺ｮ謚慕ｨｿ譯医ｒ蜊ｳ譎ら函謌舌＠閾ｪ蜍暮�堺ｿ｡縲る寔螳｢縺ｮ蜻ｼ縺ｳ豌ｴ繧�24譎る俣菴灘宛縺ｧ邨ｶ繧�縺励∪縺帙ｓ縲�
+          </p>
+        </div>
+        <div class="benefit-item">
+          <h3><span>妾</span> 莠育ｴ�縺ｮ譛螟ｧ蛹悶→遨ｺ螳､縺ｮ繝斐Φ繝昴う繝ｳ繝郁ｧ｣豸�</h3>
+          <p>
+            繧ｫ繝ｬ繝ｳ繝繝ｼ縺ｨ騾｣蜍輔＠縲∽ｺ育ｴ�縺ｮ阮�縺�蟷ｳ譌･縺ｮ遨ｺ螳､繧貞沂繧√ｋ縺溘ａ縺ｮ蟆ら畑繝励Λ繝ｳ繧但I縺瑚�ｪ蜍穂ｽ懈�舌ゅち繝ｼ繧ｲ繝�繝磯｡ｧ螳｢縺ｸ繝｡繝ｼ繝ｫ繧ЛINE縺ｧ譛驕ｩ縺ｪ繧ｿ繧､繝溘Φ繧ｰ縺ｧ驟堺ｿ｡縺励∪縺吶�
+          </p>
+        </div>
+        <div class="benefit-item">
+          <h3><span>投</span> RevPAR�ｼ育ｵ悟霧謖�讓呻ｼ峨�ｮ閾ｪ蠕狗噪蜷台ｸ�</h3>
+          <p>
+            髮�螳｢縺ｨ螳｢螳､遞ｼ蜒阪�ｮ繝�繝ｼ繧ｿ縺ｯ縺吶∋縺ｦ繝繝�繧ｷ繝･繝懊�ｼ繝峨〒荳蜈�逶｣隕悶＆繧後∵怙驕ｩ縺ｪ雋ｩ螢ｲ萓｡譬ｼ�ｼ医ム繧､繝翫Α繝�繧ｯ繝励Λ繧､繧ｷ繝ｳ繧ｰ�ｼ峨→雋ｩ菫�繧ｷ繝翫Μ繧ｪ縺ｸ繝ｪ繧｢繝ｫ繧ｿ繧､繝縺ｫ驍�蜈�縺輔ｌ縺ｾ縺吶�
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 蜷�繧ｷ繧ｹ繝�繝繧ｫ繝ｼ繝� -->
+    <div class="grid">
+      <!-- 1. AI繝√Ε繝�繝医さ繝ｳ繧ｷ繧ｧ繝ｫ繧ｸ繝･ -->
+      <a href="/akasawa-chat/index.html" class="card">
+        <div>
+          <div class="card-icon">町</div>
+          <h2 class="card-title">AI 繝√Ε繝�繝医さ繝ｳ繧ｷ繧ｧ繝ｫ繧ｸ繝･</h2>
+          <p class="card-desc">
+            螳｢螳､蜀�縺ｮ蟆ら畑QR繧ｳ繝ｼ繝峨°繧峨�ｮ譯亥���ｼ磯､ｨ蜀�險ｭ蛯吶�ｻ雋ｸ蛻�鬚ｨ蜻ら憾豕√�ｻ逵区攸迪ｫ諠�蝣ｱ縺ｪ縺ｩ�ｼ峨→縲�<br>
+            蜈ｬ蠑上�帙�ｼ繝繝壹�ｼ繧ｸ荳翫�ｮ縲窟I莠育ｴ�繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝医阪ｒ蜷梧凾縺ｫ繧ｫ繝舌�ｼ縺吶ｋ螟夊ｨ隱暸I繧ｳ繝ｳ繧ｷ繧ｧ繝ｫ繧ｸ繝･縲�
+          </p>
+          <div class="card-benefit">
+            <strong>繝吶ロ繝輔ぅ繝�繝�:</strong><br>
+            螳ｿ豕頑､懆ｨ取悄縺ｮ莠育ｴ�迯ｲ蠕励°繧画ｻ槫惠荳ｭ縺ｮ邏ｰ繧�縺九↑縺雁撫縺�蜷医ｏ縺帙∪縺ｧ24譎る俣閾ｪ蜍募ｯｾ蠢懊＠縲∝叙繧翫％縺ｼ縺励ぞ繝ｭ縺ｨ繧ｹ繧ｿ繝�繝輔�ｮ雋諡�霆ｽ貂帙ｒ荳｡遶九�
+          </div>
+        </div>
+        <div class="card-action">繧ｷ繧ｹ繝�繝繧定ｵｷ蜍輔☆繧� 筐�</div>
+      </a>
+
+      <!-- 2. 繝｡繝ｼ繝ｫ繝ｻLINE閾ｪ蜍暮｣謳ｺ驟堺ｿ｡ -->
+      <a href="/akasawa-ml/index.html" class="card">
+        <div>
+          <div class="card-icon">笨会ｸ�</div>
+          <h2 class="card-title">繝｡繝ｼ繝ｫ繝ｻLINE閾ｪ蜍暮｣謳ｺ驟堺ｿ｡</h2>
+          <p class="card-desc">
+            螳ｿ豕贋ｺ育ｴ�繧ｷ繧ｹ繝�繝繧ГSV繝�繝ｼ繧ｿ縺ｨ騾｣蜍輔＠縲∝ｮｿ豕雁燕蠕後�ｮ繝輔か繝ｭ繝ｼ繧ｷ繝翫Μ繧ｪ驟堺ｿ｡縺翫ｈ縺ｳ縲�<br>
+            繝ｪ繝斐�ｼ繧ｿ繝ｼ迯ｲ蠕励ｄ逶ｴ霑代�ｮ遨ｺ螳､繧貞沂繧√ｋ縺溘ａ縺ｮ繝｡繝�繧ｻ繝ｼ繧ｸ驟堺ｿ｡繧定�ｪ蜍輔〒陦後≧驟堺ｿ｡繧ｷ繧ｹ繝�繝縲�
+          </p>
+          <div class="card-benefit">
+            <strong>繝吶ロ繝輔ぅ繝�繝�:</strong><br>
+            螳ｿ豕雁ｮ｢繧偵ヵ繧｡繝ｳ蛹悶＠縺ｦ繝ｪ繝斐�ｼ繝育紫繧帝ｫ倥ａ縺､縺､縲√き繝ｬ繝ｳ繝繝ｼ縺ｨ蜷梧悄縺励※蟷ｳ譌･縺ｮ遯∫匱逧�縺ｪ遨ｺ螳､縺ｸ繧ｿ繝ｼ繧ｲ繝�繝磯剞螳壹け繝ｼ繝昴Φ遲峨ｒ閾ｪ蠕狗噪縺ｫ螻翫￠縺ｦ蜊ｳ蠎ｧ縺ｫ蝓九ａ縺ｾ縺吶�
+          </div>
+        </div>
+        <div class="card-action">繧ｷ繧ｹ繝�繝繧定ｵｷ蜍輔☆繧� 筐�</div>
+      </a>
+
+      <!-- 3. 竭 繧ｪ繝ｼ繝翫�ｼ謚慕ｨｿ邂｡逅��ｼ亥床譛ｬ逋ｻ骭ｲ �ｼ� 蜍慕判遒ｺ隱阪ム繝�繧ｷ繝･繝懊�ｼ繝会ｼ� -->
+      <a href="/endo-sns/index.html" class="card" style="border-color: rgba(212, 175, 55, 0.55);">
+        <div>
+          <div class="card-icon">憧</div>
+          <h2 class="card-title">竭 繧ｪ繝ｼ繝翫�ｼ謚慕ｨｿ邂｡逅��ｼ亥床譛ｬ逋ｻ骭ｲ繝ｻ蜍慕判遒ｺ隱搾ｼ�</h2>
+          <p class="card-desc">
+            蜿ｰ譛ｬ�ｼ医が繝ｼ繝翫�ｼ繝｡繝｢�ｼ峨�ｮ蜈･蜉帙°繧峨，artesia縺ｫ繧医ｋ譛ｬ莠ｺ繧ｯ繝ｭ繝ｼ繝ｳ髻ｳ螢ｰ縺ｮ蜷域�舌ヽemotion縺ｫ繧医ｋ邵ｦ蝙九す繝ｧ繝ｼ繝亥虚逕ｻ縺ｮ閾ｪ蜍輔Ξ繝ｳ繝繝ｪ繝ｳ繧ｰ縲ヾNS�ｼ�Instagram / X�ｼ峨∈縺ｮ蛟句挨縺ｮ譌･遞倶ｺ育ｴ�繝ｻ蜊ｳ譎よ兜遞ｿ縺ｾ縺ｧ繧剃ｸ逕ｻ髱｢縺ｧ螳檎ｵ舌☆繧狗ｵｱ蜷医ム繝�繧ｷ繝･繝懊�ｼ繝峨�
+          </p>
+          <div class="card-benefit">
+            <strong>繝吶ロ繝輔ぅ繝�繝�:</strong><br>
+            蜿ｰ譛ｬ繧堤匳骭ｲ縺吶ｋ縺ｨ縲∫判髱｢荳矩Κ縺ｸ蜊ｳ蠎ｧ縺ｫ螳梧�仙虚逕ｻ�ｼ�MP4�ｼ峨′閾ｪ蜍慕函謌舌＆繧後√◎縺ｮ蝣ｴ縺ｧ繝励Ξ繝薙Η繝ｼ遒ｺ隱阪√ム繧ｦ繝ｳ繝ｭ繝ｼ繝峨√メ繝｣繝阪Ν蛻･縺ｮ蜈ｬ髢九せ繧ｱ繧ｸ繝･繝ｼ繝ｫ險ｭ螳壹′蜿ｯ閭ｽ縺ｧ縺吶�
+          </div>
+        </div>
+        <div class="card-action">邨ｱ蜷医ム繝�繧ｷ繝･繝懊�ｼ繝峨ｒ髢九￥ 筐�</div>
+      </a>
+
+      <!-- 4. 竭｡ 襍､豐｢貂ｩ豕画羅鬢ｨ謚慕ｨｿ逋ｻ骭ｲ -->
+      <a href="/akasawa-sns/index.html" class="card">
+        <div>
+          <div class="card-icon">胴</div>
+          <h2 class="card-title">竭｡ 襍､豐｢貂ｩ豕画羅鬢ｨ謚慕ｨｿ逋ｻ骭ｲ</h2>
+          <p class="card-desc">
+            襍､豐｢貂ｩ豕画羅鬢ｨ縺ｮ蜈ｨ繝�繝ｼ繧ｿ�ｼ育賢繝ｻ縺ｬ繧区ｹｯ繝ｻ貂捺ｵ√�ｻ髱咎､翫↑縺ｩ�ｼ峨�ｮRAG繧呈政霈峨＠縺溷�ｬ蠑輯NS繝ｻGBP謚慕ｨｿ繧ｷ繧ｹ繝�繝縲�<br>
+            蜀咏悄繧�蜍慕判繧偵い繝�繝励Ο繝ｼ繝峨☆繧九□縺代〒縲∵羅鬢ｨ縺ｮ鬲�蜉帙ｒ蠑輔″蜃ｺ縺呎怙驕ｩ縺ｪ荳区嶌縺肴兜遞ｿ繧定�ｪ蜍慕函謌舌＠縺ｾ縺吶�
+          </p>
+          <div class="card-benefit">
+            <strong>繝吶ロ繝輔ぅ繝�繝�:</strong><br>
+            髮�螳｢縺ｮ髴ｲ蜃ｺ荳崎ｶｳ繧但I縺瑚�ｪ蠕狗噪縺ｫ讀懃衍繝ｻ繧ｫ繝舌�ｼ縺励∵羅鬢ｨ縺ｮ鬲�蜉帙ｒ邨ｶ縺磯俣縺ｪ縺上ロ繝�繝井ｸ翫↓蠎�繧∫ｶ壹￠縺ｾ縺吶�
+          </div>
+        </div>
+        <div class="card-action">繧ｷ繧ｹ繝�繝繧定ｵｷ蜍輔☆繧� 筐�</div>
+      </a>
+
+      <!-- 5. 繝繧､繝翫Α繝�繧ｯ繝励Λ繧､繧ｷ繝ｳ繧ｰ邨ｱ蜷育屮隕悶ム繝�繧ｷ繝･繝懊�ｼ繝� -->
+      <a href="/akasawa-dp/" class="card">
+        <div>
+          <div class="card-icon">投</div>
+          <h2 class="card-title">繝繧､繝翫Α繝�繧ｯ繝励Λ繧､繧ｷ繝ｳ繧ｰ邨ｱ蜷育屮隕悶ム繝�繧ｷ繝･繝懊�ｼ繝�</h2>
+          <p class="card-desc">
+            繝帙ユ繝ｫ邨悟霧縺ｮ譛驥崎ｦ∵欠讓吶〒縺ゅｋ <strong>RevPAR</strong>�ｼ�Revenue Per Available Room: 雋ｩ螢ｲ蜿ｯ閭ｽ螳｢螳､1螳､縺ゅ◆繧翫�ｮ螢ｲ荳奇ｼ峨ｒ蠕ｹ蠎慕噪縺ｫ逶｣隕悶＠縲∝髄荳翫＆縺帙ｋ縺溘ａ縺ｮ邨ｱ蜷亥��譫千判髱｢縲�
+          </p>
+          <div class="card-benefit">
+            <strong>繝吶ロ繝輔ぅ繝�繝�:</strong><br>
+            螳｢螳､蟷ｳ蝮�蜊倅ｾ｡�ｼ�ADR�ｼ峨→螳｢螳､遞ｼ蜒咲紫�ｼ�OCC�ｼ峨�ｮ謗帙￠蜷医ｏ縺帙〒縺ゅｋ RevPAR 繧呈怙螟ｧ蛹悶☆繧九◆繧√�髴隕∽ｺ域ｸｬ縺ｫ蝓ｺ縺･縺乗怙驕ｩ縺ｪ雋ｩ螢ｲ萓｡譬ｼ縺ｨ雋ｩ菫�繝励Λ繝ｳ縺ｮ諢乗晄ｱｺ螳壹ｒAI縺梧髪謠ｴ縺励∪縺吶�
+          </div>
+        </div>
+        <div class="card-action">繧ｷ繧ｹ繝�繝繧定ｵｷ蜍輔☆繧� 筐�</div>
+      </a>
+
+      <!-- 6. 繧ｯ繝√さ繝溯ｿ比ｿ｡繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝� -->
+      <a href="/akasawa-review/index.html" class="card">
+        <div>
+          <div class="card-icon">町</div>
+          <h2 class="card-title">繧ｯ繝√さ繝溯ｿ比ｿ｡繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝�</h2>
+          <p class="card-desc">
+            縺雁ｮ｢讒倥°繧牙ｯ�縺帙ｉ繧後◆繧ｯ繝√さ繝溘↓蟇ｾ縺励√が繝ｼ繝翫�ｼ驕阯､豁｣菫頑ｰ上�ｮ繝医�ｼ繝ｳ�ｼ�繝槭リ繝ｼ縺ｧ貂ｩ縺九∩縺ｨ繝ｦ繝ｼ繝｢繧｢貅｢繧後ｋ霑比ｿ｡繧�3繝代ち繝ｼ繝ｳ閾ｪ蜍慕函謌舌☆繧九す繧ｹ繝�繝縲�
+          </p>
+          <div class="card-benefit">
+            <strong>繝吶ロ繝輔ぅ繝�繝�:</strong><br>
+            螳ｿ豕雁ｮ｢縺ｸ縺ｮ諢溯ｬ昴ｄ繝輔ぅ繝ｼ繝峨ヰ繝�繧ｯ縺ｫ蟇ｾ縺励※縲∬ｪ螳溘°縺､繝代�ｼ繧ｽ繝翫Λ繧､繧ｺ縺輔ｌ縺溯ｿ皮ｭ斐ｒ菴懈�舌＠縲∵羅鬢ｨ縺ｮ繝輔ぃ繝ｳ蛹悶→GBP�ｼ�Google繝薙ず繝阪せ繝励Ο繝輔ぅ繝ｼ繝ｫ�ｼ峨�ｮ隧穂ｾ｡蜷台ｸ翫ｒ菫�騾ｲ縺励∪縺吶�
+          </div>
+        </div>
+        <div class="card-action">繧ｷ繧ｹ繝�繝繧定ｵｷ蜍輔☆繧� 筐�</div>
+      </a>
+
+      <!-- 7. 蜈ｬ蠑上ヶ繝ｭ繧ｰ閾ｪ蜍慕函謌舌す繧ｹ繝�繝 -->
+      <a href="/akasawa-blog/index.html" class="card">
+        <div>
+          <div class="card-icon">当</div>
+          <h2 class="card-title">蜈ｬ蠑上ヶ繝ｭ繧ｰ閾ｪ蜍慕函謌舌す繧ｹ繝�繝</h2>
+          <p class="card-desc">
+            Google繝薙ず繝阪せ繝励Ο繝輔ぅ繝ｼ繝ｫ縺ｮ縲後け繝√さ繝滂ｼ井ｸ谺｡諠�蝣ｱ�ｼ峨阪→螳ｿ縺ｮ縲梧晄ΦRAG縲阪ｒ閾ｪ蜍輔ヶ繝ｬ繝ｳ繝峨＠縲ヾEO縺翫ｈ縺ｳLLMO�ｼ�AI讀懃ｴ｢譛驕ｩ蛹厄ｼ峨↓迚ｹ蛹悶＠縺溘ヶ繝ｭ繧ｰ險倅ｺ九ｄ讒矩蛹悶ョ繝ｼ繧ｿ繧定�ｪ蜍慕函謌舌＠縺ｾ縺吶�
+          </p>
+          <div class="card-benefit">
+            <strong>繝吶ロ繝輔ぅ繝�繝�:</strong><br>
+            繝ｪ繧｢繝ｫ縺ｪ螳ｿ豕贋ｽ馴ｨ薙→螳ｿ縺ｮ蜩ｲ蟄ｦ繧定檮蜷医＠縺溽峡閾ｪ繧ｳ繝ｳ繝�繝ｳ繝�繧定�ｪ蠕狗函逕｣縺励；oogle讀懃ｴ｢繧ГhatGPT繝ｻPerplexity遲峨�ｮAI讀懃ｴ｢繧ｨ繝ｳ繧ｸ繝ｳ縺ｧ縺ｮ螳ｿ縺ｮ髴ｲ蜃ｺ縺ｨ繧､繝ｳ繝�繝�繧ｯ繧ｹ繧呈怙螟ｧ蛹悶＠縺ｾ縺吶�
+          </div>
+        </div>
+        <div class="card-action">繧ｷ繧ｹ繝�繝繧定ｵｷ蜍輔☆繧� 筐�</div>
+      </a>
+
+      <!-- 8. AI OTA譛驕ｩ蛹悶お繝ｳ繧ｸ繝ｳ -->
+      <a href="/akasawa-ota/index.html" class="card">
+        <div>
+          <div class="card-icon">笞｡</div>
+          <h2 class="card-title">AI OTA譛驕ｩ蛹悶お繝ｳ繧ｸ繝ｳ</h2>
+          <p class="card-desc">
+            讌ｽ螟ｩ繝医Λ繝吶Ν縲√§繧�繧峨ｓnet縲。ooking.com縺ｮ謗ｲ霈峨ユ繧ｭ繧ｹ繝医�ｻ繧ｯ繝√さ繝溘�ｻ蜀咏悄繝ｻ繝励Λ繝ｳ蜀�螳ｹ繝ｻ髴ｲ蜃ｺ繝�繝ｼ繧ｿ繧但I縺ｧ邱丞粋蛻�譫舌＠縲∵怙驕ｩ縺ｪ繝励Ο繝｢繝ｼ繧ｷ繝ｧ繝ｳ�ｼ医け繝ｼ繝昴Φ�ｼ芽ｨｭ險医ｄ繝ｪ繝ｩ繧､繝医ｒ謠先｡医＠縺ｾ縺吶�
+          </p>
+          <div class="card-benefit">
+            <strong>繝吶ロ繝輔ぅ繝�繝�:</strong><br>
+            蟐剃ｽ薙＃縺ｨ縺ｮ荳ｻ隕∝ｮ｢螻､繧�繧ｭ繝｣繝ｳ繝壹�ｼ繝ｳ迚ｹ諤ｧ縺ｫ蜷医ｏ縺帙◆髴ｲ蜃ｺ�ｼ�SEO�ｼ峨→縲∫┌鬧�縺ｮ縺ｪ縺�繧ｯ繝ｼ繝昴Φ蜑ｲ蠑戊ｨｭ險医↓繧医ｊ縲∝ｮｿ縺ｮ蛻ｩ逶顔紫繧貞ｮ医ｊ縺ｪ縺後ｉ雋ｩ螢ｲ�ｼ�CVR�ｼ峨ｒ譛螟ｧ蛹悶＠縺ｾ縺吶�
+          </div>
+        </div>
+        <div class="card-action">繧ｷ繧ｹ繝�繝繧定ｵｷ蜍輔☆繧� 筐�</div>
+      </a>
+
+      <!-- 9. 螳ｿ豕翫�励Λ繝ｳ菴懈�舌お繝ｼ繧ｸ繧ｧ繝ｳ繝� -->
+      <a href="/akasawa-plan/index.html" class="card">
+        <div>
+          <div class="card-icon">妾</div>
+          <h2 class="card-title">螳ｿ豕翫�励Λ繝ｳ菴懈�舌お繝ｼ繧ｸ繧ｧ繝ｳ繝�</h2>
+          <p class="card-desc">
+            襍､豐｢貂ｩ豕峨�ｮ迢ｬ閾ｪ縺ｮ蠑ｷ縺ｿ�ｼ医〓繧区ｹｯ縲∫賢縲√♀繧ゅ※縺ｪ縺暦ｼ峨→蟶ょｴ繝医Ξ繝ｳ繝峨ｒ謗帙￠蜷医ｏ縺帙∵･ｽ螟ｩ繝医Λ繝吶Ν遲峨�ｮAI讀懃ｴ｢繧､繝ｳ繝�繝�繧ｯ繧ｹ縺ｨ莠ｺ髢薙�ｮ螳ｿ豕雁虚讖溘�ｮ蜿梧婿縺ｫ譛驕ｩ蛹悶＆繧後◆螢ｲ繧後ｋ繝励Λ繝ｳ繧定�ｪ蜍戊ｨｭ險医＠縺ｾ縺吶�
+          </p>
+          <div class="card-benefit">
+            <strong>繝吶ロ繝輔ぅ繝�繝�:</strong><br>
+            AI縺後せ繧ｭ繝｣繝ｳ縺励ｄ縺吶＞莉戊ｾｼ縺ｿ繧ｿ繧ｰ�ｼ域､懃ｴ｢繧ｭ繝ｼ繝ｯ繝ｼ繝会ｼ峨ｒ邯ｲ鄒�縺励◆繧ｿ繧､繝医Ν縺ｨ縲∽ｺｺ髢薙�ｮ蠢�繧呈昭縺輔�ｶ繧九せ繝医�ｼ繝ｪ繝ｼ莉慕ｫ九※縺ｮ隧ｳ邏ｰ譁�繧堤函謌舌＠縲�髴ｲ蜃ｺ縺ｨ莠育ｴ�霆｢謠帷紫�ｼ�CVR�ｼ峨�ｮ蜿梧婿繧貞括逧�縺ｫ鬮倥ａ縺ｾ縺吶�
+          </div>
+        </div>
+        <div class="card-action">繧ｷ繧ｹ繝�繝繧定ｵｷ蜍輔☆繧� 筐�</div>
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 襍､豐｢貂ｩ豕画羅鬢ｨ 邨ｱ蜷�AI繧ｷ繧ｹ繝�繝繝昴�ｼ繧ｿ繝ｫ. All rights reserved.</p>
+  </footer>
+</body>
+</html>

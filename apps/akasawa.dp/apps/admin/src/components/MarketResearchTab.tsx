@@ -25,7 +25,7 @@ const TARGET_DATES = [
   { date: "2026-08-22", label: "通常（土）", isEvent: true }
 ];
 
-type MetricType = "prices" | "direct_avg" | "direct_median" | "direct_min" | "direct_max" | "all_range" | "full_count" | "coupon_count" | "pet_range" | "event_increase";
+type MetricType = "prices" | "direct_avg" | "direct_median" | "direct_min" | "direct_max" | "all_range" | "full_count" | "coupon_count" | "pet_range" | "event_increase" | "stats";
 
 const METRICS: { id: MetricType, label: string, icon: string }[] = [
   { id: "prices", label: "施設ごとの価格", icon: "🏢" },
@@ -68,17 +68,17 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
 
       // 楽天トラベルの空室検索URL（塩原温泉、大人2名、1室）
       const targetUrl = `https://search.travel.rakuten.co.jp/ds/vacant/searchVacant?f_dai=japan&f_chu=tochigi&f_sho=nasu&f_sai=shiobara&f_otona_su=2&f_heya_su=1&f_nen1=${year}&f_tuki1=${month}&f_hi1=${day}`;
-      // CORS回避用プロキシ
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+      // CORS回避用プロキシ（corsproxy.io を使用）
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 
       try {
         const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error("Network error");
-        const json = await response.json();
+        if (!response.ok) throw new Error(`Network error: ${response.status}`);
+        const html = await response.text();
         
-        if (json.contents && isMounted) {
+        if (html && isMounted) {
           // HTML内のJSオブジェクトから空室施設数(totalResults)を抽出
-          const match = json.contents.match(/"totalResults":\[(\d+)\]/);
+          const match = html.match(/"totalResults":\[(\d+)\]/);
           if (match && match[1]) {
             const vacantCount = parseInt(match[1], 10);
             let occ = Math.round(((TOTAL_SHIOBARA_HOTELS - vacantCount) / TOTAL_SHIOBARA_HOTELS) * 100);
