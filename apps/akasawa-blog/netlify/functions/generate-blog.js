@@ -1,4 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const fs = require('fs');
+const path = require('path');
 
 exports.handler = async (event) => {
   // CORSプリフライト対応
@@ -33,26 +35,15 @@ exports.handler = async (event) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    // 赤沢温泉の思想・哲学RAG
-    const philosophyContext = `
-    ■ 赤沢温泉旅館のブランド・哲学 (RAGデータ)
-    1. 【ぬる湯の美学（静養と自己治癒）】
-       - 温泉は加温を最小限にし、38℃〜40℃前後の「ぬる湯」として源泉かけ流しで提供しています。
-       - 熱いお湯で体を急激に温めるのではなく、ぬる湯に長時間（30分〜1時間以上）ゆったり浸かることで、副交感神経が優位になり、脳と身体が真から休まります。これを「静養（リセット）」と呼んでいます。
-    2. 【看板猫たちがもたらす余白】
-       - 館内には複数の看板猫（灰灰、その他の猫たち）が気ままに暮らしています。
-       - 猫たちは「おもてなし担当」ですが、気まぐれで、ツンデレです。
-       - 猫が膝の上で眠る時間、静かにたたずむ姿を見ることで、現代人が忘れがちな「目的のない無駄な時間（余白）」の価値を思い出させます。
-    3. 【多国籍スタッフとの共生とおもてなし】
-       - 従業員の多くが外国出身の若者たちです。完璧な日本語ではないかもしれませんが、彼らは一生懸命に温かいおもてなしを心がけています。
-       - 基本を大切にし、卵焼きや焼き魚を席についてから温かい状態で提供する「できたて配膳」など、小さな宿ならではの細やかな心配りを大切にしています。
-    4. 【無駄の美学 ＆ 完璧という呪縛からの解放】
-       - 現代のタイパ（タイムパフォーマンス）至上主義や「完璧でなければならない」というストレスから離れ、古民家を改装した歪んだ柱や、不揃いな石畳の美しさ（余白・不完全さの美）に目を向ける滞在を提案しています。
-    5. 【食へのこだわり】
-       - 地元の山菜、川魚（ヤシオマスや鮎の塩焼き）、ジビエ（鹿肉料理）、そして人気の手作り蒸し餃子など、ヘルシーで心のこもった料理を提供。特に、新鮮な生野菜サラダをたっぷり出すのがこだわりです。
-    6. 【奥日本シルバールート】
-       - 那須塩原から奥会津、新潟の魚沼へと抜ける、大自然と歴史を巡る広域周遊ルートをプロモートしています。当館はその中継地・静養の拠点です。
-    `;
+    // 赤沢温泉旅館の強み（RAG）を共有フォルダから読み込む
+    const philosophyPath = path.join(__dirname, '_shared', 'ryokan_rag.md');
+    let philosophyContext = '';
+    try {
+      philosophyContext = fs.readFileSync(philosophyPath, 'utf8');
+    } catch (err) {
+      console.warn('Failed to load ryokan_rag.md, using fallback.', err.message);
+      philosophyContext = '赤沢温泉旅館（ぬる湯、猫、大自然、静養）の要素を取り入れてください。';
+    }
 
     const systemPrompt = `
     あなたは「那須塩原温泉 赤沢温泉旅館」の公式ホームページ専属のプロブロガー（ライター）です。

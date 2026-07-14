@@ -20,8 +20,8 @@ exports.handler = async (event, context) => {
     }
 
     // Read RAG data
-    const philosophyPath = path.join(__dirname, '_lib', 'owner-philosophy.md');
-    const pastReviewsPath = path.join(__dirname, '_lib', 'past_reviews.md');
+    const philosophyPath = path.join(__dirname, '_shared', 'owner-philosophy.md');
+    const pastReviewsPath = path.join(__dirname, '_shared', 'past_reviews.md');
     
     const philosophyText = fs.readFileSync(philosophyPath, 'utf8');
     const pastReviewsText = fs.readFileSync(pastReviewsPath, 'utf8');

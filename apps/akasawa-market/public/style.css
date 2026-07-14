@@ -1,0 +1,628 @@
+:root {
+  --bg-color: #05120c;
+  --bg-gradient: radial-gradient(circle at 50% -20%, #173625 0%, #05120c 80%);
+  --card-bg: rgba(13, 31, 23, 0.75);
+  --border-color: rgba(212, 175, 55, 0.2);
+  --accent-color: #d4af37; /* Gold */
+  --accent-hover: #f3cf5a;
+  --text-main: #f5f2eb;
+  --text-sub: #a4b3ab;
+  --success: #52c41a;
+  --danger: #ff4d4f;
+  --warning: #faad14;
+  --blue: #1890ff;
+  --radius-sm: 6px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --font-serif: 'Noto Serif JP', serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  background-image: var(--bg-gradient);
+  color: var(--text-main);
+  font-family: var(--font-serif);
+  min-height: 100vh;
+  line-height: 1.7;
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  width: 100%;
+}
+
+/* ヘッダー */
+.app-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 2rem;
+}
+
+.header-brand {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.4em;
+  color: var(--accent-color);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.app-header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.header-desc {
+  color: var(--text-sub);
+  max-width: 800px;
+  margin: 0 auto;
+  font-size: 0.95rem;
+  font-weight: 300;
+}
+
+/* 稼働率サマリー */
+.summary-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.occ-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+.occ-card-body h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.occ-card-body h3 i {
+  color: var(--accent-color);
+}
+
+.occ-desc {
+  color: var(--text-sub);
+  font-size: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-sub);
+}
+
+.status-badge.green {
+  background: rgba(82, 196, 26, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(82, 196, 26, 0.3);
+}
+
+.status-badge.orange {
+  background: rgba(250, 173, 20, 0.15);
+  color: var(--warning);
+  border: 1px solid rgba(250, 173, 20, 0.3);
+}
+
+.status-badge.blue {
+  background: rgba(24, 144, 255, 0.15);
+  color: var(--blue);
+  border: 1px solid rgba(24, 144, 255, 0.3);
+}
+
+.occ-val-area {
+  text-align: right;
+}
+
+.occ-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  line-height: 1.1;
+}
+
+.occ-label {
+  font-size: 0.8rem;
+  color: var(--text-sub);
+}
+
+/* インフォセクション */
+.info-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.info-box {
+  background: rgba(13, 31, 23, 0.4);
+  border-left: 3px solid var(--accent-color);
+  padding: 1.2rem 1.5rem;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.85rem;
+}
+
+.info-box h4 {
+  font-size: 0.95rem;
+  color: var(--accent-color);
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+
+.info-box p {
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+/* グリッドレイアウト */
+.layout-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 900px) {
+  .layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* コントロールパネル */
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.panel-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+.panel-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.select-input, .date-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 0.6rem;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.select-input:focus, .date-input:focus {
+  border-color: var(--accent-color);
+}
+
+.channel-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.channel-btn {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
+  color: var(--text-sub);
+  padding: 0.6rem 0.2rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.channel-btn:hover {
+  color: var(--text-main);
+  border-color: var(--accent-color);
+}
+
+.channel-btn.active {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
+/* 指標メニュー */
+.metric-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metric-btn {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  color: var(--text-sub);
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.metric-btn span {
+  font-size: 1.1rem;
+}
+
+.metric-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+  border-color: var(--accent-color);
+}
+
+.metric-btn.active {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  font-weight: 600;
+  border-left: 4px solid var(--accent-color);
+  padding-left: calc(1rem - 4px);
+}
+
+/* 結果エリア */
+.result-area {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.result-header h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: 0.05em;
+}
+
+.result-date {
+  font-size: 0.9rem;
+  color: var(--accent-color);
+  background: rgba(212, 175, 55, 0.1);
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+}
+
+/* 結果コンテンツ */
+.mr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.2rem;
+}
+
+.mr-hotel-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.mr-hotel-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.mr-hotel-card.full {
+  opacity: 0.6;
+}
+
+.mr-hotel-card-header {
+  margin-bottom: 0.8rem;
+}
+
+.mr-hotel-type-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin-bottom: 0.4rem;
+}
+
+.mr-hotel-type-badge.blue {
+  background: rgba(24, 144, 255, 0.15);
+  color: var(--blue);
+}
+
+.mr-hotel-type-badge.orange {
+  background: rgba(250, 173, 20, 0.15);
+  color: var(--warning);
+}
+
+.mr-hotel-type-badge.purple {
+  background: rgba(186, 114, 237, 0.15);
+  color: #ba72ed;
+}
+
+.mr-hotel-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.mr-hotel-price-row {
+  margin-top: auto;
+  margin-bottom: 0.8rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding-top: 0.8rem;
+}
+
+.price-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.price-full {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.mr-hotel-details {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.mr-hotel-badges {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mr-badge {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  font-size: 0.65rem;
+}
+
+.mr-badge.coupon {
+  background: rgba(250, 173, 20, 0.15);
+  color: var(--warning);
+}
+
+/* KPIビュー */
+.mr-kpi-view {
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+.mr-kpi-label {
+  font-size: 1rem;
+  color: var(--text-sub);
+  display: block;
+  margin-bottom: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.mr-kpi-value {
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  margin-bottom: 1.5rem;
+  line-height: 1.1;
+}
+
+.mr-kpi-value.gradient {
+  background: linear-gradient(135deg, var(--accent-color), #fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.mr-kpi-value.text-danger { color: var(--danger); }
+.mr-kpi-value.text-success { color: var(--success); }
+
+.mr-kpi-desc {
+  max-width: 600px;
+  margin: 0 auto;
+  color: var(--text-sub);
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+/* 分析ビュー */
+.mr-analysis-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.mr-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+}
+
+.mr-summary-card.danger { border-left: 5px solid var(--danger); }
+.mr-summary-card.warning { border-left: 5px solid var(--warning); }
+
+.mr-summary-card .card-icon {
+  font-size: 2.5rem;
+}
+
+.mr-summary-card h3 {
+  font-size: 0.95rem;
+  color: var(--text-sub);
+  margin-bottom: 0.3rem;
+}
+
+.mr-summary-card .card-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.mr-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.mr-list-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.mr-list-item.danger i { color: var(--danger); }
+.mr-list-item.warning i { color: var(--warning); }
+
+.mr-analysis-tip {
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid var(--border-color);
+  padding: 1.2rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+/* 統計・インサイト */
+.mr-stats-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.mr-summary-item-box {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.mr-summary-item-box .label {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+}
+
+.mr-summary-item-box .value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.mr-tip-item {
+  display: flex;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.mr-tip-item i {
+  font-size: 1.2rem;
+  margin-top: 0.2rem;
+}
+
+.mr-tip-item.danger i { color: var(--danger); }
+.mr-tip-item.warning i { color: var(--warning); }
+.mr-tip-item.success i { color: var(--success); }
+.mr-tip-item.info i { color: var(--blue); }
+
+.mr-tip-item strong {
+  color: var(--text-main);
+}
+
+/* フッター */
+.app-footer {
+  text-align: center;
+  padding-top: 3rem;
+  color: var(--text-sub);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: 4rem;
+}

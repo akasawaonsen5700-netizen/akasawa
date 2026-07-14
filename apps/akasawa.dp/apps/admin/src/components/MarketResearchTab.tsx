@@ -2,19 +2,10 @@ import React, { useState, useMemo, useEffect } from "react";
 import { MarketResearchData } from "../types";
 import "./MarketResearchTab.css";
 
+import TARGET_FACILITIES_JSON from "../../../../../../shared/target_hotels.json";
+
 // 仕様書に基づく調査対象施設
-const TARGET_FACILITIES = [
-  { id: "majimaso", name: "旅館まじま荘", type: "direct" },
-  { id: "yamaguciya", name: "山口屋旅館", type: "direct" },
-  { id: "kamiaizuya", name: "上会津屋", type: "direct" },
-  { id: "nuriya", name: "心づくしの宿 ぬりや", type: "direct" },
-  { id: "tokiwa", name: "常盤ホテル", type: "direct" },
-  { id: "okukogen", name: "奥塩原高原ホテル", type: "market" },
-  { id: "shimofujiya", name: "やまの宿 下藤屋", type: "market" },
-  { id: "shofuro", name: "松楓楼 松屋", type: "market" },
-  { id: "gensenkan", name: "秘湯の宿 元泉館", type: "pet" },
-  { id: "wanwan", name: "わんわんパラダイス", type: "pet" }
-];
+const TARGET_FACILITIES = TARGET_FACILITIES_JSON;
 
 const TARGET_DATES = [
   { date: "2026-07-22", label: "通常（水）", isEvent: false },

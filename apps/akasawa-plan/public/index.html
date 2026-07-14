@@ -44,6 +44,16 @@
           <textarea id="custom-notes" placeholder="例: チェックアウトを1時間延長し11:00にしたい。夕食に特製の蒸し餃子のおかわり自由特典を付けたい、など..."></textarea>
         </div>
 
+        <hr class="divider">
+
+        <h2>3. ターゲットホテルの参考情報</h2>
+        <div class="quick-directions">
+          <label class="section-sub-label">💡 クリックでプランと料金設定を展開します</label>
+          <div class="target-hotels-container" id="target-hotels-container">
+            <!-- JSで動的に生成 -->
+          </div>
+        </div>
+
         <button id="generate-btn" class="generate-btn">
           <span class="btn-text">🛡️ AI ＆ 人間最適化プランを新規生成</span>
           <div class="loader" id="loader" style="display: none;"></div>
@@ -55,6 +65,11 @@
         <div class="output-header">
           <h2>プラン企画 ＆ 原稿書面</h2>
           <span class="status-badge" id="status-badge">未生成</span>
+        </div>
+
+        <div class="plan-tabs hidden" id="plan-tabs">
+          <button class="plan-tab-btn active" data-type="yearRoundPlan">年間通してのプラン</button>
+          <button class="plan-tab-btn" data-type="shortTermPlan">短期の特別プラン</button>
         </div>
 
         <div class="placeholder-view" id="placeholder-view">

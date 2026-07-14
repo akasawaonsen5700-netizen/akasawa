@@ -1,0 +1,14 @@
+{
+  "name": "akasawa-market",
+  "version": "1.0.0",
+  "description": "Akasawa Onsen Market Research Agent (Simple)",
+  "scripts": {
+    "dev": "netlify dev",
+    "start": "netlify dev",
+    "build": "echo 'Static app build not required'"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "netlify-cli": "^17.36.1"
+  }
+}

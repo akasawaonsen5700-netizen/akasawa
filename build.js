@@ -37,6 +37,10 @@ function copyFolderSync(from, to) {
 console.log('Copying portal index.html...');
 fs.copyFileSync(path.join(__dirname, 'index.html'), path.join(distDir, 'index.html'));
 
+// 2.5. 共通データ基盤(shared)のコピー
+console.log('Copying shared data...');
+copyFolderSync(path.join(__dirname, 'shared'), path.join(distDir, 'shared'));
+
 // 3. apps/akasawa-chat のコピー (静的)
 console.log('Copying akasawa-chat...');
 copyFolderSync(path.join(__dirname, 'apps', 'akasawa-chat'), path.join(distDir, 'akasawa-chat'));
@@ -87,6 +91,11 @@ try {
 
 // 7. Netlify Functions のマージ
 console.log('Merging Netlify Functions...');
+
+// shared を netlify/functions/_shared としてコピー
+console.log('Copying shared to netlify/functions/_shared...');
+copyFolderSync(path.join(__dirname, 'shared'), path.join(functionsDir, '_shared'));
+
 // akasawa-ml functions
 const mlFuncs = path.join(__dirname, 'apps', 'akasawa-ml', 'netlify', 'functions');
 if (fs.existsSync(mlFuncs)) {
@@ -148,6 +157,10 @@ if (fs.existsSync(endoFuncsSrc)) {
 // 7.5. apps/akasawa-review のコピー (静的)
 console.log('Copying akasawa-review...');
 copyFolderSync(path.join(__dirname, 'apps', 'akasawa-review', 'public'), path.join(distDir, 'akasawa-review'));
+
+// 7.6. apps/nasumid-p のコピー (静的)
+console.log('Copying nasumid-p...');
+copyFolderSync(path.join(__dirname, 'apps', 'nasumid-p'), path.join(distDir, 'nasumid-p'));
 
 // akasawa-review functions
 const reviewFuncsSrc = path.join(__dirname, 'apps', 'akasawa-review', 'netlify', 'functions');

@@ -537,3 +537,104 @@ textarea:focus, select:focus, input:focus {
 .hidden {
   display: none !important;
 }
+
+/* ターゲットホテル */
+.target-hotel-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.target-hotel-header {
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.target-hotel-header:hover {
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.hotel-name {
+  font-family: 'Noto Serif JP', serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--brand);
+}
+
+.hotel-icon {
+  font-size: 12px;
+  transition: transform 0.3s;
+}
+
+.target-hotel-card.open .hotel-icon {
+  transform: rotate(180deg);
+}
+
+.target-hotel-body {
+  padding: 0 16px 16px;
+  display: none;
+  font-size: 13px;
+  border-top: 1px dashed rgba(212, 175, 55, 0.2);
+  margin-top: 8px;
+  padding-top: 12px;
+}
+
+.target-hotel-card.open .target-hotel-body {
+  display: block;
+}
+
+.hotel-plan-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.hotel-plan-title {
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.hotel-plan-price {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* プランタブ */
+.plan-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+}
+
+.plan-tab-btn {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.plan-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.plan-tab-btn.active {
+  background: var(--brand);
+  color: var(--bg-dark);
+  border-color: var(--brand);
+  font-weight: bold;
+}

@@ -1,4 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const fs = require('fs');
+const path = require('path');
 
 exports.handler = async (event) => {
   // CORSプリフライト対応
@@ -35,16 +37,15 @@ exports.handler = async (event) => {
 
     let systemPrompt = '';
 
-    // 赤沢温泉旅館の強み（RAG）
-    const ryokanRag = `
-    ■ 赤沢温泉旅館 の強みと独自のポジショニング (RAGデータ)
-    - 【源泉かけ流しぬる湯 (38〜40℃)】: 長時間浸かることで自律神経を整え、脳と体を真から休める「静養（リセット）」の体験価値。
-    - 【看板猫たちと過ごす、目的のない余白】: 人懐っこい猫たちと戯れ、現代人が忘れがちな「時間を無駄にする豊かさ」を感じる。
-    - 【多国籍スタッフのできたて配膳】: 一生懸命な外国人スタッフの温かいおもてなし。朝食の着席後配膳（卵焼き・焼き魚）、夕食のアツアツ天ぷら・手作り蒸し餃子。
-    - 【古民家と大自然】: 箒川沿いの静寂の一軒宿、目の前の滝のロケーション。不完全さの美学（完璧からの解放）。
-    - 【奥日本シルバールート】: 那須塩原から会津、新潟（魚沼）へ抜ける大自然のドライブ中継地。
-    - 【離れの古民家貸別荘（ペット同伴）】: 完全プライベート空間で愛犬と温泉を満喫。
-    `;
+    // 赤沢温泉旅館の強み（RAG）を共有フォルダから読み込む
+    const ryokanRagPath = path.join(__dirname, '_shared', 'ryokan_rag.md');
+    let ryokanRag = '';
+    try {
+      ryokanRag = fs.readFileSync(ryokanRagPath, 'utf8');
+    } catch (err) {
+      console.warn('Failed to load ryokan_rag.md, using fallback.', err.message);
+      ryokanRag = '赤沢温泉旅館（ぬる湯、猫、大自然、静養）の要素を取り入れてください。';
+    }
 
     // タイプ別のプロンプト構築（Before/Afterとコピペ入稿・パラメータ指示を厳密に定義）
     if (type === 'rakuten' || type === 'jalan' || type === 'booking') {

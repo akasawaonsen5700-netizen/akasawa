@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>市場調査 (簡易版) | 赤沢温泉旅館 統合AIシステム</title>
+  <!-- Google Fonts: Cinzel & Noto Serif JP -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- ヘッダー -->
+    <header class="app-header">
+      <div class="header-brand">Akasawa Onsen Ryokan</div>
+      <h1>市場相場 競合比較インサイト (簡易版)</h1>
+      <p class="header-desc">
+        塩原温泉エリアの競合他社の販売価格や空室状況を自動集計し、当館の最適な客室料金設定（ダイナミックプライシング）の判断をサポートします。
+      </p>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+      
+      <!-- 稼働率サマリーカード -->
+      <section class="summary-section">
+        <div class="occ-card">
+          <div class="occ-card-body">
+            <h3><i class="fas fa-map-marker-alt"></i> 塩原温泉エリア 全体宿泊率</h3>
+            <p class="occ-desc">対象: 楽天トラベル掲載の那須・塩原・板室エリア全施設</p>
+            <div id="scraping-status" class="status-badge">同期データを読み込み中...</div>
+          </div>
+          <div class="occ-val-area">
+            <div id="area-occ-val" class="occ-value">--%</div>
+            <div id="area-occ-label" class="occ-label">通常</div>
+          </div>
+        </div>
+
+        <div class="occ-card">
+          <div class="occ-card-body">
+            <h3><i class="fas fa-hotel"></i> 調査対象10施設 平均稼働率</h3>
+            <p class="occ-desc">当館がベンチマークしている競合・参考ホテル（計10軒）</p>
+            <div class="status-badge blue">個別稼働率の集計値</div>
+          </div>
+          <div class="occ-val-area">
+            <div id="competitor-occ-val" class="occ-value">--%</div>
+            <div id="competitor-occ-label" class="occ-label">10軒中0軒が満室</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 調査基準および選定根拠 -->
+      <section class="info-section">
+        <div class="info-box">
+          <h4><i class="fas fa-info-circle"></i> 調査条件の統一</h4>
+          <p>正確な価格比較のため、全施設について【 大人2名 / 1室利用 / 1泊2食付 / 標準和室 】の条件で料金を取得しています。</p>
+        </div>
+        <div class="info-box">
+          <h4><i class="fas fa-lightbulb"></i> 競合選定の根拠</h4>
+          <p>
+            <strong>直接比較 (5施設):</strong> まじま荘、山口屋、上会津屋、ぬりや、常盤ホテル。当館の「基準価格」のベースとなる同規模・同価格帯の宿です。<br>
+            <strong>相場参考 (3施設):</strong> 奥塩原高原、下藤屋、松楓楼松屋。連休や高需要期にエリア全体の価格がどこまで高騰するかの指標です。<br>
+            <strong>ペット可 (2施設):</strong> 元泉館、わんわんパラダイス。ペット同伴顧客の流入トレンドを監視します。
+          </p>
+        </div>
+      </section>
+
+      <!-- メイン操作レイアウト -->
+      <div class="layout-grid">
+        
+        <!-- サイドパネル：設定 -->
+        <aside class="control-panel">
+          <div class="panel-section">
+            <h3><i class="fas fa-calendar-alt"></i> 1. 調査日程を選択</h3>
+            <div class="date-selector-wrapper">
+              <select id="date-select" class="select-input">
+                <!-- JSで動的に追加 -->
+              </select>
+              <input type="date" id="custom-date" class="date-input" style="margin-top: 10px;">
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <h3><i class="fas fa-network-wired"></i> 2. 予約チャネルを選択</h3>
+            <div class="channel-toggle">
+              <button id="channel-rakuten" class="channel-btn active" onclick="switchChannel('rakuten')">
+                <i class="fas fa-shopping-bag"></i> 楽天トラベル
+              </button>
+              <button id="channel-jalan" class="channel-btn" onclick="switchChannel('jalan')">
+                <i class="fas fa-book-open"></i> じゃらんnet
+              </button>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <h3><i class="fas fa-chart-pie"></i> 3. 確認したい指標</h3>
+            <div class="metric-menu" id="metric-buttons">
+              <!-- JSで動的に生成 -->
+            </div>
+          </div>
+        </aside>
+
+        <!-- メイン表示：結果ディスプレイ -->
+        <section class="result-area">
+          <div class="result-header">
+            <h2 id="result-title">施設ごとの価格</h2>
+            <span id="result-date-label" class="result-date">対象日: ----/--/--</span>
+          </div>
+          
+          <div class="result-content" id="result-content">
+            <!-- JSで動的にHTMLが流し込まれます -->
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <p>&copy; 2026 赤沢温泉旅館 統合AIシステム. All rights reserved.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
