@@ -85,9 +85,9 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
   // 現在選択されている日付のデータを取得（存在しない場合は自動生成してデモ表示する）
   const currentDateData = useMemo(() => {
     const existingData = researchData.filter(d => d.dateKey === selectedDate && d.ota === selectedOta);
-    if (existingData.length > 0) return existingData;
 
-    // データが存在しない任意の日付が選ばれた場合、シミュレーションデータを動的生成
+    // データが存在しない任意の日付が選ばれた場合、または一部の施設データが欠落している場合、
+    // シミュレーションデータを動的生成して補完する
     const dObj = new Date(selectedDate);
     const dayOfWeek = dObj.getDay();
     const isWeekend = dayOfWeek === 5 || dayOfWeek === 6; // 金・土を高稼働とする
@@ -99,7 +99,11 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
     const baseMarkup = (isWeekend ? 3000 : 0) + (isHolidaySeason ? 5000 : 0) + (seed * 20);
 
     return TARGET_FACILITIES.map((facility, idx) => {
-      // 施設ごとの適当なベース価格
+      // 既に保存されたデータがあればそれを使う
+      const found = existingData.find(d => d.hotelId === facility.id);
+      if (found) return found;
+
+      // なければ適当なベース価格を生成
       let base = facility.type === "direct" ? 12000 : facility.type === "market" ? 18000 : 16000;
       
       // OTAによるわずかな価格差（じゃらんの方が少し高い/安い施設がある等のシミュレーション）
