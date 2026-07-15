@@ -38,10 +38,18 @@ interface Props {
 }
 
 export default function MarketResearchTab({ researchData, onSaveData }: Props) {
-  const [selectedDate, setSelectedDate] = useState<string>(TARGET_DATES[0].date);
+  // 今日の日付を初期値とする
+  const getTodayStr = () => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split('T')[0];
+  };
+
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayStr());
   const [selectedMetric, setSelectedMetric] = useState<MetricType>("prices");
   const [selectedOta, setSelectedOta] = useState<"rakuten" | "jalan">("rakuten");
   const [realOccRate, setRealOccRate] = useState<number | null>(null);
+  const [apiCompetitorsData, setApiCompetitorsData] = useState<MarketResearchData[] | null>(null);
   const [isFetchingOcc, setIsFetchingOcc] = useState<boolean>(false);
   const TOTAL_SHIOBARA_HOTELS = 65; // 塩原温泉の推定総施設数
 
@@ -51,6 +59,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
     const fetchRealData = async () => {
       setIsFetchingOcc(true);
       setRealOccRate(null);
+      setApiCompetitorsData(null);
 
       const dObj = new Date(selectedDate);
       const year = dObj.getFullYear();
@@ -65,11 +74,32 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
         if (!response.ok) throw new Error(`Network error: ${response.status}`);
         const json = await response.json();
         
-        if (json.totalResults !== undefined && json.totalResults !== -1 && isMounted) {
-          const vacantCount = json.totalResults;
-          let occ = Math.round(((TOTAL_SHIOBARA_HOTELS - vacantCount) / TOTAL_SHIOBARA_HOTELS) * 100);
-          occ = Math.max(0, Math.min(100, occ));
-          setRealOccRate(occ);
+        if (isMounted) {
+          if (json.totalResults !== undefined && json.totalResults !== -1) {
+            const vacantCount = json.totalResults;
+            let occ = Math.round(((TOTAL_SHIOBARA_HOTELS - vacantCount) / TOTAL_SHIOBARA_HOTELS) * 100);
+            occ = Math.max(0, Math.min(100, occ));
+            setRealOccRate(occ);
+          }
+          if (json.competitors) {
+            const formatted = json.competitors.map((c: any) => ({
+              id: `${selectedDate}-api-${selectedOta}-${c.hotelId}`,
+              dateKey: selectedDate,
+              ota: "rakuten",
+              hotelId: c.hotelId,
+              status: c.status,
+              price: c.price,
+              planName: c.planName || "",
+              roomType: c.roomType || "",
+              meals: "1泊2食",
+              hasCoupon: false,
+              hasCampaign: false,
+              hasPetPlan: c.hasPetPlan,
+              features: [],
+              updatedAt: new Date().toISOString()
+            }));
+            setApiCompetitorsData(formatted);
+          }
         }
       } catch (error) {
         console.error("Scraping failed:", error);
@@ -84,6 +114,31 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
 
   // 現在選択されている日付のデータを取得（存在しない場合は自動生成してデモ表示する）
   const currentDateData = useMemo(() => {
+    // APIから取得できた場合は優先して使用する
+    if (apiCompetitorsData && selectedOta === "rakuten") {
+      return TARGET_FACILITIES.map(facility => {
+        const found = apiCompetitorsData.find(d => d.hotelId === facility.id);
+        if (found) return found;
+        
+        return {
+          id: `${selectedDate}-auto-${selectedOta}-${facility.id}`,
+          dateKey: selectedDate,
+          ota: selectedOta,
+          hotelId: facility.id,
+          status: "full",
+          price: 0,
+          planName: "",
+          roomType: "",
+          meals: "",
+          hasCoupon: false,
+          hasCampaign: false,
+          hasPetPlan: facility.type === "pet",
+          features: [],
+          updatedAt: new Date().toISOString()
+        };
+      });
+    }
+
     const existingData = researchData.filter(d => d.dateKey === selectedDate && d.ota === selectedOta);
 
     // データが存在しない任意の日付が選ばれた場合、または一部の施設データが欠落している場合、
@@ -133,7 +188,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
         updatedAt: new Date().toISOString()
       };
     });
-  }, [researchData, selectedDate, selectedOta]);
+  }, [researchData, selectedDate, selectedOta, apiCompetitorsData]);
 
   // 通常日(7/22等)の直接比較施設の平均価格 (上昇幅計算用)
   const normalDayAvgPrice = useMemo(() => {
