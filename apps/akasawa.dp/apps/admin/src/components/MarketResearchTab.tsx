@@ -112,7 +112,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
     return () => { isMounted = false; };
   }, [selectedDate]);
 
-  // 現在選択されている日付のデータを取得（存在しない場合は自動生成してデモ表示する）
+  // 現在選択されている日付のデータを取得（APIの実績データ、または保存されたデータのみを使用し、シミュレーションは一切行わない）
   const currentDateData = useMemo(() => {
     // APIから取得できた場合は優先して使用する
     if (apiCompetitorsData && selectedOta === "rakuten") {
@@ -121,11 +121,11 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
         if (found) return found;
         
         return {
-          id: `${selectedDate}-auto-${selectedOta}-${facility.id}`,
+          id: `${selectedDate}-api-${selectedOta}-${facility.id}`,
           dateKey: selectedDate,
           ota: selectedOta,
           hotelId: facility.id,
-          status: "full",
+          status: "full" as const,
           price: 0,
           planName: "",
           roomType: "",
@@ -140,71 +140,20 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
     }
 
     const existingData = researchData.filter(d => d.dateKey === selectedDate && d.ota === selectedOta);
+    if (existingData.length > 0) {
+      return existingData;
+    }
 
-    // データが存在しない任意の日付が選ばれた場合、または一部の施設データが欠落している場合、
-    // シミュレーションデータを動的生成して補完する
-    const dObj = new Date(selectedDate);
-    const dayOfWeek = dObj.getDay();
-    const isWeekend = dayOfWeek === 5 || dayOfWeek === 6; // 金・土を高稼働とする
-    const isHolidaySeason = dObj.getMonth() === 7 || dObj.getMonth() === 3; // 8月・4月を繁忙期とする
-    
-    // 日付とOTAに応じたシード値（乱数調整用）
-    const otaSeed = selectedOta === "rakuten" ? 1 : 2;
-    const seed = (dObj.getDate() * 13 + dObj.getMonth() * 7 + otaSeed * 5) % 100;
-    const baseMarkup = (isWeekend ? 3000 : 0) + (isHolidaySeason ? 5000 : 0) + (seed * 20);
-
-    return TARGET_FACILITIES.map((facility, idx) => {
-      // 既に保存されたデータがあればそれを使う
-      const found = existingData.find(d => d.hotelId === facility.id);
-      if (found) return found;
-
-      // なければ適当なベース価格を生成
-      let base = facility.type === "direct" ? 12000 : facility.type === "market" ? 18000 : 16000;
-      
-      // OTAによるわずかな価格差（じゃらんの方が少し高い/安い施設がある等のシミュレーション）
-      const otaDiff = selectedOta === "jalan" ? ((idx % 3) * 500) : 0;
-      base += baseMarkup + (idx * 500) + otaDiff;
-
-      // 満室かどうかのシミュレーション
-      const fullChance = (isWeekend ? 0.4 : 0.1) + (isHolidaySeason ? 0.3 : 0);
-      const isFull = (seed + idx * 17) % 100 < (fullChance * 100);
-      
-      const hasCoupon = (seed + idx * 23) % 100 < 30; // 30%の確率でクーポン
-
-      return {
-        id: `${selectedDate}-auto-${selectedOta}-${facility.id}`,
-        dateKey: selectedDate,
-        ota: selectedOta,
-        hotelId: facility.id,
-        status: isFull ? "full" : "available",
-        price: Math.floor(base / 100) * 100, // 100円丸め
-        planName: isWeekend ? "週末限定プラン" : "スタンダードプラン",
-        roomType: "和室10畳",
-        meals: "1泊2食",
-        hasCoupon: hasCoupon,
-        hasCampaign: false,
-        hasPetPlan: facility.type === "pet",
-        features: [],
-        updatedAt: new Date().toISOString()
-      };
-    });
+    // データが一切存在しない場合は、空の配列を返す（シミュレーションデータを生成しない）
+    return [];
   }, [researchData, selectedDate, selectedOta, apiCompetitorsData]);
-
-  // 通常日(7/22等)の直接比較施設の平均価格 (上昇幅計算用)
-  const normalDayAvgPrice = useMemo(() => {
-    // 基準となる平日データをシミュレーションで固定生成して比較基準にする
-    const directPrices = TARGET_FACILITIES
-      .filter(f => f.type === "direct")
-      .map((f, idx) => 12000 + (idx * 500)); // ベースの平日価格
-    return Math.round(directPrices.reduce((a, b) => a + b, 0) / directPrices.length);
-  }, []);
 
   // 各種集計値の計算
   const aggregatedResults = useMemo(() => {
     const facilitiesWithData = TARGET_FACILITIES.map(facility => {
       const data = currentDateData.find(d => d.hotelId === facility.id);
       return { facility, data };
-    });
+    }).filter(item => item.data !== undefined); // データがあるもののみ
 
     const directPrices = facilitiesWithData
       .filter(f => f.facility.type === "direct" && f.data && f.data.price > 0 && f.data.status !== "full")
@@ -233,12 +182,6 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
     const directMin = directPrices.length > 0 ? directPrices[0] : null;
     const directMax = directPrices.length > 0 ? directPrices[directPrices.length - 1] : null;
 
-    let increaseRate = null;
-    const selectedDateInfo = TARGET_DATES.find(d => d.date === selectedDate);
-    if (selectedDateInfo?.isEvent && directAvg !== null && normalDayAvgPrice > 0) {
-      increaseRate = Math.round(((directAvg - normalDayAvgPrice) / normalDayAvgPrice) * 100);
-    }
-
     return {
       facilitiesWithData,
       directAvg,
@@ -250,15 +193,14 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
       fullFacilities,
       couponFacilities,
       petMin: petPrices.length > 0 ? petPrices[0] : null,
-      petMax: petPrices.length > 0 ? petPrices[petPrices.length - 1] : null,
-      increaseRate
+      petMax: petPrices.length > 0 ? petPrices[petPrices.length - 1] : null
     };
-  }, [currentDateData, selectedDate, normalDayAvgPrice]);
+  }, [currentDateData]);
 
   const renderMetricContent = () => {
     const {
       facilitiesWithData, directAvg, directMedian, directMin, directMax,
-      allMin, allMax, fullFacilities, couponFacilities, petMin, petMax, increaseRate
+      allMin, allMax, fullFacilities, couponFacilities, petMin, petMax
     } = aggregatedResults;
 
     switch (selectedMetric) {
@@ -299,9 +241,9 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                       <div>プラン: {data.planName || "---"}</div>
                       <div>客室: {data.roomType || "---"}</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', padding: '6px 0', borderTop: '1px dashed #cbd5e1', borderBottom: '1px dashed #cbd5e1', fontSize: '12px' }}>
-                        <span style={{ color: '#64748b' }}>館内稼働率:</span>
+                        <span style={{ color: '#64748b' }}>空室状況:</span>
                         <span style={{ fontWeight: 'bold', color: data.status === "full" ? '#be123c' : '#0f766e' }}>
-                          {data.status === "full" ? '100% (満室)' : `${Math.min(95, 45 + ((new Date(selectedDate).getDate() * 7 + facility.id.charCodeAt(0)) % 45))}%`}
+                          {data.status === "full" ? '満室' : '空室あり'}
                         </span>
                       </div>
                       <div>
@@ -331,11 +273,6 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                 <div className="mr-stat-value">
                   {directAvg ? `¥${directAvg.toLocaleString()}` : "---"}
                 </div>
-                {increaseRate !== null && increaseRate > 0 && (
-                  <div className="mr-stat-subtext text-danger font-bold mt-2">
-                    <i className="fas fa-arrow-up"></i> 平日比 +{increaseRate}% 高騰中
-                  </div>
-                )}
               </div>
               
               <div className="mr-stat-box outline">
@@ -361,7 +298,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                   <li className="flex items-start gap-2 bg-rose-50 p-3 rounded-lg text-rose-800">
                     <span className="mt-0.5">⚠️</span>
                     <div>
-                      <strong>{fullFacilities.length}施設が既に満室（または残りわずか）です。</strong><br/>
+                      <strong>{fullFacilities.length}施設が既に満室です。</strong><br/>
                       <span className="text-sm">（{fullFacilities.map(f => f.facility.name).join('、')}）<br/>エリア全体の供給が不足しており、強気の価格設定（値上げ）が成功しやすい市況です。</span>
                     </div>
                   </li>
@@ -372,15 +309,6 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                     <div>
                       <strong>競合がクーポンを発行中です。</strong><br/>
                       <span className="text-sm">（{couponFacilities.map(f => f.facility.name).join('、')}）<br/>表面上の価格よりも実質価格が安くなっているため、価格差に注意が必要です。</span>
-                    </div>
-                  </li>
-                )}
-                {directAvg && normalDayAvgPrice > 0 && directAvg < normalDayAvgPrice && (
-                  <li className="flex items-start gap-2 bg-blue-50 p-3 rounded-lg text-blue-800">
-                    <span className="mt-0.5">📉</span>
-                    <div>
-                      <strong>相場が平日平均を下回っています。</strong><br/>
-                      <span className="text-sm">集客が鈍い可能性があります。直前割引などのキャンペーン発動を検討してください。</span>
                     </div>
                   </li>
                 )}
@@ -474,22 +402,6 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
             </div>
           </div>
         );
-      case "event_increase":
-        const isEvent = TARGET_DATES.find(d => d.date === selectedDate)?.isEvent;
-        if (!isEvent) return (
-          <div className="mr-no-data">
-            <span>🌿</span>
-            <p>この日は通常日のため比較対象外です</p>
-          </div>
-        );
-        return (
-          <div className="mr-kpi-view">
-            <span className="mr-kpi-label">通常日（7/22）からの相場高騰率</span>
-            <div className="mr-kpi-value gradient" style={{fontSize: '84px', background: 'linear-gradient(90deg, #d97706, #be123c)', WebkitBackgroundClip: 'text'}}>
-              {increaseRate !== null ? `+${increaseRate}%` : "算出不可"}
-            </div>
-          </div>
-        );
       default:
         return null;
     }
@@ -512,7 +424,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
           </p>
         </div>
 
-        {/* エリア全体宿泊率（リアルタイム反映対応）＆ 調査対象10施設の宿泊率 */}
+        {/* エリア全体宿泊率（リアルタイム反映対応）＆ 調査対象施設の満室状況 */}
         {(() => {
           let occ = 0;
           let isSimulated = false;
@@ -522,29 +434,14 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
           } else if (realOccRate !== null) {
             occ = realOccRate;
           } else {
-            const dObj = new Date(selectedDate);
-            const dayOfWeek = dObj.getDay();
-            const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
-            const isHolidaySeason = dObj.getMonth() === 7 || dObj.getMonth() === 3 || dObj.getMonth() === 4;
-            
-            let baseOcc = isWeekend ? 78 : 35;
-            if (isHolidaySeason) baseOcc += 15;
-            const seed = (dObj.getDate() * 11 + dObj.getMonth() * 3) % 20;
-            occ = baseOcc - 10 + seed;
-            if (occ > 100) occ = 100;
+            occ = -1; // 通信エラーの場合は一切の推計を行わない
             isSimulated = true;
           }
 
-          // 調査対象施設の平均稼働率を算出
+          // 調査対象施設の満室状況を算出
           const targetFullCount = currentDateData.filter(d => d.status === "full").length;
-          const targetOccRates = TARGET_FACILITIES.map(facility => {
-            const data = currentDateData.find(d => d.hotelId === facility.id);
-            if (data?.status === "full") return 100;
-            // 決定論的なシミュレーション値
-            const dObj = new Date(selectedDate);
-            return Math.min(95, 45 + ((dObj.getDate() * 7 + facility.id.charCodeAt(0)) % 45));
-          });
-          const targetAvgOcc = Math.round(targetOccRates.reduce((a, b) => a + b, 0) / TARGET_FACILITIES.length);
+          const totalTargetCount = currentDateData.length;
+          const fullRate = totalTargetCount > 0 ? Math.round((targetFullCount / totalTargetCount) * 100) : 0;
           
           return (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '24px' }}>
@@ -563,15 +460,17 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                       🟢 楽天トラベルよりリアルタイム取得済
                     </div>
                   )}
-                  {occ !== -1 && isSimulated && (
-                    <div style={{ marginTop: '8px', display: 'inline-block', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
-                      🟡 通信エラー：推計値
+                  {occ === -1 && (
+                    <div style={{ marginTop: '8px', display: 'inline-block', background: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
+                      🔴 データ未取得
                     </div>
                   )}
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   {isFetchingOcc ? (
                     <div style={{ color: '#94a3b8', fontSize: '13px' }}>取得中...</div>
+                  ) : occ === -1 ? (
+                    <div style={{ fontSize: '24px', color: '#cbd5e1', fontWeight: 'bold' }}>---</div>
                   ) : (
                     <>
                       <div style={{ fontSize: '32px', fontWeight: 'bold', color: occ >= 85 ? '#ef4444' : occ >= 60 ? '#f59e0b' : '#3b82f6' }}>
@@ -585,26 +484,32 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                 </div>
               </div>
 
-              {/* 調査対象施設 平均稼働率カード */}
+              {/* 調査対象施設 満室率カード */}
               <div className="mr-kpi-card" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', padding: '24px', borderRadius: '12px', border: '1px solid #334155', borderLeftColor: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <div className="mr-kpi-label" style={{ fontSize: '16px', color: '#a7f3d0', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '18px' }}>📋</span> 調査対象{TARGET_FACILITIES.length}施設 平均稼働率
+                    <span style={{ fontSize: '18px' }}>📋</span> 調査対象{TARGET_FACILITIES.length}施設 満室率
                   </div>
                   <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
-                    リサーチしている競合・参考宿（計{TARGET_FACILITIES.length}軒）の平均
+                    リサーチしている競合・参考宿（計{TARGET_FACILITIES.length}軒）のうち満室の割合
                   </p>
                   <div style={{ marginTop: '8px', display: 'inline-block', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
-                    🔍 個別稼働率の集計値
+                    🔍 リアルタイム満室判定
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '32px', fontWeight: 'bold', color: targetAvgOcc >= 80 ? '#ef4444' : targetAvgOcc >= 50 ? '#f59e0b' : '#10b981' }}>
-                    {targetAvgOcc}%
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#e2e8f0', marginTop: '4px', fontWeight: 600 }}>
-                    {TARGET_FACILITIES.length}施設中 {targetFullCount} 軒が満室
-                  </div>
+                  {totalTargetCount === 0 ? (
+                    <div style={{ fontSize: '24px', color: '#cbd5e1', fontWeight: 'bold' }}>---</div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: '32px', fontWeight: 'bold', color: fullRate >= 80 ? '#ef4444' : fullRate >= 40 ? '#f59e0b' : '#10b981' }}>
+                        {fullRate}%
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#e2e8f0', marginTop: '4px', fontWeight: 600 }}>
+                        {TARGET_FACILITIES.length}施設中 {targetFullCount} 軒が満室
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
