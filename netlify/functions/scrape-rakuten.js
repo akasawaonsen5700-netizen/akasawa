@@ -15,6 +15,20 @@ const TARGETS = {
   104699: 'wanwan'
 };
 
+const HOTEL_NAMES = {
+  majimaso: '旅館まじま荘',
+  yamaguciya: '山口屋旅館',
+  kamiaizuya: '上会津屋',
+  nuriya: '心づくしの宿 ぬりや',
+  tokiwa: '常盤ホテル',
+  umekawaso: '塩原温泉梅川壮',
+  okukogen: '奥塩原高原ホテル',
+  shimofujiya: 'やまの宿 下藤屋',
+  shofuro: '松楓楼 松屋',
+  gensenkan: '秘湯の宿 元泉館',
+  wanwan: 'わんわんパラダイス'
+};
+
 exports.handler = async function (event, context) {
   const { year, month, day } = event.queryStringParameters || {};
 
@@ -34,7 +48,7 @@ exports.handler = async function (event, context) {
   let totalResults = -1;
   let competitors = [];
 
-  // A案: 全体宿泊率のスクレイピング (約65施設中、空室のある施設数)
+  // A案: 全体宿泊率のスクレイピング
   try {
     const htmlUrl = `https://search.travel.rakuten.co.jp/ds/vacant/searchVacant?f_dai=japan&f_chu=tochigi&f_sho=nasu&f_sai=shiobara&f_otona_su=2&f_heya_su=1&f_nen1=${year}&f_tuki1=${month}&f_hi1=${day}`;
     const respHTML = await fetch(htmlUrl, {
@@ -52,7 +66,7 @@ exports.handler = async function (event, context) {
     console.error("HTML Scrape error:", err);
   }
 
-  // B案: ターゲット11施設のリアルタイム価格と空室取得
+  // B案: ターゲット11施設のリアルタイム詳細取得
   try {
     const hotelNos = Object.keys(TARGETS).join(',');
     const apiUrl = `https://openapi.rakuten.co.jp/engine/api/Travel/VacantHotelSearch/20170426?applicationId=${WORKING_APP_ID}&accessKey=${WORKING_ACCESS_KEY}&format=json&hotelNo=${hotelNos}&checkinDate=${checkinDate}&checkoutDate=${checkoutDate}&adultNum=2`;
@@ -89,26 +103,34 @@ exports.handler = async function (event, context) {
         if (facilityId) {
           competitors.push({
             hotelId: facilityId,
+            hotelName: info.hotelName || HOTEL_NAMES[facilityId],
+            reviewAverage: info.reviewAverage ? parseFloat(info.reviewAverage) : 0,
+            hotelInformationUrl: info.hotelInformationUrl || `https://travel.rakuten.co.jp/HOTEL/${info.hotelNo}/`,
             status: "available",
             price: minPrice === 999999 ? 0 : minPrice,
             planName: planName,
             roomType: roomName,
-            hasPetPlan: facilityId === "wanwan" || facilityId === "okukogen",
+            hasPetPlan: facilityId === "wanwan" || facilityId === "gensenkan"
           });
         }
       });
     }
     
-    // APIレスポンスに含まれなかった施設は満室
-    Object.values(TARGETS).forEach(fid => {
+    // APIレスポンスに含まれなかった施設は満室扱い
+    const allTargets = Object.values(TARGETS);
+    allTargets.forEach(fid => {
       if (!competitors.find(c => c.hotelId === fid)) {
+        const matchingNo = Object.keys(TARGETS).find(k => TARGETS[k] === fid);
         competitors.push({
           hotelId: fid,
+          hotelName: HOTEL_NAMES[fid] || fid,
+          reviewAverage: 0, // 満室時は基本情報が取れないため0
+          hotelInformationUrl: matchingNo ? `https://travel.rakuten.co.jp/HOTEL/${matchingNo}/` : "",
           status: "full",
           price: 0,
           planName: "",
           roomType: "",
-          hasPetPlan: fid === "wanwan" || fid === "okukogen",
+          hasPetPlan: fid === "wanwan" || fid === "gensenkan"
         });
       }
     });

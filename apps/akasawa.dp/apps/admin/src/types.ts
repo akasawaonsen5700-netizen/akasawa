@@ -144,7 +144,7 @@ export type MarketResearchData = {
   ota: "rakuten" | "jalan";  // The OTA used
   hotelId: string;           // Competitor ID (e.g., "majimaso", "oku-kogen")
   price: number;             // Selling price (taxes included) for 1 room 2 adults
-  status: "available" | "full" | "no_sales"; // Vacancy status
+  status: "available" | "full" | "no_sales" | "few"; // Vacancy status
   planName: string;          // Name of the plan
   roomType: string;          // Room type name
   meals: string;             // Meals condition

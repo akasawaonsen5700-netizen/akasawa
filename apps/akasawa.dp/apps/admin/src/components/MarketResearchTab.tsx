@@ -49,6 +49,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
   const [selectedMetric, setSelectedMetric] = useState<MetricType>("prices");
   const [selectedOta, setSelectedOta] = useState<"rakuten" | "jalan">("rakuten");
   const [realOccRate, setRealOccRate] = useState<number | null>(null);
+  const [realVacantCount, setRealVacantCount] = useState<number | null>(null);
   const [apiCompetitorsData, setApiCompetitorsData] = useState<MarketResearchData[] | null>(null);
   const [isFetchingOcc, setIsFetchingOcc] = useState<boolean>(false);
   const TOTAL_SHIOBARA_HOTELS = 65; // 塩原温泉の推定総施設数
@@ -77,6 +78,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
         if (isMounted) {
           if (json.totalResults !== undefined && json.totalResults !== -1) {
             const vacantCount = json.totalResults;
+            setRealVacantCount(vacantCount);
             let occ = Math.round(((TOTAL_SHIOBARA_HOTELS - vacantCount) / TOTAL_SHIOBARA_HOTELS) * 100);
             occ = Math.max(0, Math.min(100, occ));
             setRealOccRate(occ);
@@ -112,7 +114,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
     return () => { isMounted = false; };
   }, [selectedDate]);
 
-  // 現在選択されている日付のデータを取得（APIの実績データ、または保存されたデータのみを使用し、シミュレーションは一切行わない）
+  // 現在選択されている日付のデータを取得（APIの実績データのみを使用し、シミュレーションやモックデータは使用しない）
   const currentDateData = useMemo(() => {
     // APIから取得できた場合は優先して使用する
     if (apiCompetitorsData && selectedOta === "rakuten") {
@@ -139,14 +141,9 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
       });
     }
 
-    const existingData = researchData.filter(d => d.dateKey === selectedDate && d.ota === selectedOta);
-    if (existingData.length > 0) {
-      return existingData;
-    }
-
-    // データが一切存在しない場合は、空の配列を返す（シミュレーションデータを生成しない）
+    // データが一切存在しない場合は、空の配列を返す（シミュレーション・モックデータは非表示にする）
     return [];
-  }, [researchData, selectedDate, selectedOta, apiCompetitorsData]);
+  }, [selectedDate, selectedOta, apiCompetitorsData]);
 
   // 各種集計値の計算
   const aggregatedResults = useMemo(() => {
@@ -269,7 +266,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
             
             <div className="mr-stats-grid">
               <div className="mr-stat-box primary">
-                <div className="mr-stat-label">直接比較 5施設の平均価格</div>
+                <div className="mr-stat-label">直接比較 6施設の平均価格</div>
                 <div className="mr-stat-value">
                   {directAvg ? `¥${directAvg.toLocaleString()}` : "---"}
                 </div>
@@ -319,7 +316,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
       case "direct_avg":
         return (
           <div className="mr-kpi-view">
-            <span className="mr-kpi-label">直接比較 5施設の平均</span>
+            <span className="mr-kpi-label">直接比較 6施設の平均</span>
             <div className="mr-kpi-value gradient">
               {directAvg ? `¥${directAvg.toLocaleString()}` : "データ不足"}
             </div>
@@ -455,6 +452,11 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                   <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
                     対象: 楽天トラベル掲載の塩原エリア全施設（約65軒）
                   </p>
+                  {realVacantCount !== null && occ !== -1 && !isSimulated && (
+                    <p style={{ fontSize: '13px', color: '#a7f3d0', margin: '6px 0 0 0', fontWeight: 'bold' }}>
+                      空室: {realVacantCount} 軒 / 満室: {TOTAL_SHIOBARA_HOTELS - realVacantCount} 軒
+                    </p>
+                  )}
                   {occ !== -1 && !isSimulated && (
                     <div style={{ marginTop: '8px', display: 'inline-block', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
                       🟢 楽天トラベルよりリアルタイム取得済
@@ -526,10 +528,10 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
         </div>
 
         <div className="mr-reasons">
-          <h3>💡 なぜこの{TARGET_FACILITIES.length}施設を調べるのか？（選定の根拠）</h3>
+          <h3>💡 なぜこの11施設を調べるのか？（選定の根拠）</h3>
           <ul className="mr-reasons-list">
             <li>
-              <strong>🔵 直接比較（{TARGET_FACILITIES.filter(f => f.type === 'direct').length}施設）</strong>
+              <strong>🔵 直接比較（6施設）</strong>
               まじま荘、山口屋など同規模旅館。この平均・最安値が赤沢の「基準価格」のベースになります。
             </li>
             <li>

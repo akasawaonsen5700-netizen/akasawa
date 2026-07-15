@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { CalendarPrice, Proposal, RoomType } from "../types";
 
 interface CalendarTabProps {
@@ -24,6 +24,62 @@ export default function CalendarTab({
 
   // 詳細表示中の日付
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  // 競合11施設のリアルタイムデータ
+  const [competitors, setCompetitors] = useState<any[] | null>(null);
+  const [loadingCompetitors, setLoadingCompetitors] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setCompetitors(null);
+      return;
+    }
+
+    const dObj = new Date(selectedDate);
+    const year = dObj.getFullYear();
+    const month = String(dObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dObj.getDate()).padStart(2, '0');
+
+    setLoadingCompetitors(true);
+    setCompetitors(null);
+
+    fetch(`/api/scrape-rakuten?year=${year}&month=${month}&day=${day}`)
+      .then(res => res.json())
+      .then(json => {
+        if (json.competitors) {
+          const TARGET_HOTELS = [
+            { "id": "majimaso", "name": "旅館まじま荘" },
+            { "id": "yamaguciya", "name": "山口屋旅館" },
+            { "id": "kamiaizuya", "name": "上会津屋" },
+            { "id": "nuriya", "name": "心づくしの宿 ぬりや" },
+            { "id": "tokiwa", "name": "常盤ホテル" },
+            { "id": "umekawaso", "name": "塩原温泉梅川壮" },
+            { "id": "okukogen", "name": "奥塩原高原ホテル" },
+            { "id": "shimofujiya", "name": "やまの宿 下藤屋" },
+            { "id": "shofuro", "name": "松楓楼 松屋" },
+            { "id": "gensenkan", "name": "秘湯の宿 元泉館" },
+            { "id": "wanwan", "name": "わんわんパラダイス" }
+          ];
+
+          const formatted = json.competitors.map((c: any) => {
+            const matched = TARGET_HOTELS.find(h => h.id === c.hotelId);
+            return {
+              hotelId: c.hotelId,
+              hotelName: c.hotelName || (matched ? matched.name : c.hotelId),
+              reviewAverage: c.reviewAverage || 0,
+              hotelInformationUrl: c.hotelInformationUrl || "",
+              status: c.status,
+              price: c.price,
+              planName: c.planName,
+              roomType: c.roomType
+            };
+          });
+          setCompetitors(formatted);
+        }
+      })
+      .catch(err => console.error("Failed to fetch competitors:", err))
+      .finally(() => setLoadingCompetitors(false));
+  }, [selectedDate]);
 
   // 月移動
   const handlePrevMonth = () => {
@@ -98,6 +154,30 @@ export default function CalendarTab({
     };
   }, [selectedDate, prices, proposals]);
 
+  const selectedDayStats = useMemo(() => {
+    if (!selectedDayDetails || selectedDayDetails.prices.length === 0) return null;
+    const dayPrices = selectedDayDetails.prices;
+    const avgOcc =
+      dayPrices.length > 0
+        ? dayPrices.reduce((sum, p) => sum + p.occupancyRate, 0) / dayPrices.length
+        : 0.5;
+
+    const totalRooms = 67;
+    // 部屋を販売してるのが空室数
+    const vacantRooms = Math.round(totalRooms * (1 - avgOcc));
+    // 67件 - 空室数 ＝ 満室数
+    const occupiedRooms = totalRooms - vacantRooms;
+    // 満室率
+    const occupancyPercentage = Math.round((occupiedRooms / totalRooms) * 100);
+
+    return {
+      totalRooms,
+      vacantRooms,
+      occupiedRooms,
+      occupancyPercentage
+    };
+  }, [selectedDayDetails]);
+
   return (
     <section className="page active" id="page-calendar">
       <div className="card">
@@ -146,17 +226,19 @@ export default function CalendarTab({
                   ? dayPrices.reduce((sum, p) => sum + p.occupancyRate, 0) / dayPrices.length
                   : 0.5;
 
+              // 67室を母数とした計算
+              const totalRooms = 67;
+              const cellVacant = Math.round(totalRooms * (1 - avgOcc));
+              const cellOccupied = totalRooms - cellVacant;
+              const cellOccPct = Math.round((cellOccupied / totalRooms) * 100);
+
               let occClass = "mid";
-              let occLabel = "通常";
-              if (avgOcc >= 0.7) {
+              if (cellOccPct >= 70) {
                 occClass = "high";
-                occLabel = `高稼働 ${Math.round(avgOcc * 100)}%`;
-              } else if (avgOcc < 0.5) {
+              } else if (cellOccPct < 50) {
                 occClass = "low";
-                occLabel = `低稼働 ${Math.round(avgOcc * 100)}%`;
-              } else {
-                occLabel = `${Math.round(avgOcc * 100)}%`;
               }
+              const occLabel = `満室 ${cellOccPct}% (空室 ${cellVacant}室)`;
 
               return (
                 <div
@@ -222,6 +304,38 @@ export default function CalendarTab({
             </button>
           </div>
           <div className="card-body">
+            {selectedDayStats && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: "16px",
+                  marginBottom: "20px",
+                  padding: "16px",
+                  background: "var(--bg-app)",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border)"
+                }}
+              >
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "4px" }}>総客室数（母数）</div>
+                  <div style={{ fontSize: "20px", fontWeight: "bold", color: "var(--text)" }}>{selectedDayStats.totalRooms} 室</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "4px" }}>空室数（販売中）</div>
+                  <div style={{ fontSize: "20px", fontWeight: "bold", color: "var(--success)" }}>{selectedDayStats.vacantRooms} 室</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "4px" }}>満室数</div>
+                  <div style={{ fontSize: "20px", fontWeight: "bold", color: "var(--primary)" }}>{selectedDayStats.occupiedRooms} 室</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "4px" }}>満室率</div>
+                  <div style={{ fontSize: "24px", fontWeight: "bold", color: "var(--primary)" }}>{selectedDayStats.occupancyPercentage}%</div>
+                </div>
+              </div>
+            )}
+
             {selectedDayDetails.prices.length === 0 ? (
               <p style={{ color: "var(--text-muted)", fontSize: "14px", textAlign: "center" }}>
                 この日の算出価格データはありません。「再計算」を行うか「サンプル初期化」を実行してください。
@@ -337,6 +451,89 @@ export default function CalendarTab({
                 </table>
               </div>
             )}
+
+            {/* 競合11施設のリアルタイム調査状況 */}
+            <div style={{ marginTop: "32px", borderTop: "2px solid var(--border)", paddingTop: "24px" }}>
+              <h4 style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "16px", color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>🔍</span> 競合11施設のリアルタイム調査状況（大人2名 / 1室利用 / 1泊2食付）
+              </h4>
+              {loadingCompetitors ? (
+                <div style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "14px" }}>
+                  <span className="spinner-small" style={{ display: "inline-block", marginRight: "8px" }}></span>
+                  楽天トラベルから最新の実データを取得中...
+                </div>
+              ) : competitors && competitors.length > 0 ? (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+                  {competitors.map((comp) => (
+                    <div
+                      key={comp.hotelId}
+                      style={{
+                        background: "var(--bg-app)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "8px",
+                        padding: "16px",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+                        <h5 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "var(--text)" }}>{comp.hotelName}</h5>
+                        <span style={{ fontSize: "12px", color: "#eab308", fontWeight: "bold", background: "rgba(234, 179, 8, 0.1)", padding: "2px 6px", borderRadius: "4px" }}>
+                          ⭐ {comp.reviewAverage > 0 ? comp.reviewAverage.toFixed(1) : "評価なし"}
+                        </span>
+                      </div>
+                      
+                      <div style={{ display: "flex", gap: "8px", fontSize: "11px", color: "var(--text-muted)", marginBottom: "12px" }}>
+                        <span style={{ background: "var(--border)", padding: "2px 6px", borderRadius: "4px" }}>👤 2名宿泊</span>
+                        <span style={{ background: "var(--border)", padding: "2px 6px", borderRadius: "4px" }}>🍴 一泊二食</span>
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        {comp.status === "full" ? (
+                          <span style={{ color: "#ef4444", fontWeight: "bold", fontSize: "14px", background: "rgba(239, 68, 68, 0.1)", padding: "4px 8px", borderRadius: "4px" }}>
+                            満室
+                          </span>
+                        ) : (
+                          <>
+                            <span style={{ fontSize: "18px", fontWeight: "bold", color: "var(--success)" }}>
+                              ¥{comp.price.toLocaleString()}
+                            </span>
+                            <span style={{ fontSize: "11px", color: "var(--success)", background: "rgba(16, 185, 129, 0.1)", padding: "4px 8px", borderRadius: "4px", fontWeight: "bold" }}>
+                              空室あり
+                            </span>
+                          </>
+                        )}
+                      </div>
+
+                      {comp.hotelInformationUrl && (
+                        <div style={{ marginTop: "12px", textAlign: "right", borderTop: "1px dashed var(--border)", paddingTop: "8px" }}>
+                          <a
+                            href={comp.hotelInformationUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontSize: "12px",
+                              color: "#3b82f6",
+                              textDecoration: "none",
+                              fontWeight: "bold",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px"
+                            }}
+                          >
+                            楽天トラベルで見る ↗
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ color: "var(--text-muted)", fontSize: "14px", textAlign: "center", padding: "20px" }}>
+                  リアルタイムデータがありません。
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}
