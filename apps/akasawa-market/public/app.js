@@ -469,7 +469,7 @@ function updateViewContent() {
 
     case 'all_range':
       container.innerHTML = `<div class="mr-kpi-view">
-        <span class="mr-kpi-label">全10施設全体の価格帯 (最安値 〜 最高値)</span>
+        <span class="mr-kpi-label">調査対象全施設全体の価格帯 (最安値 〜 最高値)</span>
         <div class="mr-kpi-value text-dark" style="font-size: 2.8rem; color: var(--text-main);">
           ${allPrices.length > 0 ? `${formatCurrency(allPrices[0])} 〜 ${formatCurrency(allPrices[allPrices.length - 1])}` : '全施設満室'}
         </div>

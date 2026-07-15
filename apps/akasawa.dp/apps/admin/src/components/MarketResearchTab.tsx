@@ -480,7 +480,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
             isSimulated = true;
           }
 
-          // 調査対象10施設の平均稼働率を算出
+          // 調査対象施設の平均稼働率を算出
           const targetFullCount = currentDateData.filter(d => d.status === "full").length;
           const targetOccRates = TARGET_FACILITIES.map(facility => {
             const data = currentDateData.find(d => d.hotelId === facility.id);
@@ -530,14 +530,14 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                 </div>
               </div>
 
-              {/* 調査対象10施設 平均稼働率カード */}
-              <div style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', padding: '24px', borderRadius: '12px', border: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
-                <div>
-                  <h3 style={{ fontSize: '16px', color: '#e2e8f0', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '18px' }}>📋</span> 調査対象10施設 平均稼働率
-                  </h3>
+              {/* 調査対象施設 平均稼働率カード */}
+              <div className="mr-kpi-card" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', padding: '24px', borderRadius: '12px', border: '1px solid #334155', borderLeftColor: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div className="mr-kpi-label" style={{ fontSize: '16px', color: '#a7f3d0', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '18px' }}>📋</span> 調査対象{TARGET_FACILITIES.length}施設 平均稼働率
+                  </div>
                   <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
-                    リサーチしている競合・参考宿（計10軒）の平均
+                    リサーチしている競合・参考宿（計{TARGET_FACILITIES.length}軒）の平均
                   </p>
                   <div style={{ marginTop: '8px', display: 'inline-block', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
                     🔍 個別稼働率の集計値
@@ -548,7 +548,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                     {targetAvgOcc}%
                   </div>
                   <div style={{ fontSize: '11px', color: '#e2e8f0', marginTop: '4px', fontWeight: 600 }}>
-                    10施設中 {targetFullCount} 軒が満室
+                    {TARGET_FACILITIES.length}施設中 {targetFullCount} 軒が満室
                   </div>
                 </div>
               </div>
@@ -566,10 +566,10 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
         </div>
 
         <div className="mr-reasons">
-          <h3>💡 なぜこの10施設を調べるのか？（選定の根拠）</h3>
+          <h3>💡 なぜこの{TARGET_FACILITIES.length}施設を調べるのか？（選定の根拠）</h3>
           <ul className="mr-reasons-list">
             <li>
-              <strong>🔵 直接比較（5施設）</strong>
+              <strong>🔵 直接比較（{TARGET_FACILITIES.filter(f => f.type === 'direct').length}施設）</strong>
               まじま荘、山口屋など同規模旅館。この平均・最安値が赤沢の「基準価格」のベースになります。
             </li>
             <li>

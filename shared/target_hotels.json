@@ -4,11 +4,11 @@
   { "id": "kamiaizuya", "name": "上会津屋", "type": "direct", "plan": "【定番】源泉かけ流し満喫プラン", "price": "¥12,000〜" },
   { "id": "nuriya", "name": "心づくしの宿 ぬりや", "type": "direct", "plan": "【基本】心づくし会席プラン", "price": "¥12,000〜" },
   { "id": "tokiwa", "name": "常盤ホテル", "type": "direct", "plan": "【基本】温泉と旬の味覚プラン", "price": "¥12,000〜" },
+  { "id": "umekawaso", "name": "塩原温泉梅川壮", "type": "direct", "plan": "【相場参考】温泉満喫プラン", "price": "¥14,000〜" },
+  { "id": "matsunoiso", "name": "塩原温泉 松の井荘", "type": "direct", "plan": "【相場参考】温泉満喫プラン", "price": "¥14,000〜" },
   { "id": "okukogen", "name": "奥塩原高原ホテル", "type": "market", "plan": "【相場参考】高原リゾート満喫プラン", "price": "¥18,000〜" },
   { "id": "shimofujiya", "name": "やまの宿 下藤屋", "type": "market", "plan": "【相場参考】特選会席プラン", "price": "¥18,000〜" },
   { "id": "shofuro", "name": "松楓楼 松屋", "type": "market", "plan": "【相場参考】露天風呂付き客室プラン", "price": "¥18,000〜" },
   { "id": "gensenkan", "name": "秘湯の宿 元泉館", "type": "pet", "plan": "【ペット可】愛犬と同室宿泊プラン", "price": "¥16,000〜" },
-  { "id": "wanwan", "name": "わんわんパラダイス", "type": "pet", "plan": "【ペット専用】ドッグリゾート満喫プラン", "price": "¥16,000〜" },
-  { "id": "umekawaso", "name": "塩原温泉梅川壮", "type": "direct", "plan": "【相場参考】温泉満喫プラン", "price": "¥14,000〜" },
-  { "id": "matsunoiso", "name": "塩原温泉 松の井荘", "type": "direct", "plan": "【相場参考】温泉満喫プラン", "price": "¥14,000〜" }
+  { "id": "wanwan", "name": "わんわんパラダイス", "type": "pet", "plan": "【ペット専用】ドッグリゾート満喫プラン", "price": "¥16,000〜" }
 ]
