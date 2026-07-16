@@ -14,6 +14,7 @@ export const MOCK_MARKET_DATA: MarketResearchData[] = [
   
   { id: "2026-07-22-rakuten-gensenkan", dateKey: "2026-07-22", ota: "rakuten", hotelId: "gensenkan", status: "few", price: 15000, planName: "秘湯満喫", roomType: "和室", meals: "1泊2食", hasCoupon: false, hasCampaign: false, hasPetPlan: false, features: ["にごり湯"], updatedAt: "2026-07-12T10:00:00Z" },
   { id: "2026-07-22-rakuten-wanwan", dateKey: "2026-07-22", ota: "rakuten", hotelId: "wanwan", status: "available", price: 19800, planName: "愛犬同伴プラン", roomType: "ツイン", meals: "1泊2食", hasCoupon: true, hasCampaign: false, hasPetPlan: true, features: ["ドッグラン"], updatedAt: "2026-07-12T10:00:00Z" },
+  { id: "2026-07-22-rakuten-umekawaso", dateKey: "2026-07-22", ota: "rakuten", hotelId: "umekawaso", status: "available", price: 13000, planName: "温泉満喫プラン", roomType: "和室", meals: "1泊2食", hasCoupon: false, hasCampaign: false, hasPetPlan: false, features: [], updatedAt: "2026-07-12T10:00:00Z" },
 
   // 8/13 (お盆) - 楽天トラベル
   { id: "2026-08-13-rakuten-majimaso", dateKey: "2026-08-13", ota: "rakuten", hotelId: "majimaso", status: "full", price: 18000, planName: "お盆特別プラン", roomType: "和室", meals: "1泊2食", hasCoupon: false, hasCampaign: false, hasPetPlan: false, features: [], updatedAt: "2026-07-12T10:00:00Z" },
@@ -28,4 +29,5 @@ export const MOCK_MARKET_DATA: MarketResearchData[] = [
   
   { id: "2026-08-13-rakuten-gensenkan", dateKey: "2026-08-13", ota: "rakuten", hotelId: "gensenkan", status: "few", price: 25000, planName: "お盆秘湯", roomType: "和室", meals: "1泊2食", hasCoupon: false, hasCampaign: false, hasPetPlan: false, features: ["にごり湯"], updatedAt: "2026-07-12T10:00:00Z" },
   { id: "2026-08-13-rakuten-wanwan", dateKey: "2026-08-13", ota: "rakuten", hotelId: "wanwan", status: "full", price: 35000, planName: "お盆愛犬同伴", roomType: "ツイン", meals: "1泊2食", hasCoupon: false, hasCampaign: false, hasPetPlan: true, features: ["ドッグラン"], updatedAt: "2026-07-12T10:00:00Z" },
+  { id: "2026-08-13-rakuten-umekawaso", dateKey: "2026-08-13", ota: "rakuten", hotelId: "umekawaso", status: "full", price: 22000, planName: "お盆特別プラン", roomType: "和室", meals: "1泊2食", hasCoupon: false, hasCampaign: false, hasPetPlan: false, features: [], updatedAt: "2026-07-12T10:00:00Z" },
 ];

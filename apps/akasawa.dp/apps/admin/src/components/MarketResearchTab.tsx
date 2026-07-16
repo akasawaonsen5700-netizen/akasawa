@@ -52,7 +52,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
   const [realVacantCount, setRealVacantCount] = useState<number | null>(null);
   const [apiCompetitorsData, setApiCompetitorsData] = useState<MarketResearchData[] | null>(null);
   const [isFetchingOcc, setIsFetchingOcc] = useState<boolean>(false);
-  const TOTAL_SHIOBARA_HOTELS = 65; // 塩原温泉の推定総施設数
+  const TOTAL_SHIOBARA_HOTELS = 67; // 塩原温泉の総施設数（仕様に基づく）
 
   // リアルタイム市場データフェッチ
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
           if (json.totalResults !== undefined && json.totalResults !== -1) {
             const vacantCount = json.totalResults;
             setRealVacantCount(vacantCount);
-            let occ = Math.round(((TOTAL_SHIOBARA_HOTELS - vacantCount) / TOTAL_SHIOBARA_HOTELS) * 100);
+            let occ = Math.floor(((TOTAL_SHIOBARA_HOTELS - vacantCount) / TOTAL_SHIOBARA_HOTELS) * 100);
             occ = Math.max(0, Math.min(100, occ));
             setRealOccRate(occ);
           }
@@ -525,7 +525,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                     <span style={{ fontSize: '18px' }}>♨️</span> 塩原温泉エリア 全体宿泊率
                   </h3>
                   <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
-                    対象: 楽天トラベル掲載の塩原エリア全施設（約65軒）
+                    対象: 楽天トラベル掲載の塩原エリア全施設（67軒）
                   </p>
                   {realVacantCount !== null && occ !== -1 && !isSimulated && (
                     <p style={{ fontSize: '13px', color: '#a7f3d0', margin: '6px 0 0 0', fontWeight: 'bold' }}>
@@ -598,7 +598,11 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
           <h3 style={{ fontSize: '14px', color: '#6ee7b7', margin: '0 0 8px 0' }}>📋 調査条件（価格比較の基準）</h3>
           <p style={{ fontSize: '13px', color: '#e2e8f0', margin: 0, lineHeight: '1.6' }}>
             正確な相場比較を行うため、全施設について以下の条件で統一して料金を取得しています。<br/>
-            <strong style={{ color: '#fff', fontSize: '14px' }}>【 大人2名 / 1室利用 / 標準客室 / 1泊2食付 】</strong>
+            <strong style={{ color: '#fff', fontSize: '14px' }}>【 大人2名 / 1室利用 / 標準客室 / 1泊2食付 / 1名あたりの税込価格 】</strong>
+            <span style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginTop: '6px', lineHeight: '1.4' }}>
+              ※ 楽天APIから取得した<strong>2名合計料金を 2 で割った料金（1名あたり）</strong>を表示しています。<br/>
+              ※ 正確な相場比較のため、素泊まり・朝食のみ・特別室・露天風呂付き客室・早割・直前割・タイムセール・ペットプラン（ペット可宿を除く）は自動的に除外して算出しています。
+            </span>
           </p>
         </div>
 
