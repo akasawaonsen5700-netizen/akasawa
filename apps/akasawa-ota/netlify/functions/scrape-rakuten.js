@@ -7,7 +7,6 @@ const fetch = typeof globalThis.fetch !== 'undefined'
 
 const TARGETS = {
   14850: 'majimaso',
-  9304: 'yamaguciya',
   4674: 'kamiaizuya',
   129558: 'nuriya',
   5884: 'tokiwa',
@@ -22,7 +21,6 @@ const TARGETS = {
 // 11施設の詳細マスタデータ
 const COMPETITOR_MASTER = {
   majimaso: { name: '旅館まじま荘', rating: 4.2, url: 'https://travel.rakuten.co.jp/HOTEL/14850/' },
-  yamaguciya: { name: '山口屋旅館', rating: 4.1, url: 'https://travel.rakuten.co.jp/HOTEL/9304/' },
   kamiaizuya: { name: '上会津屋', rating: 4.4, url: 'https://travel.rakuten.co.jp/HOTEL/4674/' },
   nuriya: { name: '心づくしの宿 ぬりや', rating: 4.3, url: 'https://travel.rakuten.co.jp/HOTEL/129558/' },
   tokiwa: { name: '常盤ホテル', rating: 4.0, url: 'https://travel.rakuten.co.jp/HOTEL/5884/' },
@@ -82,7 +80,7 @@ exports.handler = async function (event, context) {
     let areaPage = 1;
     let hasNextAreaPage = true;
 
-    while (hasNextAreaPage && areaPage <= 2) {
+    while (hasNextAreaPage && areaPage <= 3) {
       const areaApiUrl = `https://openapi.rakuten.co.jp/engine/api/Travel/VacantHotelSearch/20170426?applicationId=${WORKING_APP_ID}&accessKey=${WORKING_ACCESS_KEY}&format=json&largeClassCode=japan&middleClassCode=tochigi&smallClassCode=shiobara&checkinDate=${checkinDate}&checkoutDate=${checkoutDate}&adultNum=2&searchPattern=0&hits=30&page=${areaPage}`;
       
       const areaResp = await fetch(areaApiUrl, {
@@ -163,25 +161,25 @@ exports.handler = async function (event, context) {
 
     allHotels.forEach(h => {
       const info = h.hotel[0].hotelBasicInfo;
-      const roomInfoContainer = h.hotel.find(el => el.roomInfo);
-      
-      if (roomInfoContainer && roomInfoContainer.roomInfo) {
-        const facilityId = TARGETS[info.hotelNo];
-        if (facilityId) {
-          if (!hotelPlansMap[facilityId]) {
-            hotelPlansMap[facilityId] = { info: info, plans: [] };
-          }
-
-          const roomBasic = roomInfoContainer.roomInfo[0].roomBasicInfo;
-          const dailyChargeContainer = roomInfoContainer.roomInfo.find(el => el.dailyCharge);
-          const price = dailyChargeContainer && dailyChargeContainer.dailyCharge ? dailyChargeContainer.dailyCharge.total : 999999;
-
-          hotelPlansMap[facilityId].plans.push({
-            planName: roomBasic.planName || "",
-            roomName: roomBasic.roomName || "",
-            price: price
-          });
+      const facilityId = TARGETS[info.hotelNo];
+      if (facilityId) {
+        if (!hotelPlansMap[facilityId]) {
+          hotelPlansMap[facilityId] = { info: info, plans: [] };
         }
+
+        h.hotel.forEach(el => {
+          if (el.roomInfo) {
+            const roomBasic = el.roomInfo[0].roomBasicInfo;
+            const dailyChargeContainer = el.roomInfo.find(innerEl => innerEl.dailyCharge);
+            const price = dailyChargeContainer && dailyChargeContainer.dailyCharge ? dailyChargeContainer.dailyCharge.total : 999999;
+
+            hotelPlansMap[facilityId].plans.push({
+              planName: roomBasic.planName || "",
+              roomName: roomBasic.roomName || "",
+              price: price
+            });
+          }
+        });
       }
     });
 

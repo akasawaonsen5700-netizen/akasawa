@@ -128,7 +128,6 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
         
         const masterUrl = 
           facility.id === "majimaso" ? "https://travel.rakuten.co.jp/HOTEL/14850/" :
-          facility.id === "yamaguciya" ? "https://travel.rakuten.co.jp/HOTEL/9304/" :
           facility.id === "kamiaizuya" ? "https://travel.rakuten.co.jp/HOTEL/4674/" :
           facility.id === "nuriya" ? "https://travel.rakuten.co.jp/HOTEL/129558/" :
           facility.id === "tokiwa" ? "https://travel.rakuten.co.jp/HOTEL/5884/" :
@@ -164,7 +163,6 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
     return TARGET_FACILITIES.map(facility => {
       const masterUrl = 
         facility.id === "majimaso" ? "https://travel.rakuten.co.jp/HOTEL/14850/" :
-        facility.id === "yamaguciya" ? "https://travel.rakuten.co.jp/HOTEL/9304/" :
         facility.id === "kamiaizuya" ? "https://travel.rakuten.co.jp/HOTEL/4674/" :
         facility.id === "nuriya" ? "https://travel.rakuten.co.jp/HOTEL/129558/" :
         facility.id === "tokiwa" ? "https://travel.rakuten.co.jp/HOTEL/5884/" :
@@ -320,7 +318,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', padding: '6px 0', borderTop: '1px dashed #cbd5e1', borderBottom: '1px dashed #cbd5e1', fontSize: '12px' }}>
                         <span style={{ color: '#64748b' }}>空室状況:</span>
                         <span style={{ fontWeight: 'bold', color: data.status === "full" ? '#be123c' : '#0f766e' }}>
-                          {data.status === "full" ? '満室' : `空室あり｜${data.roomCount || 0}室`}
+                          {data.status === "full" ? '満室' : `空室あり｜${data.roomCount || 0}プラン販売`}
                         </span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
@@ -625,11 +623,11 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
         </div>
 
         <div className="mr-reasons">
-          <h3>💡 なぜこの11施設を調べるのか？（選定の根拠）</h3>
+          <h3>💡 なぜこの10施設を調べるのか？（選定の根拠）</h3>
           <ul className="mr-reasons-list">
             <li>
-              <strong>🔵 直接比較（6施設）</strong>
-              まじま荘、山口屋など同規模旅館。この平均・最安値が赤沢の「基準価格」のベースになります。
+              <strong>🔵 直接比較（5施設）</strong>
+              まじま荘など同規模旅館。この平均・最安値が赤沢の「基準価格」のベースになります。
             </li>
             <li>
               <strong>🔘 相場参考（3施設）</strong>

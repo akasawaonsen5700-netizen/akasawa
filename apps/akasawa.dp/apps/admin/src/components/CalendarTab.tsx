@@ -54,7 +54,6 @@ export default function CalendarTab({
         if (json.competitors) {
           const TARGET_HOTELS = [
             { id: "majimaso", name: "旅館まじま荘", rating: 4.2, url: "https://travel.rakuten.co.jp/HOTEL/14850/" },
-            { id: "yamaguciya", name: "山口屋旅館", rating: 4.1, url: "https://travel.rakuten.co.jp/HOTEL/9304/" },
             { id: "kamiaizuya", name: "上会津屋", rating: 4.4, url: "https://travel.rakuten.co.jp/HOTEL/4674/" },
             { id: "nuriya", name: "心づくしの宿 ぬりや", rating: 4.3, url: "https://travel.rakuten.co.jp/HOTEL/129558/" },
             { id: "tokiwa", name: "常盤ホテル", rating: 4.0, url: "https://travel.rakuten.co.jp/HOTEL/5884/" },
@@ -529,8 +528,8 @@ export default function CalendarTab({
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div>
-                  <strong style={{ color: "#1e3a8a" }}>🔵 直接比較（6施設）</strong><br />
-                  まじま荘、山口屋など同規模旅館。この平均・最安値が赤沢の「基準価格」のベースになります。
+                  <strong style={{ color: "#1e3a8a" }}>🔵 直接比較（5施設）</strong><br />
+                  まじま荘など同規模旅館。この平均・最安値が赤沢の「基準価格」のベースになります。
                 </div>
                 <div>
                   <strong style={{ color: "#4b5563" }}>🔘 相場参考（3施設）</strong><br />
