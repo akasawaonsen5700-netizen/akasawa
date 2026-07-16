@@ -34,6 +34,17 @@ const COMPETITOR_MASTER = {
   wanwan: { name: 'わんわんパラダイス', rating: 4.2, url: 'https://travel.rakuten.co.jp/HOTEL/104699/' }
 };
 
+// 楽天トラベルの「塩原温泉」カテゴリ (Japan-Tochigi-Nasushiobara-Shiobara) に所属する全68宿の公式ホテルNoリスト
+const SHIOBARA_HOTEL_IDS = new Set([
+  "104699","106120","108911","10893","109143","109188","129503","129558","130092","130512",
+  "135495","137011","139924","141349","14850","148895","149003","158803","168710","171075",
+  "171102","178660","179991","180420","181731","182177","182335","183256","184890","188070",
+  "189516","191142","191906","192419","194095","195152","196027","196231","196671","196672",
+  "198021","198042","198660","199770","20063","20095","2477","2491","2634","29530",
+  "30967","31902","32030","38848","40934","41140","4674","5144","5650","5884",
+  "68477","72035","74518","74676","74699","9129","9304","9581"
+]);
+
 // 除外プランキーワード
 const EXCLUDE_KEYWORDS = [
   '早割', '直前', 'タイムセール', '一人旅', 'ビジネス', '連泊', '訳あり', '訳有', '記念日', '3名', '三名', '4名'
@@ -99,15 +110,13 @@ exports.handler = async function (event, context) {
     }
 
     if (areaHotels.length > 0) {
-      // 住所フィルターを適用して「塩原温泉郷」のみ抽出
-      const excludeAddressKeywords = ['下永田', '井口', '睦', '西三島', '東三島', '二区町', '五軒町', '西原町', '永田', '三島', '太夫塚'];
+      // 楽天公式の「塩原温泉」カテゴリホテルNoマスタに完全一致する宿のみを抽出
       const filteredShiobaraHotels = areaHotels.filter(h => {
         const info = h.hotel[0].hotelBasicInfo;
-        const address = info.address2 || '';
-        return address.includes('塩原') && !excludeAddressKeywords.some(keyword => address.includes(keyword));
+        return SHIOBARA_HOTEL_IDS.has(String(info.hotelNo));
       });
       totalResults = filteredShiobaraHotels.length;
-      console.log(`Vacant area search resolved strictly to ${totalResults} hotels in Shiobara Onsen.`);
+      console.log(`Vacant area search strictly resolved to ${totalResults} hotels in Shiobara Onsen.`);
     }
   } catch (error) {
     console.error("Area Vacant Search error (A案):", error.message);
