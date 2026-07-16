@@ -15,18 +15,19 @@ const TARGETS = {
   104699: 'wanwan'
 };
 
-const HOTEL_NAMES = {
-  majimaso: '旅館まじま荘',
-  yamaguciya: '山口屋旅館',
-  kamiaizuya: '上会津屋',
-  nuriya: '心づくしの宿 ぬりや',
-  tokiwa: '常盤ホテル',
-  umekawaso: '塩原温泉梅川壮',
-  okukogen: '奥塩原高原ホテル',
-  shimofujiya: 'やまの宿 下藤屋',
-  shofuro: '松楓楼 松屋',
-  gensenkan: '秘湯の宿 元泉館',
-  wanwan: 'わんわんパラダイス'
+// 11施設の詳細マスタデータ（満室時のフォールバックおよびデータ整合用）
+const COMPETITOR_MASTER = {
+  majimaso: { name: '旅館まじま荘', rating: 4.2, url: 'https://travel.rakuten.co.jp/HOTEL/14850/' },
+  yamaguciya: { name: '山口屋旅館', rating: 4.1, url: 'https://travel.rakuten.co.jp/HOTEL/9304/' },
+  kamiaizuya: { name: '上会津屋', rating: 4.4, url: 'https://travel.rakuten.co.jp/HOTEL/4674/' },
+  nuriya: { name: '心づくしの宿 ぬりや', rating: 4.3, url: 'https://travel.rakuten.co.jp/HOTEL/129558/' },
+  tokiwa: { name: '常盤ホテル', rating: 4.0, url: 'https://travel.rakuten.co.jp/HOTEL/5884/' },
+  umekawaso: { name: '塩原温泉梅川壮', rating: 4.4, url: 'https://travel.rakuten.co.jp/HOTEL/109143/' },
+  okukogen: { name: '奥塩原高原ホテル', rating: 4.2, url: 'https://travel.rakuten.co.jp/HOTEL/32030/' },
+  shimofujiya: { name: 'やまの宿 下藤屋', rating: 4.5, url: 'https://travel.rakuten.co.jp/HOTEL/5650/' },
+  shofuro: { name: '松楓楼 松屋', rating: 4.5, url: 'https://travel.rakuten.co.jp/HOTEL/2634/' },
+  gensenkan: { name: '秘湯の宿 元泉館', rating: 4.2, url: 'https://travel.rakuten.co.jp/HOTEL/5144/' },
+  wanwan: { name: 'わんわんパラダイス', rating: 4.2, url: 'https://travel.rakuten.co.jp/HOTEL/104699/' }
 };
 
 exports.handler = async function (event, context) {
@@ -101,11 +102,12 @@ exports.handler = async function (event, context) {
         
         const facilityId = TARGETS[info.hotelNo];
         if (facilityId) {
+          const master = COMPETITOR_MASTER[facilityId] || {};
           competitors.push({
             hotelId: facilityId,
-            hotelName: info.hotelName || HOTEL_NAMES[facilityId],
-            reviewAverage: info.reviewAverage ? parseFloat(info.reviewAverage) : 0,
-            hotelInformationUrl: info.hotelInformationUrl || `https://travel.rakuten.co.jp/HOTEL/${info.hotelNo}/`,
+            hotelName: info.hotelName || master.name || facilityId,
+            reviewAverage: info.reviewAverage ? parseFloat(info.reviewAverage) : (master.rating || 0),
+            hotelInformationUrl: info.hotelInformationUrl || master.url || "",
             status: "available",
             price: minPrice === 999999 ? 0 : minPrice,
             planName: planName,
@@ -116,16 +118,16 @@ exports.handler = async function (event, context) {
       });
     }
     
-    // APIレスポンスに含まれなかった施設は満室扱い
+    // APIレスポンスに含まれなかった施設は満室扱いとしてマスタ情報から補完して返す
     const allTargets = Object.values(TARGETS);
     allTargets.forEach(fid => {
       if (!competitors.find(c => c.hotelId === fid)) {
-        const matchingNo = Object.keys(TARGETS).find(k => TARGETS[k] === fid);
+        const master = COMPETITOR_MASTER[fid] || {};
         competitors.push({
           hotelId: fid,
-          hotelName: HOTEL_NAMES[fid] || fid,
-          reviewAverage: 0, // 満室時は基本情報が取れないため0
-          hotelInformationUrl: matchingNo ? `https://travel.rakuten.co.jp/HOTEL/${matchingNo}/` : "",
+          hotelName: master.name || fid,
+          reviewAverage: master.rating || 0,
+          hotelInformationUrl: master.url || "",
           status: "full",
           price: 0,
           planName: "",

@@ -28,10 +28,12 @@ export default function CalendarTab({
   // 競合11施設のリアルタイムデータ
   const [competitors, setCompetitors] = useState<any[] | null>(null);
   const [loadingCompetitors, setLoadingCompetitors] = useState<boolean>(false);
+  const [areaVacantCount, setAreaVacantCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!selectedDate) {
       setCompetitors(null);
+      setAreaVacantCount(null);
       return;
     }
 
@@ -46,19 +48,22 @@ export default function CalendarTab({
     fetch(`/api/scrape-rakuten?year=${year}&month=${month}&day=${day}`)
       .then(res => res.json())
       .then(json => {
+        if (json.totalResults !== undefined) {
+          setAreaVacantCount(json.totalResults);
+        }
         if (json.competitors) {
           const TARGET_HOTELS = [
-            { "id": "majimaso", "name": "旅館まじま荘" },
-            { "id": "yamaguciya", "name": "山口屋旅館" },
-            { "id": "kamiaizuya", "name": "上会津屋" },
-            { "id": "nuriya", "name": "心づくしの宿 ぬりや" },
-            { "id": "tokiwa", "name": "常盤ホテル" },
-            { "id": "umekawaso", "name": "塩原温泉梅川壮" },
-            { "id": "okukogen", "name": "奥塩原高原ホテル" },
-            { "id": "shimofujiya", "name": "やまの宿 下藤屋" },
-            { "id": "shofuro", "name": "松楓楼 松屋" },
-            { "id": "gensenkan", "name": "秘湯の宿 元泉館" },
-            { "id": "wanwan", "name": "わんわんパラダイス" }
+            { id: "majimaso", name: "旅館まじま荘", rating: 4.2, url: "https://travel.rakuten.co.jp/HOTEL/14850/" },
+            { id: "yamaguciya", name: "山口屋旅館", rating: 4.1, url: "https://travel.rakuten.co.jp/HOTEL/9304/" },
+            { id: "kamiaizuya", name: "上会津屋", rating: 4.4, url: "https://travel.rakuten.co.jp/HOTEL/4674/" },
+            { id: "nuriya", name: "心づくしの宿 ぬりや", rating: 4.3, url: "https://travel.rakuten.co.jp/HOTEL/129558/" },
+            { id: "tokiwa", name: "常盤ホテル", rating: 4.0, url: "https://travel.rakuten.co.jp/HOTEL/5884/" },
+            { id: "umekawaso", name: "塩原温泉梅川壮", rating: 4.4, url: "https://travel.rakuten.co.jp/HOTEL/109143/" },
+            { id: "okukogen", name: "奥塩原高原ホテル", rating: 4.2, url: "https://travel.rakuten.co.jp/HOTEL/32030/" },
+            { id: "shimofujiya", name: "やまの宿 下藤屋", rating: 4.5, url: "https://travel.rakuten.co.jp/HOTEL/5650/" },
+            { id: "shofuro", name: "松楓楼 松屋", rating: 4.5, url: "https://travel.rakuten.co.jp/HOTEL/2634/" },
+            { id: "gensenkan", name: "秘湯の宿 元泉館", rating: 4.2, url: "https://travel.rakuten.co.jp/HOTEL/5144/" },
+            { id: "wanwan", name: "わんわんパラダイス", rating: 4.2, url: "https://travel.rakuten.co.jp/HOTEL/104699/" }
           ];
 
           const formatted = json.competitors.map((c: any) => {
@@ -66,8 +71,8 @@ export default function CalendarTab({
             return {
               hotelId: c.hotelId,
               hotelName: c.hotelName || (matched ? matched.name : c.hotelId),
-              reviewAverage: c.reviewAverage || 0,
-              hotelInformationUrl: c.hotelInformationUrl || "",
+              reviewAverage: c.reviewAverage || (matched ? matched.rating : 0),
+              hotelInformationUrl: c.hotelInformationUrl || (matched ? matched.url : ""),
               status: c.status,
               price: c.price,
               planName: c.planName,
@@ -336,6 +341,60 @@ export default function CalendarTab({
               </div>
             )}
 
+            {/* ♨️ 塩原温泉エリア 全体宿泊率 */}
+            {areaVacantCount !== null && areaVacantCount >= 0 && (
+              <div
+                style={{
+                  background: "#f0fdf4",
+                  border: "1px solid #bbf7d0",
+                  borderRadius: "8px",
+                  padding: "20px",
+                  marginBottom: "20px"
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: "24px", marginBottom: "4px" }}>♨️</div>
+                    <h3 style={{ fontSize: "16px", fontWeight: "bold", color: "#166534", margin: "0 0 4px 0" }}>
+                      塩原温泉エリア 全体宿泊率
+                    </h3>
+                    <div style={{ fontSize: "12px", color: "#15803d", marginBottom: "16px" }}>
+                      対象: 楽天トラベル掲載の塩原エリア全施設（約65軒）
+                    </div>
+                    
+                    <div style={{ fontSize: "16px", fontWeight: "bold", color: "#166534", marginBottom: "12px" }}>
+                      空室: <span style={{ fontSize: "18px", color: "#15803d" }}>{areaVacantCount}</span> 軒 / 
+                      満室: <span style={{ fontSize: "18px", color: "#b91c1c" }}>{Math.max(0, 67 - areaVacantCount)}</span> 軒
+                    </div>
+                    
+                    <div style={{ fontSize: "12px", color: "#16a34a", fontWeight: "bold", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <span>🟢</span> 楽天トラベルよりリアルタイム取得済
+                    </div>
+                  </div>
+                  
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: "36px", fontWeight: "900", color: "#166534", lineHeight: "1" }}>
+                      {Math.round(((67 - areaVacantCount) / 67) * 100)}%
+                    </div>
+                    <div
+                      style={{
+                        display: "inline-block",
+                        marginTop: "8px",
+                        background: "#166534",
+                        color: "#ffffff",
+                        padding: "4px 12px",
+                        borderRadius: "20px",
+                        fontSize: "12px",
+                        fontWeight: "bold"
+                      }}
+                    >
+                      {Math.round(((67 - areaVacantCount) / 67) * 100) >= 60 ? "高需要" : Math.round(((67 - areaVacantCount) / 67) * 100) >= 40 ? "中需要" : "低需要"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {selectedDayDetails.prices.length === 0 ? (
               <p style={{ color: "var(--text-muted)", fontSize: "14px", textAlign: "center" }}>
                 この日の算出価格データはありません。「再計算」を行うか「サンプル初期化」を実行してください。
@@ -452,10 +511,42 @@ export default function CalendarTab({
               </div>
             )}
 
+            {/* なぜこの11施設を調べるのか？（選定の根拠） */}
+            <div
+              style={{
+                marginTop: "24px",
+                padding: "16px",
+                background: "var(--bg-app)",
+                border: "1px solid var(--border)",
+                borderRadius: "8px",
+                fontSize: "13px",
+                lineHeight: "1.6",
+                color: "var(--text)"
+              }}
+            >
+              <h4 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: "bold", color: "var(--primary)" }}>
+                💡 なぜこの11施設を調べるのか？（選定の根拠）
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div>
+                  <strong style={{ color: "#1e3a8a" }}>🔵 直接比較（6施設）</strong><br />
+                  まじま荘、山口屋など同規模旅館。この平均・最安値が赤沢の「基準価格」のベースになります。
+                </div>
+                <div>
+                  <strong style={{ color: "#4b5563" }}>🔘 相場参考（3施設）</strong><br />
+                  奥塩原高原ホテルなど中位〜上位宿。連休でエリアがどこまで高騰するかの「天井」を探ります。
+                </div>
+                <div>
+                  <strong style={{ color: "#6d28d9" }}>🟣 独自状態（2施設）</strong><br />
+                  元泉館、わんわんパラダイス。ペット同伴などの独自需要がどれほどの「プレミアム」を生むかの指標です。
+                </div>
+              </div>
+            </div>
+
             {/* 競合11施設のリアルタイム調査状況 */}
             <div style={{ marginTop: "32px", borderTop: "2px solid var(--border)", paddingTop: "24px" }}>
               <h4 style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "16px", color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
-                <span>🔍</span> 競合11施設のリアルタイム調査状況（大人2名 / 1室利用 / 1泊2食付）
+                <span>🔍</span> 競合11施設のリアルタイム調査状況
               </h4>
               {loadingCompetitors ? (
                 <div style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "14px" }}>
@@ -478,27 +569,33 @@ export default function CalendarTab({
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
                         <h5 style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "var(--text)" }}>{comp.hotelName}</h5>
-                        <span style={{ fontSize: "12px", color: "#eab308", fontWeight: "bold", background: "rgba(234, 179, 8, 0.1)", padding: "2px 6px", borderRadius: "4px" }}>
-                          ⭐ {comp.reviewAverage > 0 ? comp.reviewAverage.toFixed(1) : "評価なし"}
+                        <span style={{ fontSize: "11px", color: "#eab308", fontWeight: "bold", background: "rgba(234, 179, 8, 0.1)", padding: "2px 6px", borderRadius: "4px" }}>
+                          ⭐ {comp.reviewAverage > 0 ? `${comp.reviewAverage.toFixed(1)} (評価・クチコミ)` : "評価なし"}
                         </span>
                       </div>
                       
-                      <div style={{ display: "flex", gap: "8px", fontSize: "11px", color: "var(--text-muted)", marginBottom: "12px" }}>
-                        <span style={{ background: "var(--border)", padding: "2px 6px", borderRadius: "4px" }}>👤 2名宿泊</span>
-                        <span style={{ background: "var(--border)", padding: "2px 6px", borderRadius: "4px" }}>🍴 一泊二食</span>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", fontSize: "11px", color: "var(--text-muted)", marginBottom: "12px" }}>
+                        <span style={{ background: "var(--border)", padding: "2px 6px", borderRadius: "4px" }}>🍴 プランの基本:一泊二食</span>
+                        <span style={{ background: "var(--border)", padding: "2px 6px", borderRadius: "4px" }}>👤 ２名</span>
+                        <span style={{ background: "var(--border)", padding: "2px 6px", borderRadius: "4px" }}>🚪 部屋情報10帖</span>
                       </div>
 
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         {comp.status === "full" ? (
-                          <span style={{ color: "#ef4444", fontWeight: "bold", fontSize: "14px", background: "rgba(239, 68, 68, 0.1)", padding: "4px 8px", borderRadius: "4px" }}>
-                            満室
-                          </span>
+                          <>
+                            <span style={{ color: "#ef4444", fontWeight: "bold", fontSize: "14px", background: "rgba(239, 68, 68, 0.1)", padding: "4px 8px", borderRadius: "4px" }}>
+                              満室
+                            </span>
+                            <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>
+                              表示なし
+                            </span>
+                          </>
                         ) : (
                           <>
-                            <span style={{ fontSize: "18px", fontWeight: "bold", color: "var(--success)" }}>
+                            <span style={{ fontSize: "18px", fontWeight: "bold", color: "#10b981" }}>
                               ¥{comp.price.toLocaleString()}
                             </span>
-                            <span style={{ fontSize: "11px", color: "var(--success)", background: "rgba(16, 185, 129, 0.1)", padding: "4px 8px", borderRadius: "4px", fontWeight: "bold" }}>
+                            <span style={{ fontSize: "11px", color: "#10b981", background: "rgba(16, 185, 129, 0.1)", padding: "4px 8px", borderRadius: "4px", fontWeight: "bold" }}>
                               空室あり
                             </span>
                           </>
