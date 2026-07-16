@@ -34,7 +34,7 @@ const COMPETITOR_MASTER = {
   wanwan: { name: 'わんわんパラダイス', rating: 4.2, url: 'https://travel.rakuten.co.jp/HOTEL/104699/' }
 };
 
-// 楽天トラベルの「塩原温泉」カテゴリ (Japan-Tochigi-Nasushiobara-Shiobara) に所属する全68宿の公式ホテルNoリスト
+// 楽天トラベルの「塩原温泉」カテゴリ (67宿) の公式ホテルNoリスト
 const SHIOBARA_HOTEL_IDS = new Set([
   "104699","106120","108911","10893","109143","109188","129503","129558","130092","130512",
   "135495","137011","139924","141349","14850","148895","149003","158803","168710","171075",
@@ -45,12 +45,12 @@ const SHIOBARA_HOTEL_IDS = new Set([
   "68477","72035","74518","74676","74699","9129","9304"
 ]);
 
-// 除外プランキーワード
+// 除外プランキーワード (ステップ1用)
 const EXCLUDE_KEYWORDS = [
   '早割', '直前', 'タイムセール', '一人旅', 'ビジネス', '連泊', '訳あり', '訳有', '記念日', '3名', '三名', '4名'
 ];
 
-// 高級客室などを除外するための客室キーワード
+// 高級客室などを除外するための客室キーワード (ステップ1, 2用)
 const EXCLUDE_ROOM_KEYWORDS = [
   '特別室', '露天風呂付', '露天風呂付き', 'スイート', '離れ', '貴賓室'
 ];
@@ -77,7 +77,6 @@ exports.handler = async function (event, context) {
   let competitors = [];
 
   // --- クエリ1: A案 エリア全体の空室検索 (全体満室率の算出用) ---
-  // searchPattern=0 (施設ごと) で重複なく空室施設の一覧を高速に取得
   try {
     let areaHotels = [];
     let areaPage = 1;
@@ -97,7 +96,7 @@ exports.handler = async function (event, context) {
           const pagingInfo = areaJson.pagingInfo;
           if (pagingInfo && areaPage < pagingInfo.pageCount) {
             areaPage++;
-            await sleep(1100); // 429回避のため厳格に1100ms待機
+            await sleep(1100);
           } else {
             hasNextAreaPage = false;
           }
@@ -110,23 +109,20 @@ exports.handler = async function (event, context) {
     }
 
     if (areaHotels.length > 0) {
-      // 楽天公式の「塩原温泉」カテゴリホテルNoマスタに完全一致する宿のみを抽出
       const filteredShiobaraHotels = areaHotels.filter(h => {
         const info = h.hotel[0].hotelBasicInfo;
         return SHIOBARA_HOTEL_IDS.has(String(info.hotelNo));
       });
       totalResults = filteredShiobaraHotels.length;
-      console.log(`Vacant area search strictly resolved to ${totalResults} hotels in Shiobara Onsen.`);
+      console.log(`Vacant area search resolved strictly to ${totalResults} hotels in Shiobara Onsen.`);
     }
   } catch (error) {
     console.error("Area Vacant Search error (A案):", error.message);
   }
 
-  // クエリ間のバーストを防ぎ、429制限を100%回避するため 1100ms 待機
   await sleep(1100);
 
   // --- クエリ2: B案 ターゲット11施設一括詳細検索 ---
-  // hotelNoを指定して searchPattern=1 (プランごと) で全空室プランを完全ロード
   try {
     const hotelNos = Object.keys(TARGETS).join(',');
     let allHotels = [];
@@ -148,7 +144,7 @@ exports.handler = async function (event, context) {
             const pagingInfo = apiJson.pagingInfo;
             if (pagingInfo && page < pagingInfo.pageCount) {
               page++;
-              await sleep(1100); // 429回避のため厳格に1100ms待機
+              await sleep(1100);
             } else {
               hasNextPage = false;
             }
@@ -163,7 +159,6 @@ exports.handler = async function (event, context) {
       }
     }
 
-    // ホテルIDごとにプランを収集するマップ
     const hotelPlansMap = {};
 
     allHotels.forEach(h => {
@@ -190,7 +185,6 @@ exports.handler = async function (event, context) {
       }
     });
 
-    // プラン名から1泊2食をチェックする補助関数
     const isOneNightTwoMeals = (planName) => {
       const low = planName.toLowerCase();
       
@@ -215,7 +209,6 @@ exports.handler = async function (event, context) {
       return true;
     };
 
-    // 11施設のプラン分析
     Object.keys(TARGETS).forEach(hotelNo => {
       const facilityId = TARGETS[hotelNo];
       const master = COMPETITOR_MASTER[facilityId] || {};
@@ -266,7 +259,7 @@ exports.handler = async function (event, context) {
         }
       });
 
-      // 2回目のループ (フォールバック)
+      // 2回目のループ (フォールバック): 条件を緩和
       if (!isAvailable) {
         plans.forEach(p => {
           if (p.price === 999999) return;
@@ -283,6 +276,30 @@ exports.handler = async function (event, context) {
           if (facilityId !== "wanwan" && facilityId !== "gensenkan") {
             if (planName.includes('ペット') || planName.includes('愛犬') || planName.includes('ワンちゃん') || planName.includes('犬') || planName.includes('猫')) return;
           }
+
+          isAvailable = true;
+          if (p.price < minPrice) {
+            minPrice = p.price;
+            matchedPlanName = planName;
+            matchedRoomName = roomName;
+          }
+        });
+      }
+
+      // 3回目のループ (最終フォールバック): 空室があるなら絶対に満室判定にしない
+      // 1泊2食付でありさえすれば、特別室・露天付き・部屋クラスにかかわらず全て許容
+      if (!isAvailable) {
+        plans.forEach(p => {
+          if (p.price === 999999) return;
+
+          const planName = p.planName;
+          const roomName = p.roomName;
+
+          if (!isOneNightTwoMeals(planName)) return;
+
+          // 2人利用不可のプラン（一人旅、3人以上など）のみ念のため除外
+          const minExclude = ['一人旅', '3名', '三名', '4名'];
+          if (minExclude.some(word => planName.includes(word))) return;
 
           isAvailable = true;
           if (p.price < minPrice) {
@@ -325,7 +342,6 @@ exports.handler = async function (event, context) {
     console.error("API error (B案):", error.message);
   }
 
-  // 万が一リストから漏れた施設を満室補完
   const allTargets = Object.values(TARGETS);
   allTargets.forEach(fid => {
     if (!competitors.find(c => c.hotelId === fid)) {
