@@ -65,29 +65,59 @@ exports.handler = async function (event, context) {
   let totalResults = -1;
   let competitors = [];
 
-  // A案: 全体宿泊率のスクレイピング
+  // --- クエリ1: A案 エリア全体の空室検索 (全体満室率の算出用) ---
+  // searchPattern=0 (施設ごと) で重複なく空室施設の一覧を高速に取得
   try {
-    const targetUrl = `https://search.travel.rakuten.co.jp/ds/vacant/searchVacant?f_dai=japan&f_chu=tochigi&f_sho=nasu&f_sai=shiobara&f_otona_su=2&f_heya_su=1&f_nen1=${year}&f_tuki1=${month}&f_hi1=${day}`;
-    const response = await fetch(targetUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-      }
-    });
+    let areaHotels = [];
+    let areaPage = 1;
+    let hasNextAreaPage = true;
 
-    if (response.ok) {
-      const html = await response.text();
-      const match = html.match(/"totalResults":\[(\d+)\]/);
-      if (match && match[1]) {
-        totalResults = parseInt(match[1], 10);
+    while (hasNextAreaPage && areaPage <= 2) {
+      const areaApiUrl = `https://openapi.rakuten.co.jp/engine/api/Travel/VacantHotelSearch/20170426?applicationId=${WORKING_APP_ID}&accessKey=${WORKING_ACCESS_KEY}&format=json&largeClassCode=japan&middleClassCode=tochigi&smallClassCode=shiobara&checkinDate=${checkinDate}&checkoutDate=${checkoutDate}&adultNum=2&searchPattern=0&hits=30&page=${areaPage}`;
+      
+      const areaResp = await fetch(areaApiUrl, {
+        headers: { 'Referer': 'https://akasawa.netlify.app/', 'Origin': 'https://akasawa.netlify.app' }
+      });
+      
+      if (areaResp.ok) {
+        const areaJson = await areaResp.json();
+        if (areaJson && areaJson.hotels) {
+          areaHotels = areaHotels.concat(areaJson.hotels);
+          const pagingInfo = areaJson.pagingInfo;
+          if (pagingInfo && areaPage < pagingInfo.pageCount) {
+            areaPage++;
+            await sleep(1100); // 429回避のため厳格に1100ms待機
+          } else {
+            hasNextAreaPage = false;
+          }
+        } else {
+          hasNextAreaPage = false;
+        }
+      } else {
+        hasNextAreaPage = false;
       }
     }
+
+    if (areaHotels.length > 0) {
+      // 住所フィルターを適用して「塩原温泉郷」のみ抽出
+      const excludeAddressKeywords = ['下永田', '井口', '睦', '西三島', '東三島', '二区町', '五軒町', '西原町', '永田', '三島', '太夫塚'];
+      const filteredShiobaraHotels = areaHotels.filter(h => {
+        const info = h.hotel[0].hotelBasicInfo;
+        const address = info.address2 || '';
+        return address.includes('塩原') && !excludeAddressKeywords.some(keyword => address.includes(keyword));
+      });
+      totalResults = filteredShiobaraHotels.length;
+      console.log(`Vacant area search resolved strictly to ${totalResults} hotels in Shiobara Onsen.`);
+    }
   } catch (error) {
-    console.error("HTML Scrape error (A案):", error.message);
+    console.error("Area Vacant Search error (A案):", error.message);
   }
 
-  // B案: ターゲット11施設の詳細取得
+  // クエリ間のバーストを防ぎ、429制限を100%回避するため 1100ms 待機
+  await sleep(1100);
+
+  // --- クエリ2: B案 ターゲット11施設一括詳細検索 ---
+  // hotelNoを指定して searchPattern=1 (プランごと) で全空室プランを完全ロード
   try {
     const hotelNos = Object.keys(TARGETS).join(',');
     let allHotels = [];
@@ -109,7 +139,7 @@ exports.handler = async function (event, context) {
             const pagingInfo = apiJson.pagingInfo;
             if (pagingInfo && page < pagingInfo.pageCount) {
               page++;
-              await sleep(350);
+              await sleep(1100); // 429回避のため厳格に1100ms待機
             } else {
               hasNextPage = false;
             }
@@ -151,6 +181,31 @@ exports.handler = async function (event, context) {
       }
     });
 
+    // プラン名から1泊2食をチェックする補助関数
+    const isOneNightTwoMeals = (planName) => {
+      const low = planName.toLowerCase();
+      
+      if (low.includes('素泊') || low.includes('食事なし') || low.includes('食事無し') || low.includes('食事無') || low.includes('朝食のみ') || low.includes('夕食のみ') || low.includes('朝食なし') || low.includes('夕食なし') || low.includes('朝食無し') || low.includes('夕食無し') || low.includes('朝寝坊ok')) {
+        if (low.includes('2食') || low.includes('夕朝') || low.includes('朝夕')) {
+          return true;
+        }
+        return false;
+      }
+      
+      if (low.includes('朝食付') || low.includes('朝食付き')) {
+        if (!low.includes('夕食') && !low.includes('会席') && !low.includes('膳') && !low.includes('ディナー') && !low.includes('2食') && !low.includes('夕朝')) {
+          return false;
+        }
+      }
+      if (low.includes('夕食付') || low.includes('夕食付き')) {
+        if (!low.includes('朝食') && !low.includes('2食') && !low.includes('夕朝')) {
+          return false;
+        }
+      }
+
+      return true;
+    };
+
     // 11施設のプラン分析
     Object.keys(TARGETS).forEach(hotelNo => {
       const facilityId = TARGETS[hotelNo];
@@ -178,31 +233,6 @@ exports.handler = async function (event, context) {
       let matchedRoomName = "";
       let isAvailable = false;
 
-      // プラン名から1泊2食をチェックする補助関数
-      const isOneNightTwoMeals = (planName) => {
-        const low = planName.toLowerCase();
-        
-        if (low.includes('素泊') || low.includes('食事なし') || low.includes('食事無し') || low.includes('食事無') || low.includes('朝食のみ') || low.includes('夕食のみ') || low.includes('朝食なし') || low.includes('夕食なし') || low.includes('朝食無し') || low.includes('夕食無し') || low.includes('朝寝坊ok')) {
-          if (low.includes('2食') || low.includes('夕朝') || low.includes('朝夕')) {
-            return true;
-          }
-          return false;
-        }
-        
-        if (low.includes('朝食付') || low.includes('朝食付き')) {
-          if (!low.includes('夕食') && !low.includes('会席') && !low.includes('膳') && !low.includes('ディナー') && !low.includes('2食') && !low.includes('夕朝')) {
-            return false;
-          }
-        }
-        if (low.includes('夕食付') || low.includes('夕食付き')) {
-          if (!low.includes('朝食') && !low.includes('2食') && !low.includes('夕朝')) {
-            return false;
-          }
-        }
-
-        return true;
-      };
-
       // 1回目のループ: 厳しい条件で1泊2食標準プランを探索
       plans.forEach(p => {
         if (p.price === 999999) return;
@@ -227,7 +257,7 @@ exports.handler = async function (event, context) {
         }
       });
 
-      // 2回目のループ (フォールバック): 厳しい条件で全滅した場合
+      // 2回目のループ (フォールバック)
       if (!isAvailable) {
         plans.forEach(p => {
           if (p.price === 999999) return;
