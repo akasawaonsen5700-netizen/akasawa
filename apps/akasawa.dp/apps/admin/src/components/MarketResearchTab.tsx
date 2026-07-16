@@ -99,6 +99,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
               hasPetPlan: c.hasPetPlan,
               reviewAverage: c.reviewAverage,
               hotelInformationUrl: c.hotelInformationUrl,
+              roomCount: c.roomCount,
               features: [],
               updatedAt: new Date().toISOString()
             }));
@@ -299,6 +300,11 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                       <div style={{ fontSize: '11px', color: '#64748b', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={data.planName || undefined}>
                         <strong>プラン:</strong> {data.status === "full" ? "---" : (data.planName || "---")}
                       </div>
+                      {data.status !== "full" && (
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                          <strong>販売部屋(プラン)数:</strong> {data.roomCount || 0}
+                        </div>
+                      )}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', padding: '6px 0', borderTop: '1px dashed #cbd5e1', borderBottom: '1px dashed #cbd5e1', fontSize: '12px' }}>
                         <span style={{ color: '#64748b' }}>空室状況:</span>
                         <span style={{ fontWeight: 'bold', color: data.status === "full" ? '#be123c' : '#0f766e' }}>

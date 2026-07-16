@@ -224,6 +224,7 @@ exports.handler = async function (event, context) {
           price: 0,
           planName: "",
           roomType: "",
+          roomCount: 0,
           hasPetPlan: facilityId === "wanwan" || facilityId === "gensenkan"
         });
         return;
@@ -259,7 +260,7 @@ exports.handler = async function (event, context) {
         }
       });
 
-      // 2回目のループ (フォールバック): 条件を緩和
+      // 2回目のループ (フォールバック)
       if (!isAvailable) {
         plans.forEach(p => {
           if (p.price === 999999) return;
@@ -286,8 +287,7 @@ exports.handler = async function (event, context) {
         });
       }
 
-      // 3回目のループ (最終フォールバック): 空室があるなら絶対に満室判定にしない
-      // 1泊2食付でありさえすれば、特別室・露天付き・部屋クラスにかかわらず全て許容
+      // 3回目のループ (最終フォールバック)
       if (!isAvailable) {
         plans.forEach(p => {
           if (p.price === 999999) return;
@@ -297,7 +297,6 @@ exports.handler = async function (event, context) {
 
           if (!isOneNightTwoMeals(planName)) return;
 
-          // 2人利用不可のプラン（一人旅、3人以上など）のみ念のため除外
           const minExclude = ['一人旅', '3名', '三名', '4名'];
           if (minExclude.some(word => planName.includes(word))) return;
 
@@ -321,6 +320,7 @@ exports.handler = async function (event, context) {
           price: perPersonPrice,
           planName: matchedPlanName,
           roomType: matchedRoomName,
+          roomCount: plans.length,
           hasPetPlan: facilityId === "wanwan" || facilityId === "gensenkan"
         });
       } else {
@@ -333,6 +333,7 @@ exports.handler = async function (event, context) {
           price: 0,
           planName: "",
           roomType: "",
+          roomCount: 0,
           hasPetPlan: facilityId === "wanwan" || facilityId === "gensenkan"
         });
       }
@@ -355,6 +356,7 @@ exports.handler = async function (event, context) {
         price: 0,
         planName: "",
         roomType: "",
+        roomCount: 0,
         hasPetPlan: fid === "wanwan" || fid === "gensenkan"
       });
     }

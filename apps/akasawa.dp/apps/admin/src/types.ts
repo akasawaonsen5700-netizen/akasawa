@@ -153,6 +153,7 @@ export type MarketResearchData = {
   hasPetPlan: boolean;       // Pet plan availability
   reviewAverage?: number;    // 顧客評価 (楽天評価)
   hotelInformationUrl?: string; // 楽天の旅館URL
+  roomCount?: number;        // 販売部屋(プラン)数
   features: string[];        // Array of features (e.g., early_bird, last_minute)
   updatedAt: string;         // Timestamp of data collection
 };
