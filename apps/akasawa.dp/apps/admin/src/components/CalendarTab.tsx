@@ -359,7 +359,7 @@ export default function CalendarTab({
                       塩原温泉エリア 全体宿泊率
                     </h3>
                     <div style={{ fontSize: "12px", color: "#15803d", marginBottom: "16px" }}>
-                      対象: 楽天トラベル掲載の塩原エリア全施設（約65軒）
+                      対象: 楽天トラベル掲載の塩原エリア全施設（67軒）
                     </div>
                     
                     <div style={{ fontSize: "16px", fontWeight: "bold", color: "#166534", marginBottom: "12px" }}>

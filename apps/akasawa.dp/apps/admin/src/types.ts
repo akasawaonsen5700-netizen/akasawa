@@ -151,6 +151,8 @@ export type MarketResearchData = {
   hasCoupon: boolean;        // Whether coupon exists
   hasCampaign: boolean;      // Whether OTA campaign exists
   hasPetPlan: boolean;       // Pet plan availability
+  reviewAverage?: number;    // 顧客評価 (楽天評価)
+  hotelInformationUrl?: string; // 楽天の旅館URL
   features: string[];        // Array of features (e.g., early_bird, last_minute)
   updatedAt: string;         // Timestamp of data collection
 };

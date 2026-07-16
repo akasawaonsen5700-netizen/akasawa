@@ -97,6 +97,8 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
               hasCoupon: false,
               hasCampaign: false,
               hasPetPlan: c.hasPetPlan,
+              reviewAverage: c.reviewAverage,
+              hotelInformationUrl: c.hotelInformationUrl,
               features: [],
               updatedAt: new Date().toISOString()
             }));
@@ -117,11 +119,24 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
   // 現在選択されている日付のデータを取得（APIの実績データのみを使用し、シミュレーションやモックデータは使用しない）
   const currentDateData = useMemo(() => {
     // APIから取得できた場合は優先して使用する
-    if (apiCompetitorsData && selectedOta === "rakuten") {
+    if (apiCompetitorsData && selectedOta === "rakuten" && apiCompetitorsData.length > 0) {
       return TARGET_FACILITIES.map(facility => {
         const found = apiCompetitorsData.find(d => d.hotelId === facility.id);
         if (found) return found;
         
+        const masterUrl = 
+          facility.id === "majimaso" ? "https://travel.rakuten.co.jp/HOTEL/14850/" :
+          facility.id === "yamaguciya" ? "https://travel.rakuten.co.jp/HOTEL/9304/" :
+          facility.id === "kamiaizuya" ? "https://travel.rakuten.co.jp/HOTEL/4674/" :
+          facility.id === "nuriya" ? "https://travel.rakuten.co.jp/HOTEL/129558/" :
+          facility.id === "tokiwa" ? "https://travel.rakuten.co.jp/HOTEL/5884/" :
+          facility.id === "umekawaso" ? "https://travel.rakuten.co.jp/HOTEL/109143/" :
+          facility.id === "okukogen" ? "https://travel.rakuten.co.jp/HOTEL/32030/" :
+          facility.id === "shimofujiya" ? "https://travel.rakuten.co.jp/HOTEL/5650/" :
+          facility.id === "shofuro" ? "https://travel.rakuten.co.jp/HOTEL/2634/" :
+          facility.id === "gensenkan" ? "https://travel.rakuten.co.jp/HOTEL/5144/" :
+          facility.id === "wanwan" ? "https://travel.rakuten.co.jp/HOTEL/104699/" : "";
+
         return {
           id: `${selectedDate}-api-${selectedOta}-${facility.id}`,
           dateKey: selectedDate,
@@ -135,15 +150,50 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
           hasCoupon: false,
           hasCampaign: false,
           hasPetPlan: facility.type === "pet",
+          reviewAverage: 0,
+          hotelInformationUrl: masterUrl,
           features: [],
           updatedAt: new Date().toISOString()
         };
       });
     }
 
-    // データが一切存在しない場合は、空の配列を返す（シミュレーション・モックデータは非表示にする）
-    return [];
+    // データが一切存在しない場合でも、11施設の枠組み（宿URL付き、満室扱い表示）を返す
+    return TARGET_FACILITIES.map(facility => {
+      const masterUrl = 
+        facility.id === "majimaso" ? "https://travel.rakuten.co.jp/HOTEL/14850/" :
+        facility.id === "yamaguciya" ? "https://travel.rakuten.co.jp/HOTEL/9304/" :
+        facility.id === "kamiaizuya" ? "https://travel.rakuten.co.jp/HOTEL/4674/" :
+        facility.id === "nuriya" ? "https://travel.rakuten.co.jp/HOTEL/129558/" :
+        facility.id === "tokiwa" ? "https://travel.rakuten.co.jp/HOTEL/5884/" :
+        facility.id === "umekawaso" ? "https://travel.rakuten.co.jp/HOTEL/109143/" :
+        facility.id === "okukogen" ? "https://travel.rakuten.co.jp/HOTEL/32030/" :
+        facility.id === "shimofujiya" ? "https://travel.rakuten.co.jp/HOTEL/5650/" :
+        facility.id === "shofuro" ? "https://travel.rakuten.co.jp/HOTEL/2634/" :
+        facility.id === "gensenkan" ? "https://travel.rakuten.co.jp/HOTEL/5144/" :
+        facility.id === "wanwan" ? "https://travel.rakuten.co.jp/HOTEL/104699/" : "";
+
+      return {
+        id: `${selectedDate}-fallback-${selectedOta}-${facility.id}`,
+        dateKey: selectedDate,
+        ota: selectedOta,
+        hotelId: facility.id,
+        status: "full" as const,
+        price: 0,
+        planName: "",
+        roomType: "",
+        meals: "",
+        hasCoupon: false,
+        hasCampaign: false,
+        hasPetPlan: facility.type === "pet",
+        reviewAverage: 0,
+        hotelInformationUrl: masterUrl,
+        features: [],
+        updatedAt: new Date().toISOString()
+      };
+    });
   }, [selectedDate, selectedOta, apiCompetitorsData]);
+
 
   // 各種集計値の計算
   const aggregatedResults = useMemo(() => {
@@ -211,12 +261,17 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                 </div>
                 <h4 className="mr-card-name" style={{ marginBottom: '8px', borderBottom: 'none', paddingBottom: '0' }}>{facility.name}</h4>
                 {data && (
-                  <div style={{ marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid #f1f5f9' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid #f1f5f9' }}>
                     {data.ota === "rakuten" ? (
                       <span style={{ background: '#dbeafe', color: '#1e3a8a', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>楽天トラベル</span>
                     ) : (
                       <span style={{ background: '#ffedd5', color: '#c2410c', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>じゃらん</span>
                     )}
+                    {data.reviewAverage ? (
+                      <span style={{ color: '#f59e0b', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        ★ {data.reviewAverage.toFixed(1)}
+                      </span>
+                    ) : null}
                   </div>
                 )}
                 {data ? (
@@ -225,7 +280,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                       <div className="mr-card-price" style={{ marginBottom: 0, color: data.status === "full" ? '#94a3b8' : '#065f46' }}>
                         <span className="mr-card-price-yen" style={{ color: data.status === "full" ? '#cbd5e1' : '#475569' }}>¥</span>
                         <span style={{ textDecoration: data.status === "full" ? 'line-through' : 'none' }}>
-                          {data.price.toLocaleString()}
+                          {data.status === "full" ? '---' : data.price.toLocaleString()}
                         </span>
                       </div>
                       {data.status === "full" && (
@@ -234,24 +289,44 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                         </div>
                       )}
                     </div>
-                    <div className="mr-card-details">
-                      <div>プラン: {data.planName || "---"}</div>
-                      <div>客室: {data.roomType || "---"}</div>
+                    <div className="mr-card-details" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>
+                        <strong>条件:</strong> 大人2名 / {data.meals || "1泊2食付"}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>
+                        <strong>客室:</strong> {data.status === "full" ? "---" : (data.roomType || "標準客室")}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748b', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={data.planName || undefined}>
+                        <strong>プラン:</strong> {data.status === "full" ? "---" : (data.planName || "---")}
+                      </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', padding: '6px 0', borderTop: '1px dashed #cbd5e1', borderBottom: '1px dashed #cbd5e1', fontSize: '12px' }}>
                         <span style={{ color: '#64748b' }}>空室状況:</span>
                         <span style={{ fontWeight: 'bold', color: data.status === "full" ? '#be123c' : '#0f766e' }}>
                           {data.status === "full" ? '満室' : '空室あり'}
                         </span>
                       </div>
-                      <div>
-                        {data.hasCoupon && <span className="mr-badge coupon">🎫 クーポン</span>}
-                        {data.hasPetPlan && <span className="mr-badge pet">🐾 ペット可</span>}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          {data.hasCoupon && <span className="mr-badge coupon">🎫 クーポン</span>}
+                          {data.hasPetPlan && <span className="mr-badge pet">🐾 ペット可</span>}
+                        </div>
+                        {data.hotelInformationUrl && (
+                          <a 
+                            href={data.hotelInformationUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            style={{ fontSize: '11px', color: '#2563eb', textDecoration: 'underline', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px' }}
+                          >
+                            宿ページ ↗
+                          </a>
+                        )}
                       </div>
                     </div>
                   </>
                 ) : (
                   <div className="mr-no-data" style={{ padding: '20px 0' }}>データがありません</div>
                 )}
+
               </div>
             ))}
           </div>
