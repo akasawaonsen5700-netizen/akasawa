@@ -107,52 +107,37 @@ exports.handler = async function (event, context) {
           if (facilityId) {
             const master = COMPETITOR_MASTER[facilityId] || {};
 
+            console.log(`\n--- Debugging hotel: ${master.name || facilityId} (plans count: ${plans.length}) ---`);
+
             let minPrice = 999999;
             let matchedPlanName = "";
             let matchedRoomName = "";
             let isAvailable = false;
 
+            // 1回目のループ: 厳しい条件でマッチング
             plans.forEach(p => {
               if (p.roomInfo && p.roomInfo[1] && p.roomInfo[1].dailyCharge) {
                 const planName = p.roomInfo[0].roomBasicInfo.planName || "";
                 const roomName = p.roomInfo[0].roomBasicInfo.roomName || "";
                 const price = p.roomInfo[1].dailyCharge.total;
 
-                // --- フィルタリング条件の適用 ---
-
-                // 1. 食事条件: 夕食と朝食が両方とも付いていること (1泊2食付)
+                // 食事条件
                 const withDinner = p.roomInfo[0].roomBasicInfo.withDinner !== false;
                 const withBreakfast = p.roomInfo[0].roomBasicInfo.withBreakfast !== false;
-                if (!withDinner || !withBreakfast) {
-                  return;
-                }
+                if (!withDinner || !withBreakfast) return;
+
                 const lowPlanName = planName.toLowerCase();
                 if (lowPlanName.includes('素泊') || lowPlanName.includes('食事なし') || lowPlanName.includes('朝食のみ') || lowPlanName.includes('朝食付') || lowPlanName.includes('夕食のみ')) {
-                  if (!lowPlanName.includes('2食') && !lowPlanName.includes('夕朝')) {
-                    return;
-                  }
+                  if (!lowPlanName.includes('2食') && !lowPlanName.includes('夕朝')) return;
                 }
 
-                // 2. 除外プランキーワードの適用
-                const hasExcludePlanWord = EXCLUDE_KEYWORDS.some(word => planName.includes(word));
-                if (hasExcludePlanWord) {
-                  return;
-                }
-
-                // 3. 除外客室キーワードの適用（高級客室・特別室を除外）
-                const hasExcludeRoomWord = EXCLUDE_ROOM_KEYWORDS.some(word => planName.includes(word) || roomName.includes(word));
-                if (hasExcludeRoomWord) {
-                  return;
-                }
-
-                // 4. ペット不可施設の場合、ペット関連プランを除外
+                // 厳しい除外ワード
+                if (EXCLUDE_KEYWORDS.some(word => planName.includes(word))) return;
+                if (EXCLUDE_ROOM_KEYWORDS.some(word => planName.includes(word) || roomName.includes(word))) return;
                 if (facilityId !== "wanwan" && facilityId !== "gensenkan") {
-                  if (planName.includes('ペット') || planName.includes('愛犬') || planName.includes('ワンちゃん') || planName.includes('犬') || planName.includes('猫')) {
-                    return;
-                  }
+                  if (planName.includes('ペット') || planName.includes('愛犬') || planName.includes('ワンちゃん') || planName.includes('犬') || planName.includes('猫')) return;
                 }
 
-                // すべての条件を満たした場合、最安値を計算
                 isAvailable = true;
                 if (price < minPrice) {
                   minPrice = price;
@@ -162,8 +147,46 @@ exports.handler = async function (event, context) {
               }
             });
 
+            // 厳しい条件で空室が見つからなかった場合、早割・直前などの条件を緩和して再試行
+            if (!isAvailable) {
+              console.log(`No plans matched strict criteria for ${master.name}. Retrying with relaxed criteria...`);
+              plans.forEach(p => {
+                if (p.roomInfo && p.roomInfo[1] && p.roomInfo[1].dailyCharge) {
+                  const planName = p.roomInfo[0].roomBasicInfo.planName || "";
+                  const roomName = p.roomInfo[0].roomBasicInfo.roomName || "";
+                  const price = p.roomInfo[1].dailyCharge.total;
+
+                  // 食事条件は絶対に維持（1泊2食付）
+                  const withDinner = p.roomInfo[0].roomBasicInfo.withDinner !== false;
+                  const withBreakfast = p.roomInfo[0].roomBasicInfo.withBreakfast !== false;
+                  if (!withDinner || !withBreakfast) return;
+
+                  const lowPlanName = planName.toLowerCase();
+                  if (lowPlanName.includes('素泊') || lowPlanName.includes('食事なし') || lowPlanName.includes('朝食のみ') || lowPlanName.includes('朝食付') || lowPlanName.includes('夕食のみ')) {
+                    if (!lowPlanName.includes('2食') && !lowPlanName.includes('夕朝')) return;
+                  }
+
+                  // 厳しい除外のうち、「早割」「直前」「タイムセール」を除いた、一人旅や連泊などの除外のみ適用
+                  const relaxedExclude = ['一人旅', 'ビジネス', '連泊', '3名', '三名', '4名'];
+                  if (relaxedExclude.some(word => planName.includes(word))) return;
+                  if (EXCLUDE_ROOM_KEYWORDS.some(word => planName.includes(word) || roomName.includes(word))) return;
+                  if (facilityId !== "wanwan" && facilityId !== "gensenkan") {
+                    if (planName.includes('ペット') || planName.includes('愛犬') || planName.includes('ワンちゃん') || planName.includes('犬') || planName.includes('猫')) return;
+                  }
+
+                  isAvailable = true;
+                  if (price < minPrice) {
+                    minPrice = price;
+                    matchedPlanName = planName;
+                    matchedRoomName = roomName;
+                  }
+                }
+              });
+            }
+
             if (isAvailable && minPrice !== 999999) {
               const perPersonPrice = Math.round(minPrice / 2);
+              console.log(`Matched! Plan: ${matchedPlanName}, Price per person: ${perPersonPrice}`);
               competitors.push({
                 hotelId: facilityId,
                 hotelName: info.hotelName || master.name || facilityId,
@@ -176,6 +199,12 @@ exports.handler = async function (event, context) {
                 hasPetPlan: facilityId === "wanwan" || facilityId === "gensenkan"
               });
             } else {
+              console.log(`Still full/no valid plan for ${master.name}. Available plans were:`);
+              plans.forEach(p => {
+                if (p.roomInfo && p.roomInfo[0]) {
+                  console.log(`  - Plan: ${p.roomInfo[0].roomBasicInfo.planName}, Room: ${p.roomInfo[0].roomBasicInfo.roomName}`);
+                }
+              });
               competitors.push({
                 hotelId: facilityId,
                 hotelName: master.name || info.hotelName || facilityId,
