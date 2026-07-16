@@ -91,6 +91,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
               hotelId: c.hotelId,
               status: c.status,
               price: c.price,
+              lowPrice: c.lowPrice,
               planName: c.planName || "",
               roomType: c.roomType || "",
               meals: "1泊2食",
@@ -277,16 +278,32 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                 )}
                 {data ? (
                   <>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                      <div className="mr-card-price" style={{ marginBottom: 0, color: data.status === "full" ? '#94a3b8' : '#065f46' }}>
-                        <span className="mr-card-price-yen" style={{ color: data.status === "full" ? '#cbd5e1' : '#475569' }}>¥</span>
-                        <span style={{ textDecoration: data.status === "full" ? 'line-through' : 'none' }}>
-                          {data.status === "full" ? '---' : data.price.toLocaleString()}
-                        </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div className="mr-card-price" style={{ marginBottom: 0, color: data.status === "full" ? '#94a3b8' : '#065f46' }}>
+                          <span className="mr-card-price-yen" style={{ color: data.status === "full" ? '#cbd5e1' : '#475569' }}>¥</span>
+                          <span>
+                            {data.status === "full" 
+                              ? '---' 
+                              : data.price > 0 
+                                ? data.price.toLocaleString() 
+                                : data.lowPrice ? data.lowPrice.toLocaleString() : '---'}
+                          </span>
+                          {data.status !== "full" && data.price === 0 && data.lowPrice && (
+                            <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '6px', fontWeight: 'normal' }}>(10帖以外最安)</span>
+                          )}
+                        </div>
+                        {data.status === "full" && (
+                          <div style={{ background: '#be123c', color: '#fff', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(190, 18, 60, 0.2)' }}>
+                            満室御礼
+                          </div>
+                        )}
                       </div>
-                      {data.status === "full" && (
-                        <div style={{ background: '#be123c', color: '#fff', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(190, 18, 60, 0.2)' }}>
-                          満室御礼
+                      
+                      {data.status !== "full" && data.price > 0 && data.lowPrice && data.lowPrice < data.price && (
+                        <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: 'bold', display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <span>📉 10帖以外最安値:</span>
+                          <span>¥{data.lowPrice.toLocaleString()}</span>
                         </div>
                       )}
                     </div>
@@ -300,15 +317,10 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                       <div style={{ fontSize: '11px', color: '#64748b', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={data.planName || undefined}>
                         <strong>プラン:</strong> {data.status === "full" ? "---" : (data.planName || "---")}
                       </div>
-                      {data.status !== "full" && (
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
-                          <strong>販売部屋(プラン)数:</strong> {data.roomCount || 0}
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', padding: '6px 0', borderTop: '1px dashed #cbd5e1', borderBottom: '1px dashed #cbd5e1', fontSize: '12px' }}>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', padding: '6px 0', borderTop: '1px dashed #cbd5e1', borderBottom: '1px dashed #cbd5e1', fontSize: '12px' }}>
                         <span style={{ color: '#64748b' }}>空室状況:</span>
                         <span style={{ fontWeight: 'bold', color: data.status === "full" ? '#be123c' : '#0f766e' }}>
-                          {data.status === "full" ? '満室' : '空室あり'}
+                          {data.status === "full" ? '満室' : `空室あり｜${data.roomCount || 0}室`}
                         </span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>

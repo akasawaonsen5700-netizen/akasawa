@@ -144,6 +144,7 @@ export type MarketResearchData = {
   ota: "rakuten" | "jalan";  // The OTA used
   hotelId: string;           // Competitor ID (e.g., "majimaso", "oku-kogen")
   price: number;             // 1名あたりの販売価格（税込。大人2名・1室利用時）
+  lowPrice?: number;         // 10帖以外を含む1泊2食最安値価格
   status: "available" | "full" | "no_sales" | "few"; // Vacancy status
   planName: string;          // Name of the plan
   roomType: string;          // Room type name

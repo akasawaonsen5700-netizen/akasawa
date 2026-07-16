@@ -222,6 +222,7 @@ exports.handler = async function (event, context) {
           hotelInformationUrl: master.url || "",
           status: "full",
           price: 0,
+          lowPrice: 0,
           planName: "",
           roomType: "",
           roomCount: 0,
@@ -231,12 +232,20 @@ exports.handler = async function (event, context) {
       }
 
       const { info, plans } = hotelData;
-      let minPrice = 999999;
-      let matchedPlanName = "";
-      let matchedRoomName = "";
-      let isAvailable = false;
+      
+      // 10帖通常プラン判定用の変数
+      let stdMinPrice = 999999;
+      let stdMatchedPlanName = "";
+      let stdMatchedRoomName = "";
+      let isStdAvailable = false;
 
-      // 1回目のループ: 厳しい条件で1泊2食標準プランを探索
+      // 10帖以外を含む全体の1泊2食最安値判定用の変数
+      let absoluteMinPrice = 999999;
+      let absMatchedPlanName = "";
+      let absMatchedRoomName = "";
+      let isAnyAvailable = false;
+
+      // --- 探索1: 10帖通常（ステップ1・2の基準に合う標準10帖客室プラン） ---
       plans.forEach(p => {
         if (p.price === 999999) return;
 
@@ -245,81 +254,62 @@ exports.handler = async function (event, context) {
 
         if (!isOneNightTwoMeals(planName)) return;
 
+        // 標準的な「10畳」などの通常比較プランを狙い撃ち
         if (EXCLUDE_KEYWORDS.some(word => planName.includes(word))) return;
         if (EXCLUDE_ROOM_KEYWORDS.some(word => planName.includes(word) || roomName.includes(word))) return;
         
+        // 標準和室10畳系以外のベッド洋室や極端に狭い部屋、特異な部屋を除外（10帖に近い部屋を対象にする）
+        const lowRoom = roomName.toLowerCase();
+        if (lowRoom.includes('シングル') || lowRoom.includes('ダブル') || lowRoom.includes('ツイン') || lowRoom.includes('訳あり') || lowRoom.includes('訳有')) return;
+
         if (facilityId !== "wanwan" && facilityId !== "gensenkan") {
           if (planName.includes('ペット') || planName.includes('愛犬') || planName.includes('ワンちゃん') || planName.includes('犬') || planName.includes('猫')) return;
         }
 
-        isAvailable = true;
-        if (p.price < minPrice) {
-          minPrice = p.price;
-          matchedPlanName = planName;
-          matchedRoomName = roomName;
+        isStdAvailable = true;
+        if (p.price < stdMinPrice) {
+          stdMinPrice = p.price;
+          stdMatchedPlanName = planName;
+          stdMatchedRoomName = roomName;
         }
       });
 
-      // 2回目のループ (フォールバック)
-      if (!isAvailable) {
-        plans.forEach(p => {
-          if (p.price === 999999) return;
+      // --- 探索2: 10帖以外の1泊2食すべてを含む絶対最安値 (ステップ3) ---
+      plans.forEach(p => {
+        if (p.price === 999999) return;
 
-          const planName = p.planName;
-          const roomName = p.roomName;
+        const planName = p.planName;
+        const roomName = p.roomName;
 
-          if (!isOneNightTwoMeals(planName)) return;
+        if (!isOneNightTwoMeals(planName)) return;
 
-          const relaxedExclude = ['一人旅', 'ビジネス', '連泊', '3名', '三名', '4名'];
-          if (relaxedExclude.some(word => planName.includes(word))) return;
-          if (EXCLUDE_ROOM_KEYWORDS.some(word => planName.includes(word) || roomName.includes(word))) return;
-          
-          if (facilityId !== "wanwan" && facilityId !== "gensenkan") {
-            if (planName.includes('ペット') || planName.includes('愛犬') || planName.includes('ワンちゃん') || planName.includes('犬') || planName.includes('猫')) return;
-          }
+        // 2人利用不可のプラン（一人旅、3人以上など）のみ除外
+        const minExclude = ['一人旅', '3名', '三名', '4名'];
+        if (minExclude.some(word => planName.includes(word))) return;
 
-          isAvailable = true;
-          if (p.price < minPrice) {
-            minPrice = p.price;
-            matchedPlanName = planName;
-            matchedRoomName = roomName;
-          }
-        });
-      }
+        isAnyAvailable = true;
+        if (p.price < absoluteMinPrice) {
+          absoluteMinPrice = p.price;
+          absMatchedPlanName = planName;
+          absMatchedRoomName = roomName;
+        }
+      });
 
-      // 3回目のループ (最終フォールバック)
-      if (!isAvailable) {
-        plans.forEach(p => {
-          if (p.price === 999999) return;
-
-          const planName = p.planName;
-          const roomName = p.roomName;
-
-          if (!isOneNightTwoMeals(planName)) return;
-
-          const minExclude = ['一人旅', '3名', '三名', '4名'];
-          if (minExclude.some(word => planName.includes(word))) return;
-
-          isAvailable = true;
-          if (p.price < minPrice) {
-            minPrice = p.price;
-            matchedPlanName = planName;
-            matchedRoomName = roomName;
-          }
-        });
-      }
-
-      if (isAvailable && minPrice !== 999999) {
-        const perPersonPrice = Math.round(minPrice / 2);
+      // レスポンスの構築
+      if (isAnyAvailable && absoluteMinPrice !== 999999) {
+        const perPersonLowPrice = Math.round(absoluteMinPrice / 2);
+        const perPersonStdPrice = isStdAvailable && stdMinPrice !== 999999 ? Math.round(stdMinPrice / 2) : 0;
+        
         competitors.push({
           hotelId: facilityId,
           hotelName: info.hotelName || master.name || facilityId,
           reviewAverage: info.reviewAverage ? parseFloat(info.reviewAverage) : (master.rating || 0),
           hotelInformationUrl: info.hotelInformationUrl || master.url || "",
           status: "available",
-          price: perPersonPrice,
-          planName: matchedPlanName,
-          roomType: matchedRoomName,
+          price: perPersonStdPrice, // 10帖通常プランの1人あたり価格 (なければ0)
+          lowPrice: perPersonLowPrice, // 10帖以外を含む1泊2食最安値
+          planName: stdMatchedPlanName || absMatchedPlanName,
+          roomType: stdMatchedRoomName || absMatchedRoomName,
           roomCount: plans.length,
           hasPetPlan: facilityId === "wanwan" || facilityId === "gensenkan"
         });
@@ -331,6 +321,7 @@ exports.handler = async function (event, context) {
           hotelInformationUrl: master.url || "",
           status: "full",
           price: 0,
+          lowPrice: 0,
           planName: "",
           roomType: "",
           roomCount: 0,
@@ -354,6 +345,7 @@ exports.handler = async function (event, context) {
         hotelInformationUrl: master.url || "",
         status: "full",
         price: 0,
+        lowPrice: 0,
         planName: "",
         roomType: "",
         roomCount: 0,
