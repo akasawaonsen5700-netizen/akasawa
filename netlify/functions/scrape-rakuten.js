@@ -1,6 +1,10 @@
 const WORKING_APP_ID = process.env.RAKUTEN_APP_ID || '9d7baaac-17e2-4aea-a604-b4152ce2fc7b';
 const WORKING_ACCESS_KEY = process.env.RAKUTEN_ACCESS_KEY || 'pk_cT3tE1itL8C1K35hCdS4ZXJkstCARzGtWUi4pa2oJf8';
 
+const fetch = typeof globalThis.fetch !== 'undefined'
+  ? globalThis.fetch
+  : (...args) => import('node-fetch').then(({default: fetchFn}) => fetchFn(...args));
+
 const TARGETS = {
   14850: 'majimaso',
   9304: 'yamaguciya',
