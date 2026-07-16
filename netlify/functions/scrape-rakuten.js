@@ -92,7 +92,7 @@ exports.handler = async function (event, context) {
     let page = 1;
     let hasNextPage = true;
 
-    while (hasNextPage && page <= 4) {
+    while (hasNextPage && page <= 8) {
       const apiUrl = `https://openapi.rakuten.co.jp/engine/api/Travel/VacantHotelSearch/20170426?applicationId=${WORKING_APP_ID}&accessKey=${WORKING_ACCESS_KEY}&format=json&hotelNo=${hotelNos}&checkinDate=${checkinDate}&checkoutDate=${checkoutDate}&adultNum=2&searchPattern=1&hits=30&page=${page}`;
       
       try {
@@ -178,32 +178,7 @@ exports.handler = async function (event, context) {
 
       // プラン名から1泊2食（夕食・朝食両方あり）を厳密にチェックする補助関数
       const isOneNightTwoMeals = (planName) => {
-        const low = planName.toLowerCase();
-        
-        // 明示的な食事なしワード
-        if (low.includes('素泊') || low.includes('食事なし') || low.includes('食事無し') || low.includes('食事無') || low.includes('朝食のみ') || low.includes('夕食のみ') || low.includes('朝食なし') || low.includes('夕食なし') || low.includes('朝食無し') || low.includes('夕食無し') || low.includes('朝寝坊ok')) {
-          // 「2食」や「夕朝」「朝夕」が含まれる場合は、表現の重複（例：夕食のみプランと別枠で2食も書かれている等）を考慮して救済
-          if (low.includes('2食') || low.includes('夕朝') || low.includes('朝夕')) {
-            return true;
-          }
-          return false;
-        }
-        
-        // 「朝食付き」だが「夕食」がない、または「夕食付き」だが「朝食」がないという片方欠如を排除
-        if (low.includes('朝食付') || low.includes('朝食付き') || low.includes('朝食付')) {
-          // 夕食に関するワードがあるか
-          if (!low.includes('夕食') && !low.includes('会席') && !low.includes('膳') && !low.includes('ディナー') && !low.includes('2食') && !low.includes('夕朝')) {
-            return false;
-          }
-        }
-        if (low.includes('夕食付') || low.includes('夕食付き')) {
-          // 朝食に関するワードがあるか
-          if (!low.includes('朝食') && !low.includes('朝食') && !low.includes('2食') && !low.includes('夕朝')) {
-            return false;
-          }
-        }
-
-        return true;
+        return true; // 食事条件は一切不問（素泊まり・朝食のみ等もすべて許可）
       };
 
       // 1回目のループ: 厳しい条件で1泊2食標準プランを探索

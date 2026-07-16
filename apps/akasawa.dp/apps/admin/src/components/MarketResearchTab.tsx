@@ -661,25 +661,6 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
             )}
           </div>
 
-          <div className="mr-control-panel">
-            <h3 className="mr-control-title">2. データ取得元（OTA）</h3>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button 
-                onClick={() => setSelectedOta("rakuten")}
-                className={`mr-metric-btn ${selectedOta === "rakuten" ? 'active' : ''}`}
-                style={{ flex: 1, padding: '12px', justifyContent: 'center', background: selectedOta === "rakuten" ? '#eff6ff' : '#f8fafc', color: selectedOta === "rakuten" ? '#1e40af' : '#64748b', borderColor: selectedOta === "rakuten" ? '#bfdbfe' : '#e2e8f0', border: '1px solid', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
-              >
-                楽天トラベル
-              </button>
-              <button 
-                onClick={() => setSelectedOta("jalan")}
-                className={`mr-metric-btn ${selectedOta === "jalan" ? 'active' : ''}`}
-                style={{ flex: 1, padding: '12px', justifyContent: 'center', background: selectedOta === "jalan" ? '#fff7ed' : '#f8fafc', color: selectedOta === "jalan" ? '#9a3412' : '#64748b', borderColor: selectedOta === "jalan" ? '#fed7aa' : '#e2e8f0', border: '1px solid', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
-              >
-                じゃらん
-              </button>
-            </div>
-          </div>
 
           <div className="mr-control-panel">
             <h3 className="mr-control-title">3. 確認したい指標</h3>

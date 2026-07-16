@@ -127,7 +127,7 @@ exports.handler = async function (event, context) {
     let page = 1;
     let hasNextPage = true;
 
-    while (hasNextPage && page <= 4) {
+    while (hasNextPage && page <= 8) {
       const apiUrl = `https://openapi.rakuten.co.jp/engine/api/Travel/VacantHotelSearch/20170426?applicationId=${WORKING_APP_ID}&accessKey=${WORKING_ACCESS_KEY}&format=json&hotelNo=${hotelNos}&checkinDate=${checkinDate}&checkoutDate=${checkoutDate}&adultNum=2&searchPattern=1&hits=30&page=${page}`;
       
       try {
@@ -184,27 +184,7 @@ exports.handler = async function (event, context) {
     });
 
     const isOneNightTwoMeals = (planName) => {
-      const low = planName.toLowerCase();
-      
-      if (low.includes('素泊') || low.includes('食事なし') || low.includes('食事無し') || low.includes('食事無') || low.includes('朝食のみ') || low.includes('夕食のみ') || low.includes('朝食なし') || low.includes('夕食なし') || low.includes('朝食無し') || low.includes('夕食無し') || low.includes('朝寝坊ok')) {
-        if (low.includes('2食') || low.includes('夕朝') || low.includes('朝夕')) {
-          return true;
-        }
-        return false;
-      }
-      
-      if (low.includes('朝食付') || low.includes('朝食付き')) {
-        if (!low.includes('夕食') && !low.includes('会席') && !low.includes('膳') && !low.includes('ディナー') && !low.includes('2食') && !low.includes('夕朝')) {
-          return false;
-        }
-      }
-      if (low.includes('夕食付') || low.includes('夕食付き')) {
-        if (!low.includes('朝食') && !low.includes('2食') && !low.includes('夕朝')) {
-          return false;
-        }
-      }
-
-      return true;
+      return true; // 食事条件は一切不問（素泊まり・朝食のみ等もすべて許可）
     };
 
     Object.keys(TARGETS).forEach(hotelNo => {
@@ -272,18 +252,16 @@ exports.handler = async function (event, context) {
         }
       });
 
-      // --- 探索2: 10帖以外の1泊2食すべてを含む絶対最安値 (ステップ3) ---
+      let validPlanCount = 0;
+
+      // --- 探索2: すべての販売プランを含む絶対最安値 ---
       plans.forEach(p => {
         if (p.price === 999999) return;
 
         const planName = p.planName;
         const roomName = p.roomName;
 
-        if (!isOneNightTwoMeals(planName)) return;
-
-        // 2人利用不可のプラン（一人旅、3人以上など）のみ除外
-        const minExclude = ['一人旅', '3名', '三名', '4名'];
-        if (minExclude.some(word => planName.includes(word))) return;
+        validPlanCount++;
 
         isAnyAvailable = true;
         if (p.price < absoluteMinPrice) {
@@ -308,7 +286,7 @@ exports.handler = async function (event, context) {
           lowPrice: perPersonLowPrice, // 10帖以外を含む1泊2食最安値
           planName: stdMatchedPlanName || absMatchedPlanName,
           roomType: stdMatchedRoomName || absMatchedRoomName,
-          roomCount: plans.length,
+          roomCount: validPlanCount,
           hasPetPlan: facilityId === "wanwan" || facilityId === "gensenkan"
         });
       } else {
