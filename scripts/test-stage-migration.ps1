@@ -8,7 +8,7 @@ Write-Host "=== Phase 2-A: Staging Environment Migration & Rollback Validation =
 
 # 1. Firebase エミュレータをバックグラウンドで起動 (akasawadp-stage プロジェクト)
 Write-Host "Starting Firestore Emulator in background..."
-$EmulatorProcess = Start-Process cmd.exe -ArgumentList "/c npx firebase emulators:start --project akasawadp-stage --only firestore" -PassThru -NoNewWindow
+$EmulatorProcess = Start-Process cmd.exe -ArgumentList "/c npx firebase emulators:start --config test/firebase/firebase.json --project akasawadp-stage --only firestore" -PassThru -NoNewWindow
 Start-Sleep -Seconds 12  # 起動を確実に待つ
 
 try {

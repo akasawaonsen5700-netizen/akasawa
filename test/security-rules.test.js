@@ -4,7 +4,7 @@ const assert = require('assert');
 const testing = require('@firebase/rules-unit-testing');
 
 const PROJECT_ID = 'akasawadp-test-rules';
-const RULES_PATH = path.join(__dirname, '../firestore.rules.multitenant.test');
+const RULES_PATH = path.join(__dirname, 'firebase/firestore.rules.multitenant.test');
 const FIXTURES_PATH = path.join(__dirname, 'fixtures/mock-data.json');
 
 let testEnv;

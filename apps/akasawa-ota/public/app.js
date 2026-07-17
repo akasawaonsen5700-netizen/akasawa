@@ -271,8 +271,8 @@ async function runAnalysis(e) {
   // UIをローディングに
   el.analyzeBtn.disabled = true;
   el.loader.style.display = 'block';
-  el.statusBadge.textContent = '分析中...';
-  el.statusBadge.classList.remove('active');
+  el.reportStatus.textContent = '分析中...';
+  el.reportStatus.classList.remove('active');
 
   try {
     const response = await fetch('/api/analyze-ota', {

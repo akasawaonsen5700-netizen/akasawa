@@ -80,12 +80,12 @@ service cloud.firestore {
                         && request.resource.data.get('role', null) in ['facility_admin', 'facility_staff']);
                         
       allow update: if isSuperAdmin()
-                    || (isPartnerAdmin(resource.data.get('partnerId', null))
+                    || (isPartnerAdmin(request.resource.data.get('partnerId', null))
                         && request.resource.data.get('userId', null) == resource.data.get('userId', null)
                         && request.resource.data.get('facilityId', null) == resource.data.get('facilityId', null)
                         && request.resource.data.get('role', null) in ['facility_admin', 'facility_staff']);
                         
-      allow delete: if isSuperAdmin() || isPartnerAdmin(resource.data.get('partnerId', null));
+      allow delete: if isSuperAdmin() || isPartnerAdmin(request.resource.data.get('partnerId', null));
     }
 
     // ==========================================

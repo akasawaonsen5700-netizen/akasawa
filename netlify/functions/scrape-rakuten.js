@@ -32,12 +32,23 @@ const COMPETITOR_MASTER = {
   wanwan: { name: 'わんわんパラダイス', rating: 4.2, url: 'https://travel.rakuten.co.jp/HOTEL/104699/' }
 };
 
-// 除外プランキーワード
+// 楽天トラベルの「塩原温泉」カテゴリ (67宿) の公式ホテルNoリスト
+const SHIOBARA_HOTEL_IDS = new Set([
+  "104699","106120","108911","10893","109143","109188","129503","129558","130092","130512",
+  "135495","137011","139924","141349","14850","148895","149003","158803","168710","171075",
+  "171102","178660","179991","180420","181731","182177","182335","183256","184890","188070",
+  "189516","191142","191906","192419","194095","195152","196027","196231","196671","196672",
+  "198021","198042","198660","199770","20063","20095","2477","2491","2634","29530",
+  "30967","31902","32030","38848","40934","41140","4674","5144","5650","5884",
+  "68477","72035","74518","74676","74699","9129","9304"
+]);
+
+// 除外プランキーワード (ステップ1用)
 const EXCLUDE_KEYWORDS = [
   '早割', '直前', 'タイムセール', '一人旅', 'ビジネス', '連泊', '訳あり', '訳有', '記念日', '3名', '三名', '4名'
 ];
 
-// 高級客室などを除外するための客室キーワード
+// 高級客室などを除外するための客室キーワード (ステップ1, 2用)
 const EXCLUDE_ROOM_KEYWORDS = [
   '特別室', '露天風呂付', '露天風呂付き', 'スイート', '離れ', '貴賓室'
 ];
@@ -63,29 +74,53 @@ exports.handler = async function (event, context) {
   let totalResults = -1;
   let competitors = [];
 
-  // A案: 全体宿泊率のスクレイピング
+  // --- クエリ1: A案 エリア全体の空室検索 (全体満室率の算出用) ---
   try {
-    const targetUrl = `https://search.travel.rakuten.co.jp/ds/vacant/searchVacant?f_dai=japan&f_chu=tochigi&f_sho=nasu&f_sai=shiobara&f_otona_su=2&f_heya_su=1&f_nen1=${year}&f_tuki1=${month}&f_hi1=${day}`;
-    const response = await fetch(targetUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-      }
-    });
+    let areaHotels = [];
+    let areaPage = 1;
+    let hasNextAreaPage = true;
 
-    if (response.ok) {
-      const html = await response.text();
-      const match = html.match(/"totalResults":\[(\d+)\]/);
-      if (match && match[1]) {
-        totalResults = parseInt(match[1], 10);
+    while (hasNextAreaPage && areaPage <= 3) {
+      const areaApiUrl = `https://openapi.rakuten.co.jp/engine/api/Travel/VacantHotelSearch/20170426?applicationId=${WORKING_APP_ID}&accessKey=${WORKING_ACCESS_KEY}&format=json&largeClassCode=japan&middleClassCode=tochigi&smallClassCode=shiobara&checkinDate=${checkinDate}&checkoutDate=${checkoutDate}&adultNum=2&searchPattern=0&hits=30&page=${areaPage}`;
+      
+      const areaResp = await fetch(areaApiUrl, {
+        headers: { 'Referer': 'https://akasawa.netlify.app/', 'Origin': 'https://akasawa.netlify.app' }
+      });
+      
+      if (areaResp.ok) {
+        const areaJson = await areaResp.json();
+        if (areaJson && areaJson.hotels) {
+          areaHotels = areaHotels.concat(areaJson.hotels);
+          const pagingInfo = areaJson.pagingInfo;
+          if (pagingInfo && areaPage < pagingInfo.pageCount) {
+            areaPage++;
+            await sleep(1100);
+          } else {
+            hasNextAreaPage = false;
+          }
+        } else {
+          hasNextAreaPage = false;
+        }
+      } else {
+        hasNextAreaPage = false;
       }
     }
+
+    if (areaHotels.length > 0) {
+      const filteredShiobaraHotels = areaHotels.filter(h => {
+        const info = h.hotel[0].hotelBasicInfo;
+        return SHIOBARA_HOTEL_IDS.has(String(info.hotelNo));
+      });
+      totalResults = filteredShiobaraHotels.length;
+      console.log(`Vacant area search resolved strictly to ${totalResults} hotels in Shiobara Onsen.`);
+    }
   } catch (error) {
-    console.error("HTML Scrape error (A案):", error.message);
+    console.error("Area Vacant Search error (A案):", error.message);
   }
 
-  // B案: ターゲット11施設の詳細取得
+  await sleep(1100);
+
+  // --- クエリ2: B案 ターゲット11施設一括詳細検索 ---
   try {
     const hotelNos = Object.keys(TARGETS).join(',');
     let allHotels = [];
@@ -122,7 +157,6 @@ exports.handler = async function (event, context) {
       }
     }
 
-    // ホテルIDごとにプランを収集するマップ
     const hotelPlansMap = {};
 
     allHotels.forEach(h => {
@@ -149,7 +183,10 @@ exports.handler = async function (event, context) {
       }
     });
 
-    // 11施設のプラン分析
+    const isOneNightTwoMeals = (planName) => {
+      return true; // 食事条件は一切不問（素泊まり・朝食のみ等もすべて許可）
+    };
+
     Object.keys(TARGETS).forEach(hotelNo => {
       const facilityId = TARGETS[hotelNo];
       const master = COMPETITOR_MASTER[facilityId] || {};
@@ -163,89 +200,93 @@ exports.handler = async function (event, context) {
           hotelInformationUrl: master.url || "",
           status: "full",
           price: 0,
+          lowPrice: 0,
           planName: "",
           roomType: "",
+          roomCount: 0,
           hasPetPlan: facilityId === "wanwan" || facilityId === "gensenkan"
         });
         return;
       }
 
       const { info, plans } = hotelData;
-      let minPrice = 999999;
-      let matchedPlanName = "";
-      let matchedRoomName = "";
-      let isAvailable = false;
+      
+      // 10帖通常プラン判定用の変数
+      let stdMinPrice = 999999;
+      let stdMatchedPlanName = "";
+      let stdMatchedRoomName = "";
+      let isStdAvailable = false;
 
-      // プラン名から1泊2食（夕食・朝食両方あり）を厳密にチェックする補助関数
-      const isOneNightTwoMeals = (planName) => {
-        return true; // 食事条件は一切不問（素泊まり・朝食のみ等もすべて許可）
-      };
+      // 10帖以外を含む全体の1泊2食最安値判定用の変数
+      let absoluteMinPrice = 999999;
+      let absMatchedPlanName = "";
+      let absMatchedRoomName = "";
+      let isAnyAvailable = false;
 
-      // 1回目のループ: 厳しい条件で1泊2食標準プランを探索
+      // --- 探索1: 10帖通常（ステップ1・2の基準に合う標準10帖客室プラン） ---
       plans.forEach(p => {
         if (p.price === 999999) return;
 
         const planName = p.planName;
         const roomName = p.roomName;
 
-        // 1泊2食の判定
         if (!isOneNightTwoMeals(planName)) return;
 
-        // 厳しい除外ワード (早割、直前、タイムセールなど)
+        // 標準的な「10畳」などの通常比較プランを狙い撃ち
         if (EXCLUDE_KEYWORDS.some(word => planName.includes(word))) return;
         if (EXCLUDE_ROOM_KEYWORDS.some(word => planName.includes(word) || roomName.includes(word))) return;
         
+        // 標準和室10畳系以外のベッド洋室や極端に狭い部屋、特異な部屋を除外（10帖に近い部屋を対象にする）
+        const lowRoom = roomName.toLowerCase();
+        if (lowRoom.includes('シングル') || lowRoom.includes('ダブル') || lowRoom.includes('ツイン') || lowRoom.includes('訳あり') || lowRoom.includes('訳有')) return;
+
         if (facilityId !== "wanwan" && facilityId !== "gensenkan") {
           if (planName.includes('ペット') || planName.includes('愛犬') || planName.includes('ワンちゃん') || planName.includes('犬') || planName.includes('猫')) return;
         }
 
-        isAvailable = true;
-        if (p.price < minPrice) {
-          minPrice = p.price;
-          matchedPlanName = planName;
-          matchedRoomName = roomName;
+        isStdAvailable = true;
+        if (p.price < stdMinPrice) {
+          stdMinPrice = p.price;
+          stdMatchedPlanName = planName;
+          stdMatchedRoomName = roomName;
         }
       });
 
-      // 2回目のループ (フォールバック): 厳しい除外条件で全滅した場合、早割・直前を許容して再探索
-      if (!isAvailable) {
-        plans.forEach(p => {
-          if (p.price === 999999) return;
+      let validPlanCount = 0;
 
-          const planName = p.planName;
-          const roomName = p.roomName;
+      // --- 探索2: すべての販売プランを含む絶対最安値 ---
+      plans.forEach(p => {
+        if (p.price === 999999) return;
 
-          if (!isOneNightTwoMeals(planName)) return;
+        const planName = p.planName;
+        const roomName = p.roomName;
 
-          // 早割・直前を除外した基本除外のみ適用
-          const relaxedExclude = ['一人旅', 'ビジネス', '連泊', '3名', '三名', '4名'];
-          if (relaxedExclude.some(word => planName.includes(word))) return;
-          if (EXCLUDE_ROOM_KEYWORDS.some(word => planName.includes(word) || roomName.includes(word))) return;
-          
-          if (facilityId !== "wanwan" && facilityId !== "gensenkan") {
-            if (planName.includes('ペット') || planName.includes('愛犬') || planName.includes('ワンちゃん') || planName.includes('犬') || planName.includes('猫')) return;
-          }
+        validPlanCount++;
 
-          isAvailable = true;
-          if (p.price < minPrice) {
-            minPrice = p.price;
-            matchedPlanName = planName;
-            matchedRoomName = roomName;
-          }
-        });
-      }
+        isAnyAvailable = true;
+        if (p.price < absoluteMinPrice) {
+          absoluteMinPrice = p.price;
+          absMatchedPlanName = planName;
+          absMatchedRoomName = roomName;
+        }
+      });
 
-      if (isAvailable && minPrice !== 999999) {
-        const perPersonPrice = Math.round(minPrice / 2);
+      // レスポンスの構築
+      if (isAnyAvailable && absoluteMinPrice !== 999999) {
+        const perPersonLowPrice = Math.round(absoluteMinPrice / 2);
+        const perPersonStdPrice = isStdAvailable && stdMinPrice !== 999999 ? Math.round(stdMinPrice / 2) : 0;
+        
         competitors.push({
           hotelId: facilityId,
           hotelName: info.hotelName || master.name || facilityId,
           reviewAverage: info.reviewAverage ? parseFloat(info.reviewAverage) : (master.rating || 0),
           hotelInformationUrl: info.hotelInformationUrl || master.url || "",
           status: "available",
-          price: perPersonPrice,
-          planName: matchedPlanName,
-          roomType: matchedRoomName,
+          price: perPersonStdPrice, // 10帖通常プランの1人あたり価格 (なければ0)
+          lowPrice: perPersonLowPrice, // 10帖以外を含む1泊2食最安値
+          planName: stdMatchedPlanName || absMatchedPlanName,
+          roomType: stdMatchedRoomName || absMatchedRoomName,
+          roomCount: validPlanCount,
           hasPetPlan: facilityId === "wanwan" || facilityId === "gensenkan"
         });
       } else {
@@ -256,8 +297,10 @@ exports.handler = async function (event, context) {
           hotelInformationUrl: master.url || "",
           status: "full",
           price: 0,
+          lowPrice: 0,
           planName: "",
           roomType: "",
+          roomCount: 0,
           hasPetPlan: facilityId === "wanwan" || facilityId === "gensenkan"
         });
       }
@@ -267,7 +310,6 @@ exports.handler = async function (event, context) {
     console.error("API error (B案):", error.message);
   }
 
-  // 万が一リストから漏れた施設を満室補完
   const allTargets = Object.values(TARGETS);
   allTargets.forEach(fid => {
     if (!competitors.find(c => c.hotelId === fid)) {
@@ -279,8 +321,10 @@ exports.handler = async function (event, context) {
         hotelInformationUrl: master.url || "",
         status: "full",
         price: 0,
+        lowPrice: 0,
         planName: "",
         roomType: "",
+        roomCount: 0,
         hasPetPlan: fid === "wanwan" || fid === "gensenkan"
       });
     }

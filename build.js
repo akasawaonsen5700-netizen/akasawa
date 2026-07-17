@@ -81,7 +81,7 @@ console.log('Building akasawa.dp React dashboard...');
 const dpPath = path.join(__dirname, 'apps', 'akasawa.dp');
 const adminPath = path.join(dpPath, 'apps', 'admin');
 try {
-  execSync('npm install', { cwd: dpPath, stdio: 'inherit' });
+  execSync('npm install --legacy-peer-deps', { cwd: dpPath, stdio: 'inherit' });
   execSync('npx vite build', { cwd: adminPath, stdio: 'inherit' });
   copyFolderSync(path.join(adminPath, 'dist'), path.join(distDir, 'akasawa-dp'));
 } catch (err) {
