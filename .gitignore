@@ -8,3 +8,10 @@ dist/
 build/
 powershell.cmd
 powershell.bat
+
+# Migration and backup files
+backup-*.json
+migration-*.log
+scratch/
+backups/
+migration-output/
