@@ -1,0 +1,77 @@
+{
+  "users": {
+    "super-admin-uid": {
+      "displayName": "本部管理者",
+      "email": "super-admin@success-research.com",
+      "status": "active",
+      "role": "super_admin"
+    },
+    "partner-admin-uid": {
+      "displayName": "栃木パートナー管理者",
+      "email": "partner-admin@akazawa-tochigi.com",
+      "status": "active",
+      "role": "partner_admin",
+      "partnerId": "akazawa-tochigi"
+    },
+    "other-partner-admin-uid": {
+      "displayName": "茨城パートナー管理者",
+      "email": "partner-admin@ibara-partner.com",
+      "status": "active",
+      "role": "partner_admin",
+      "partnerId": "ibara-partner"
+    },
+    "facility-admin-uid": {
+      "displayName": "赤沢施設管理者",
+      "email": "admin@akasawa-onsen.com",
+      "status": "active"
+    },
+    "facility-staff-uid": {
+      "displayName": "赤沢一般スタッフ",
+      "email": "staff@akasawa-onsen.com",
+      "status": "active"
+    },
+    "inactive-user-uid": {
+      "displayName": "退職スタッフ",
+      "email": "inactive@akasawa-onsen.com",
+      "status": "inactive"
+    }
+  },
+  "memberships": {
+    "facility-admin-uid_akazawa-onsen": {
+      "userId": "facility-admin-uid",
+      "facilityId": "akazawa-onsen",
+      "partnerId": "akazawa-tochigi",
+      "role": "facility_admin",
+      "permissions": ["edit_kart", "publish_post", "approve_pricing"],
+      "status": "active"
+    },
+    "facility-staff-uid_akazawa-onsen": {
+      "userId": "facility-staff-uid",
+      "facilityId": "akazawa-onsen",
+      "partnerId": "akazawa-tochigi",
+      "role": "facility_staff",
+      "permissions": ["view_analytics"],
+      "status": "active"
+    },
+    "inactive-user-uid_akazawa-onsen": {
+      "userId": "inactive-user-uid",
+      "facilityId": "akazawa-onsen",
+      "partnerId": "akazawa-tochigi",
+      "role": "facility_staff",
+      "permissions": ["view_analytics"],
+      "status": "inactive"
+    }
+  },
+  "facilities": {
+    "akazawa-onsen": {
+      "name": "赤沢温泉旅館",
+      "organizationId": "success-research",
+      "partnerId": "akazawa-tochigi"
+    },
+    "other-facility": {
+      "name": "茨城グリーンホテル",
+      "organizationId": "success-research",
+      "partnerId": "ibara-partner"
+    }
+  }
+}

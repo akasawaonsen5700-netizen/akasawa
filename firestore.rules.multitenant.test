@@ -1,0 +1,139 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ==========================================
+    // ヘルパー関数定義
+    // ==========================================
+    function getClaims() {
+      return request.auth.token;
+    }
+    
+    function isSuperAdmin() {
+      return request.auth != null && getClaims().get('role', null) == 'super_admin';
+    }
+
+    // /users/{uid} のアクティブ状態の確認
+    function isUserActive() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('status', null) == 'active';
+    }
+    
+    // 地域パートナー管理者判定
+    function isPartnerAdmin(partnerId) {
+      return request.auth != null && 
+             isUserActive() &&
+             getClaims().get('role', null) == 'partner_admin' && 
+             getClaims().get('partnerId', null) == partnerId;
+    }
+    
+    // メンバーシップドキュメントパスの組み立て
+    function getMembershipPath(facilityId) {
+      return /databases/$(database)/documents/memberships/$(request.auth.uid + "_" + facilityId);
+    }
+    
+    // メンバーシップのアクティブ状態判定
+    function isMembershipActive(facilityId) {
+      return exists(getMembershipPath(facilityId)) &&
+             get(getMembershipPath(facilityId)).data.get('status', null) == 'active';
+    }
+    
+    // 施設管理者 (facility_admin) 判定
+    function isFacilityAdmin(facilityId) {
+      return request.auth != null && 
+             isUserActive() &&
+             isMembershipActive(facilityId) &&
+             get(getMembershipPath(facilityId)).data.get('role', null) == 'facility_admin';
+    }
+    
+    // 施設ユーザー (admin または staff) 判定
+    function isFacilityUser(facilityId) {
+      return request.auth != null && 
+             isUserActive() &&
+             isMembershipActive(facilityId);
+    }
+
+    // ==========================================
+    // 1. ユーザー / メンバーシップ
+    // ==========================================
+    match /users/{uid} {
+      allow read: if isSuperAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow create: if request.auth != null && request.auth.uid == uid;
+      
+      // 更新可能フィールドを制限 (displayName, updatedAt, status のみ更新可能)
+      allow update: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.get('role', null) == resource.data.get('role', null)
+                    && request.resource.data.get('organizationId', null) == resource.data.get('organizationId', null)
+                    && request.resource.data.get('partnerId', null) == resource.data.get('partnerId', null);
+      
+      allow delete: if isSuperAdmin();
+    }
+    
+    match /memberships/{membershipId} {
+      allow read: if isSuperAdmin() 
+                  || (request.auth != null && resource.data.get('userId', null) == request.auth.uid)
+                  || isPartnerAdmin(resource.data.get('partnerId', null));
+                  
+      allow create: if isSuperAdmin() 
+                    || (isPartnerAdmin(request.resource.data.get('partnerId', null))
+                        && request.resource.data.get('role', null) in ['facility_admin', 'facility_staff']);
+                        
+      allow update: if isSuperAdmin()
+                    || (isPartnerAdmin(resource.data.get('partnerId', null))
+                        && request.resource.data.get('userId', null) == resource.data.get('userId', null)
+                        && request.resource.data.get('facilityId', null) == resource.data.get('facilityId', null)
+                        && request.resource.data.get('role', null) in ['facility_admin', 'facility_staff']);
+                        
+      allow delete: if isSuperAdmin() || isPartnerAdmin(resource.data.get('partnerId', null));
+    }
+
+    // ==========================================
+    // 2. 施設 (旅館カルテ)
+    // ==========================================
+    match /facilities/{facilityId} {
+      allow read: if isSuperAdmin() || isFacilityUser(facilityId);
+      allow create: if isSuperAdmin() || isPartnerAdmin(request.resource.data.get('partnerId', null));
+      
+      allow update: if (isSuperAdmin() || isFacilityAdmin(facilityId))
+                    && request.resource.data.get('organizationId', null) == resource.data.get('organizationId', null)
+                    && request.resource.data.get('partnerId', null) == resource.data.get('partnerId', null);
+      allow delete: if isSuperAdmin();
+      
+      match /profiles/brand {
+        allow read: if isSuperAdmin() || isFacilityUser(facilityId);
+        allow write: if isSuperAdmin() || isFacilityAdmin(facilityId);
+      }
+      
+      match /knowledge/{documentId} {
+        allow read: if isSuperAdmin() || isFacilityUser(facilityId);
+        allow write: if isSuperAdmin() || isFacilityAdmin(facilityId);
+      }
+      
+      match /promptConfigs/{agentId} {
+        allow read: if isSuperAdmin() || isFacilityUser(facilityId);
+        allow write: if isSuperAdmin() || isFacilityAdmin(facilityId);
+      }
+      
+      match /integrations/{serviceId} {
+        allow read, write: if isSuperAdmin() || isFacilityAdmin(facilityId);
+      }
+    }
+
+    // ==========================================
+    // 3. 投稿 (submissions)
+    // ==========================================
+    match /submissions/{submissionId} {
+      allow read: if isSuperAdmin() 
+                  || isPartnerAdmin(resource.data.get('partnerId', null)) 
+                  || isFacilityUser(resource.data.get('facilityId', null));
+      allow create: if request.auth != null && (isSuperAdmin() || isFacilityUser(request.resource.data.get('facilityId', null)));
+      allow update: if request.auth != null 
+                    && (isSuperAdmin() 
+                        || (isFacilityUser(resource.data.get('facilityId', null))
+                            && request.resource.data.get('facilityId', null) == resource.data.get('facilityId', null)
+                            && request.resource.data.get('partnerId', null) == resource.data.get('partnerId', null)));
+      allow delete: if isSuperAdmin() || isFacilityAdmin(resource.data.get('facilityId', null));
+    }
+  }
+}
