@@ -176,15 +176,24 @@ exports.handler = async function (event, context) {
             hotelPlansMap[facilityId].plans.push({
               planName: roomBasic.planName || "",
               roomName: roomBasic.roomName || "",
-              price: price
+              price: price,
+              withDinnerFlag: roomBasic.withDinnerFlag || 0,
+              withBreakfastFlag: roomBasic.withBreakfastFlag || 0
             });
           }
         });
       }
     });
 
-    const isOneNightTwoMeals = (planName) => {
-      const p = planName.toLowerCase();
+    const isOneNightTwoMeals = (plan) => {
+      // APIのフラグで明示的に「食事なし（朝・夕どちらかが0）」とされている場合を弾く
+      // ただし、旅館側が設定をサボって 0 になっているだけのケースもあるため、
+      // フラグが両方1なら確実に一泊二食。それ以外はプラン名で最終判断する。
+      if (plan.withDinnerFlag === 1 && plan.withBreakfastFlag === 1) {
+        return true;
+      }
+      
+      const p = plan.planName.toLowerCase();
       const excludes = [
         '素泊まり', '素泊り', '素泊', 
         '朝食のみ', '夕食のみ',
@@ -238,7 +247,7 @@ exports.handler = async function (event, context) {
         const planName = p.planName;
         const roomName = p.roomName;
 
-        if (!isOneNightTwoMeals(planName)) return;
+        if (!isOneNightTwoMeals(p)) return;
 
         if (facilityId !== "wanwan" && facilityId !== "gensenkan") {
           if (planName.includes('ペット') || planName.includes('愛犬') || planName.includes('ワンちゃん') || planName.includes('犬') || planName.includes('猫')) return;
@@ -261,7 +270,7 @@ exports.handler = async function (event, context) {
         const planName = p.planName;
         const roomName = p.roomName;
 
-        if (!isOneNightTwoMeals(planName)) return; // 1泊2食のみ対象
+        if (!isOneNightTwoMeals(p)) return; // 1泊2食のみ対象
 
         validPlanCount++;
 
