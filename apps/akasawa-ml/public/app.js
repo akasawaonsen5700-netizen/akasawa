@@ -13,23 +13,23 @@ const templates = {
   reservation_confirm: {
     emailSubject: '【赤沢温泉旅館】ご予約ありがとうございます',
     message: ({ name, reservationId, checkInDate }) =>
-      `${name} 様\n\nご予約ありがとうございます。\n予約番号: ${reservationId || '未設定'}\nご宿泊日: ${fmtDate(checkInDate)}\n\n当館は「猫 × ぬる湯 × 渓流 × 静養」が特徴の宿です。\n・天然ぬる湯（38〜40℃前後）\n・猫が館内におります\n・送迎は事前予約制です\n・最終バス時刻は事前確認をお願いします\n\nご不明な点がございましたら、下記のお問い合わせフォームよりご連絡ください。\nhttps://akasawaonsen.com/inquire/\n\n赤沢温泉旅館`
+      `${name} 様\n\nご予約ありがとうございます。\n予約番号: ${reservationId || '未設定'}\nご宿泊日: ${fmtDate(checkInDate)}\n\n当館は「猫 × ぬる湯 × 渓流 × 静養」が特徴の宿です。\n・天然ぬる湯（38〜40℃前後）\n・猫が館内におります\n・送迎は事前予約制です\n・最終バス時刻は事前確認をお願いします\n\nご不明な点がございましたら、下記のお問い合わせフォームよりご連絡ください。\nhttps://akasawaonsen.com/inquire/\n\n------------------------------\n赤沢温泉旅館\n〒329-2921 栃木県那須塩原市塩原1149\nTEL: 0287-46-5700\n公式サイト: https://akasawaonsen.com/\n------------------------------`
   },
   pre_stay_3days: {
     emailSubject: '【赤沢温泉旅館】ご宿泊3日前のご案内',
     message: ({ name, checkInDate }) =>
-      `${name} 様\n\n${fmtDate(checkInDate)} ご宿泊前のご案内です。\n\n・アクセス方法の最終確認\n・送迎ご希望の方は締切前にご連絡ください\n・猫 / 自然環境 / ぬる湯の特徴を事前にご確認ください\n\n当日はお気をつけてお越しください。\nご質問等ございましたら、下記よりお問い合わせください。\nhttps://akasawaonsen.com/inquire/\n\n赤沢温泉旅館`
+      `${name} 様\n\n${fmtDate(checkInDate)} ご宿泊前のご案内です。\n\n・アクセス方法の最終確認\n・送迎ご希望の方は締切前にご連絡ください\n・猫 / 自然環境 / ぬる湯の特徴を事前にご確認ください\n\n当日はお気をつけてお越しください。\nご質問等ございましたら、下記よりお問い合わせください。\nhttps://akasawaonsen.com/inquire/\n\n------------------------------\n赤沢温泉旅館\n〒329-2921 栃木県那須塩原市塩原1149\nTEL: 0287-46-5700\n公式サイト: https://akasawaonsen.com/\n------------------------------`
   },
   post_stay_thanks: {
     emailSubject: '【赤沢温泉旅館】ご宿泊ありがとうございました',
     message: ({ name }) =>
-      `${name} 様\n\nこのたびはご宿泊ありがとうございました。\nご感想をお聞かせいただけると励みになります。\n\nまた、猫とぬる湯と静けさの時間を味わいにいらしてください。\nその他、ご不明点などがございましたら下記よりお問い合わせください。\nhttps://akasawaonsen.com/inquire/\n\n赤沢温泉旅館`
+      `${name} 様\n\nこのたびはご宿泊ありがとうございました。\nご感想をお聞かせいただけると励みになります。\n\nまた、猫とぬる湯と静けさの時間を味わいにいらしてください。\nその他、ご不明点などがございましたら下記よりお問い合わせください。\nhttps://akasawaonsen.com/inquire/\n\n------------------------------\n赤沢温泉旅館\n〒329-2921 栃木県那須塩原市塩原1149\nTEL: 0287-46-5700\n公式サイト: https://akasawaonsen.com/\n------------------------------`
   },
   repeat_offer: {
     emailSubject: '【赤沢温泉旅館】再訪ご優待のご案内',
     message: ({ name, tags }) => {
       const tagText = tags.includes('猫好き') ? '看板猫の近況もぜひお楽しみください。' : tags.includes('長湯好き') ? 'ぬる湯でゆっくり過ごす静養滞在におすすめです。' : '季節の静養滞在をご案内します。';
-      return `${name} 様\n\n再訪者さま向けのご案内です。\n${tagText}\n\nLINE登録者限定のご優待や、静かな季節のおすすめ日程もご案内できます。\nお問い合わせやご相談は下記フォームより承ります。\nhttps://akasawaonsen.com/inquire/\n\n赤沢温泉旅館`;
+      return `${name} 様\n\n再訪者さま向けのご案内です。\n${tagText}\n\nLINE登録者限定のご優待や、静かな季節のおすすめ日程もご案内できます。\nお問い合わせやご相談は下記フォームより承ります。\nhttps://akasawaonsen.com/inquire/\n\n------------------------------\n赤沢温泉旅館\n〒329-2921 栃木県那須塩原市塩原1149\nTEL: 0287-46-5700\n公式サイト: https://akasawaonsen.com/\n------------------------------`;
     }
   },
   custom: {
