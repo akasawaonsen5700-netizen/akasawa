@@ -310,7 +310,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                         <strong>条件:</strong> 大人2名 / {data.meals || "1泊2食付"}
                       </div>
                       <div style={{ fontSize: '11px', color: '#64748b' }}>
-                        <strong>客室:</strong> {data.status === "full" ? "---" : (data.roomType || "標準客室")}
+                        <strong>客室:</strong> {data.status === "full" ? "---" : (data.roomType || "基本10帖")}
                       </div>
                       <div style={{ fontSize: '11px', color: '#64748b', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={data.planName || undefined}>
                         <strong>プラン:</strong> {data.status === "full" ? "---" : (data.planName || "---")}
@@ -614,7 +614,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
           <h3 style={{ fontSize: '14px', color: '#6ee7b7', margin: '0 0 8px 0' }}>📋 調査条件（価格比較の基準）</h3>
           <p style={{ fontSize: '13px', color: '#e2e8f0', margin: 0, lineHeight: '1.6' }}>
             正確な相場比較を行うため、全施設について以下の条件で統一して料金を取得しています。<br/>
-            <strong style={{ color: '#fff', fontSize: '14px' }}>【 大人2名 / 1室利用 / 標準客室 / 1泊2食付 / 1名あたりの税込価格 】</strong>
+            <strong style={{ color: '#fff', fontSize: '14px' }}>【 基本10帖 / 大人2名 / 1室利用 / 1泊2食付 / 1名あたりの税込価格 】</strong>
             <span style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginTop: '6px', lineHeight: '1.4' }}>
               ※ 楽天APIから取得した<strong>2名合計料金を 2 で割った料金（1名あたり）</strong>を表示しています。<br/>
               ※ 正確な相場比較のため、素泊まり・朝食のみ・特別室・露天風呂付き客室・早割・直前割・タイムセール・ペットプラン（ペット可宿を除く）は自動的に除外して算出しています。
