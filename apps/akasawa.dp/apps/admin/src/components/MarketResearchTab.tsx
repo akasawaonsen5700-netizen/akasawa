@@ -309,8 +309,8 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
                       <div style={{ fontSize: '11px', color: '#64748b' }}>
                         <strong>条件:</strong> 大人2名 / {data.meals || "1泊2食付"}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>
-                        <strong>客室:</strong> {data.status === "full" ? "---" : (data.roomType || "基本10帖")}
+                      <div style={{ color: '#aaa', fontSize: '13px', marginBottom: '5px' }}>
+                        <strong>客室:</strong> {data.status === "full" ? "---" : (data.roomType || "部屋タイプ不問")}
                       </div>
                       <div style={{ fontSize: '11px', color: '#64748b', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={data.planName || undefined}>
                         <strong>プラン:</strong> {data.status === "full" ? "---" : (data.planName || "---")}
@@ -508,7 +508,7 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
           <p>
             本画面は市場の相場データを自動で集計し、オーナー様の価格調整（値上げ・値下げ）の判断をサポートする分析パネルです。<br/>
             カレンダーから日付を選び、見たい項目をクリックするだけで、塩原エリアの販売状況から抽出した「価格判断の材料」が一目でわかるようになっています。<br/>
-            お盆や週末の単価（RevPAR）を最大化するための重要な判断材料としてご活用ください。
+            繁忙期や週末の単価（RevPAR）を最大化するための重要な判断材料としてご活用ください。
           </p>
         </div>
 
@@ -614,10 +614,10 @@ export default function MarketResearchTab({ researchData, onSaveData }: Props) {
           <h3 style={{ fontSize: '14px', color: '#6ee7b7', margin: '0 0 8px 0' }}>📋 調査条件（価格比較の基準）</h3>
           <p style={{ fontSize: '13px', color: '#e2e8f0', margin: 0, lineHeight: '1.6' }}>
             正確な相場比較を行うため、全施設について以下の条件で統一して料金を取得しています。<br/>
-            <strong style={{ color: '#fff', fontSize: '14px' }}>【 基本10帖 / 大人2名 / 1室利用 / 1泊2食付 / 1名あたりの税込価格 】</strong>
+            <strong style={{ color: '#fff', fontSize: '14px' }}>【 部屋タイプ不問 / 大人2名 / 1室利用 / 1泊2食付 / 1名あたりの税込価格 】</strong>
             <span style={{ display: 'block', fontSize: '11px', color: '#cbd5e1', marginTop: '6px', lineHeight: '1.4' }}>
               ※ 楽天APIから取得した<strong>2名合計料金を 2 で割った料金（1名あたり）</strong>を表示しています。<br/>
-              ※ 正確な相場比較のため、素泊まり・朝食のみ・特別室・露天風呂付き客室・早割・直前割・タイムセール・ペットプラン（ペット可宿を除く）は自動的に除外して算出しています。
+              ※ 正確な相場比較のため、素泊まり・朝食のみ・夕食のみといった片食プラン、およびペットプラン（ペット専用宿を除く）は自動的に除外して、純粋な1泊2食付きの最安値を算出しています。
             </span>
           </p>
         </div>
