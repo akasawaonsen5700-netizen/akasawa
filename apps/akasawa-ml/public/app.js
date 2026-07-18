@@ -47,6 +47,7 @@ const el = {
   previewBox: document.getElementById('previewBox'),
   channelSelect: document.getElementById('channelSelect'),
   audienceSelect: document.getElementById('audienceSelect'),
+  customSubject: document.getElementById('customSubject'),
   customMessage: document.getElementById('customMessage'),
   seedBtn: document.getElementById('seedBtn'),
   clearBtn: document.getElementById('clearBtn'),
@@ -59,11 +60,13 @@ document.querySelectorAll('.scenario').forEach(btn => {
     state.scenario = btn.dataset.scenario;
     document.querySelectorAll('.scenario').forEach(x => x.classList.remove('active'));
     btn.classList.add('active');
+    el.customSubject.value = templates[state.scenario].emailSubject;
     preview();
   });
 });
 
 document.querySelector('.scenario').classList.add('active');
+el.customSubject.value = templates[state.scenario].emailSubject;
 
 el.customerForm.addEventListener('submit', e => {
   e.preventDefault();
@@ -98,6 +101,8 @@ el.selectAll.addEventListener('change', () => {
 });
 
 el.previewBtn.addEventListener('click', preview);
+el.customSubject.addEventListener('input', preview);
+el.customMessage.addEventListener('input', preview);
 el.dispatchBtn.addEventListener('click', dispatchMessages);
 el.seedBtn.addEventListener('click', seedCustomers);
 el.clearBtn.addEventListener('click', clearAll);
@@ -189,7 +194,8 @@ function buildMessage(customer) {
     name: fullName(customer)
   };
   const body = `${tpl.message(customerWithFullName)}${el.customMessage.value ? `\n\n${el.customMessage.value}` : ''}`;
-  return { subject: tpl.emailSubject, body };
+  const subject = el.customSubject.value.trim() || tpl.emailSubject;
+  return { subject, body };
 }
 
 function render() {

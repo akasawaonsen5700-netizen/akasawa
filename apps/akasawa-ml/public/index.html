@@ -108,9 +108,15 @@
           </select>
         </div>
       </div>
-      <div class="top-gap">
-        <label>テンプレート追記</label>
-        <textarea id="customMessage" rows="4" placeholder="追加したい文面を入力"></textarea>
+      <div class="top-gap stack">
+        <div>
+          <label>件名</label>
+          <input type="text" id="customSubject" placeholder="件名を入力 (空欄の場合はデフォルトの件名が使用されます)">
+        </div>
+        <div>
+          <label>テンプレート追記</label>
+          <textarea id="customMessage" rows="4" placeholder="追加したい文面を入力"></textarea>
+        </div>
       </div>
       <div class="top-gap inline-actions">
         <button id="previewBtn" class="ghost">プレビュー生成</button>
