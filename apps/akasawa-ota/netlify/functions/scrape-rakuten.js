@@ -186,14 +186,34 @@ exports.handler = async function (event, context) {
     });
 
     const isOneNightTwoMeals = (plan) => {
-      // APIのフラグで明示的に「食事なし（朝・夕どちらかが0）」とされている場合を弾く
-      // ただし、旅館側が設定をサボって 0 になっているだけのケースもあるため、
-      // フラグが両方1なら確実に一泊二食。それ以外はプラン名で最終判断する。
+      // APIのフラグで明示的に両方設定されている場合は一泊二食
       if (plan.withDinnerFlag === 1 && plan.withBreakfastFlag === 1) {
         return true;
       }
+      // フラグが明示的に片方のみ設定されている場合は確実に1食のみなので除外
+      if ((plan.withDinnerFlag === 1 && plan.withBreakfastFlag === 0) ||
+          (plan.withDinnerFlag === 0 && plan.withBreakfastFlag === 1)) {
+        return false;
+      }
       
       const p = plan.planName.toLowerCase();
+
+      // プラン名で明確に2食付きであることがわかる場合は無条件で許可
+      if (p.includes('2食付') || p.includes('２食付') || p.includes('二食付') || p.includes('朝夕食') || p.includes('夕朝食')) {
+        return true;
+      }
+      
+      // 「朝食」と「夕食」の両方が記載されていて、かつ「なし/無し」と書かれていない場合は許可
+      if (p.includes('朝食') && p.includes('夕食')) {
+        if (!p.includes('朝食なし') && !p.includes('朝食無し') && !p.includes('夕食なし') && !p.includes('夕食無し')) {
+          return true;
+        }
+      }
+
+      // 文字列ベースの片食チェック（例：「朝食付」とあるが「夕食」の記載がない場合は除外）
+      if ((p.includes('朝食付') || p.includes('朝食あり')) && !p.includes('夕食')) return false;
+      if ((p.includes('夕食付') || p.includes('夕食あり')) && !p.includes('朝食')) return false;
+
       const excludes = [
         '素泊まり', '素泊り', '素泊', 
         '朝食のみ', '夕食のみ',
