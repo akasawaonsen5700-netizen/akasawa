@@ -184,7 +184,15 @@ exports.handler = async function (event, context) {
     });
 
     const isOneNightTwoMeals = (planName) => {
-      return true; // 食事条件は一切不問（素泊まり・朝食のみ等もすべて許可）
+      const p = planName.toLowerCase();
+      const excludes = [
+        '素泊まり', '素泊り', '素泊', 
+        '朝食のみ', '夕食のみ',
+        '朝食無し', '朝食なし', '夕食無し', '夕食なし',
+        '食事なし', '食事無し',
+        '1泊朝食', '１泊朝食', '1泊夕食', '１泊夕食'
+      ];
+      return !excludes.some(word => p.includes(word));
     };
 
     Object.keys(TARGETS).forEach(hotelNo => {
@@ -260,6 +268,8 @@ exports.handler = async function (event, context) {
 
         const planName = p.planName;
         const roomName = p.roomName;
+
+        if (!isOneNightTwoMeals(planName)) return; // 1泊2食のみ対象
 
         validPlanCount++;
 
