@@ -85,11 +85,12 @@
         <h2>配信シナリオ</h2>
         <span class="badge success">4本実装</span>
       </div>
-      <div class="cols-4">
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
         <button class="scenario" data-scenario="reservation_confirm">予約直後</button>
         <button class="scenario" data-scenario="pre_stay_3days">宿泊3日前</button>
         <button class="scenario" data-scenario="post_stay_thanks">宿泊翌日</button>
         <button class="scenario" data-scenario="repeat_offer">再訪促進</button>
+        <button class="scenario" data-scenario="custom">自由入力</button>
       </div>
       <div class="cols-2 top-gap">
         <div>
@@ -120,6 +121,7 @@
       </div>
       <div class="top-gap inline-actions">
         <button id="previewBtn" class="ghost">プレビュー生成</button>
+        <button id="clearPreviewBtn" class="ghost danger">プレビュー消去</button>
         <button id="dispatchBtn">配信実行</button>
       </div>
       <div id="previewBox" class="preview hidden"></div>
