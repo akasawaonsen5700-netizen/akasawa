@@ -231,7 +231,7 @@ exports.handler = async function (event, context) {
       let absMatchedRoomName = "";
       let isAnyAvailable = false;
 
-      // --- 探索1: 10帖通常（ステップ1・2の基準に合う標準10帖客室プラン） ---
+      // --- 探索1: 部屋タイプ不問（一泊二食付きの最安値） ---
       plans.forEach(p => {
         if (p.price === 999999) return;
 
@@ -239,14 +239,6 @@ exports.handler = async function (event, context) {
         const roomName = p.roomName;
 
         if (!isOneNightTwoMeals(planName)) return;
-
-        // 標準的な「10畳」などの通常比較プランを狙い撃ち
-        if (EXCLUDE_KEYWORDS.some(word => planName.includes(word))) return;
-        if (EXCLUDE_ROOM_KEYWORDS.some(word => planName.includes(word) || roomName.includes(word))) return;
-        
-        // 標準和室10畳系以外のベッド洋室や極端に狭い部屋、特異な部屋を除外（10帖に近い部屋を対象にする）
-        const lowRoom = roomName.toLowerCase();
-        if (lowRoom.includes('シングル') || lowRoom.includes('ダブル') || lowRoom.includes('ツイン') || lowRoom.includes('訳あり') || lowRoom.includes('訳有')) return;
 
         if (facilityId !== "wanwan" && facilityId !== "gensenkan") {
           if (planName.includes('ペット') || planName.includes('愛犬') || planName.includes('ワンちゃん') || planName.includes('犬') || planName.includes('猫')) return;
