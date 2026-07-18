@@ -12,24 +12,24 @@ const state = {
 const templates = {
   reservation_confirm: {
     emailSubject: '【赤沢温泉旅館】ご予約ありがとうございます',
-    message: ({ name, reservationId, checkInDate }) =>
-      `${name} 様\n\nご不明な点がございましたら、下記のお問い合わせフォームよりご連絡ください。\nhttps://akasawaonsen.com/inquire/`
+    message: ({ greeting, reservationId, checkInDate }) =>
+      `${greeting}\n\nご不明な点がございましたら、下記のお問い合わせフォームよりご連絡ください。\nhttps://akasawaonsen.com/inquire/`
   },
   pre_stay_3days: {
     emailSubject: '【赤沢温泉旅館】ご宿泊3日前のご案内',
-    message: ({ name, checkInDate }) =>
-      `${name} 様\n\n${fmtDate(checkInDate)} ご宿泊前のご案内です。\n\n・アクセス方法の最終確認\n・送迎ご希望の方は締切前にご連絡ください\n・猫 / 自然環境 / ぬる湯の特徴を事前にご確認ください\n\n当日はお気をつけてお越しください。\nご質問等ございましたら、下記よりお問い合わせください。\nhttps://akasawaonsen.com/inquire/`
+    message: ({ greeting, checkInDate }) =>
+      `${greeting}\n\n${fmtDate(checkInDate)} ご宿泊前のご案内です。\n\n・アクセス方法の最終確認\n・送迎ご希望の方は締切前にご連絡ください\n・猫 / 自然環境 / ぬる湯の特徴を事前にご確認ください\n\n当日はお気をつけてお越しください。\nご質問等ございましたら、下記よりお問い合わせください。\nhttps://akasawaonsen.com/inquire/`
   },
   post_stay_thanks: {
     emailSubject: '【赤沢温泉旅館】ご宿泊ありがとうございました',
-    message: ({ name }) =>
-      `${name} 様\n\nこのたびはご宿泊ありがとうございました。\nご感想をお聞かせいただけると励みになります。\n\nまた、猫とぬる湯と静けさの時間を味わいにいらしてください。\nその他、ご不明点などがございましたら下記よりお問い合わせください。\nhttps://akasawaonsen.com/inquire/`
+    message: ({ greeting }) =>
+      `${greeting}\n\nこのたびはご宿泊ありがとうございました。\nご感想をお聞かせいただけると励みになります。\n\nまた、猫とぬる湯と静けさの時間を味わいにいらしてください。\nその他、ご不明点などがございましたら下記よりお問い合わせください。\nhttps://akasawaonsen.com/inquire/`
   },
   repeat_offer: {
     emailSubject: '【赤沢温泉旅館】再訪ご優待のご案内',
-    message: ({ name, tags }) => {
+    message: ({ greeting, tags }) => {
       const tagText = tags.includes('猫好き') ? '看板猫の近況もぜひお楽しみください。' : tags.includes('長湯好き') ? 'ぬる湯でゆっくり過ごす静養滞在におすすめです。' : '季節の静養滞在をご案内します。';
-      return `${name} 様\n\n再訪者さま向けのご案内です。\n${tagText}\n\nLINE登録者限定のご優待や、静かな季節のおすすめ日程もご案内できます。\nお問い合わせやご相談は下記フォームより承ります。\nhttps://akasawaonsen.com/inquire/`;
+      return `${greeting}\n\n再訪者さま向けのご案内です。\n${tagText}\n\nLINE登録者限定のご優待や、静かな季節のおすすめ日程もご案内できます。\nお問い合わせやご相談は下記フォームより承ります。\nhttps://akasawaonsen.com/inquire/`;
     }
   },
   custom: {
@@ -40,14 +40,16 @@ const templates = {
 
 const SIGNATURE = `
 ------------------------------
-赤沢温泉旅館
+赤沢温泉株式会社/赤沢温泉旅館 遠藤正俊
 〒329-2921 栃木県那須塩原市塩原1149
-TEL: 0287-46-5700
-公式サイト: https://akasawaonsen.com/
+TEL: 0287-46-5700　FAX：0287-46-5699
+公式サイト：https://akasawaonsen.com/
+お問い合わせ：https://akasawaonsen.com/inquire/
 ------------------------------`;
 
 const el = {
   customerForm: document.getElementById('customerForm'),
+  clearLogsBtn: document.getElementById('clearLogsBtn'),
   customerTableBody: document.getElementById('customerTableBody'),
   logList: document.getElementById('logList'),
   csvFile: document.getElementById('csvFile'),
@@ -123,6 +125,12 @@ el.customMessage.addEventListener('input', preview);
 el.dispatchBtn.addEventListener('click', dispatchMessages);
 el.seedBtn.addEventListener('click', seedCustomers);
 el.clearBtn.addEventListener('click', clearAll);
+el.clearLogsBtn.addEventListener('click', () => {
+  if (!confirm('配信履歴のみをすべて削除しますか？')) return;
+  state.logs = [];
+  persist();
+  renderLogs();
+});
 el.downloadSampleBtn.addEventListener('click', downloadSampleCsv);
 
 el.customerTableBody.addEventListener('click', e => {
@@ -206,9 +214,11 @@ function getTargets() {
 
 function buildMessage(customer) {
   const tpl = templates[state.scenario];
+  const name = fullName(customer);
   const customerWithFullName = {
     ...customer,
-    name: fullName(customer)
+    name,
+    greeting: name === '赤沢温泉旅館ご利用者様' ? '赤沢温泉旅館ご利用者様' : `${name} 様`
   };
   const tplMsg = tpl.message(customerWithFullName);
   const customMsg = el.customMessage.value;
@@ -373,7 +383,7 @@ function load(key, fallback) {
   }
 }
 
-function fullName(customer) { return `${customer.lastName || ''} ${customer.firstName || ''}`.trim() || '名称未設定'; }
+function fullName(customer) { return `${customer.lastName || ''} ${customer.firstName || ''}`.trim() || '赤沢温泉旅館ご利用者様'; }
 function fmtDate(value) { return value ? new Date(value).toLocaleDateString('ja-JP') : '-'; }
 function labelScenario(key) {
   return ({ reservation_confirm: '予約直後', pre_stay_3days: '宿泊3日前', post_stay_thanks: '宿泊翌日', repeat_offer: '再訪促進', custom: '自由入力' })[key] || key;
