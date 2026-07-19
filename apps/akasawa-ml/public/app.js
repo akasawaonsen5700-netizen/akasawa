@@ -343,6 +343,24 @@ function normalizeCustomer(input) {
 function parseCsv(text) {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
   if (!lines.length) return [];
+  
+  const firstLineStr = lines[0].toLowerCase();
+  const hasKnownHeader = firstLineStr.includes('メール') || firstLineStr.includes('email') || firstLineStr.includes('名前') || firstLineStr.includes('姓') || firstLineStr.includes('名');
+  const hasAtSymbol = firstLineStr.includes('@');
+  const isHeaderless = !hasKnownHeader && hasAtSymbol;
+
+  if (isHeaderless) {
+    return lines.map(line => {
+      const cols = splitCsvLine(line);
+      const email = cols.find(c => c.includes('@')) || '';
+      const name = cols.find(c => c !== email && c.match(/[^\x01-\x7E]/)) || cols.find(c => c !== email && c.match(/[a-zA-Z]/)) || '';
+      return {
+        'メールアドレス': email,
+        '氏名': name
+      };
+    });
+  }
+
   const headers = splitCsvLine(lines[0]);
   return lines.slice(1).map(line => {
     const cols = splitCsvLine(line);
