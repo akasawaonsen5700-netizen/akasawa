@@ -68,8 +68,6 @@ const el = {
   dispatchBtn: document.getElementById('dispatchBtn'),
   previewBox: document.getElementById('previewBox'),
   channelSelect: document.getElementById('channelSelect'),
-  audienceSelect: document.getElementById('audienceSelect'),
-  audienceSelectContainer: document.getElementById('audienceSelectContainer'),
   customSubject: document.getElementById('customSubject'),
   customMessage: document.getElementById('customMessage'),
   seedBtn: document.getElementById('seedBtn'),
@@ -93,7 +91,6 @@ function setMode(mode) {
     
     el.modeCsv.style.display = 'contents';
     el.modeManual.style.display = 'none';
-    el.audienceSelectContainer.style.display = 'block';
   } else {
     el.tabManual.classList.remove('ghost');
     el.tabManual.style.border = 'none';
@@ -102,7 +99,6 @@ function setMode(mode) {
     
     el.modeManual.style.display = 'contents';
     el.modeCsv.style.display = 'none';
-    el.audienceSelectContainer.style.display = 'none';
   }
   preview();
 }
@@ -297,11 +293,9 @@ function getTargets() {
     if (!customer.email && !customer.lineUserId) return [];
     return [customer];
   } else {
-    const audience = el.audienceSelect.value;
-    if (audience === 'all') return state.customers;
+    // 常にチェックボックスの状態（絞り込み時は絞り込まれた結果）を正とする
     const selectedIds = [...document.querySelectorAll('.row-select:checked')].map(x => x.value);
-    if (selectedIds.length) return state.customers.filter(c => selectedIds.includes(c.id));
-    return filteredCustomers();
+    return state.customers.filter(c => selectedIds.includes(c.id));
   }
 }
 
