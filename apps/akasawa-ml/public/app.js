@@ -36,7 +36,7 @@ const templates = {
   },
   custom: {
     emailSubject: '',
-    message: () => ''
+    message: ({ greeting }) => `${greeting}`
   }
 };
 
