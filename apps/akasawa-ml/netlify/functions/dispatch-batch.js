@@ -31,7 +31,7 @@ async function sendEmailBatch(payloads) {
   const from = process.env.MAIL_FROM;
   
   const validPayloads = payloads.filter(p => p.email);
-  const skippedNames = payloads.filter(p => !p.email).map(p => p.customerName || '宛名なし');
+  const skippedNames = payloads.filter(p => !p.email).map(p => `${p.customerName || '宛名なし'} (連絡先なし)`);
 
   if (!apiKey || !from) {
     return { 
@@ -86,7 +86,7 @@ async function sendEmailBatch(payloads) {
 async function sendLineBatch(payloads) {
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   const validPayloads = payloads.filter(p => p.lineUserId);
-  const skippedNames = payloads.filter(p => !p.lineUserId).map(p => p.customerName || '宛名なし');
+  const skippedNames = payloads.filter(p => !p.lineUserId).map(p => `${p.customerName || '宛名なし'} (${p.email || '連絡先なし'})`);
 
   if (!token) {
     return { 
@@ -120,13 +120,13 @@ async function sendLineBatch(payloads) {
       if (!res.ok) {
         const err = await res.text();
         results.push({ to: p.lineUserId, success: false, error: err });
-        failedNames.push(p.customerName || '宛名なし');
+        failedNames.push(`${p.customerName || '宛名なし'} (${p.lineUserId})`);
       } else {
         results.push({ to: p.lineUserId, success: true });
       }
     } catch (e) {
       results.push({ to: p.lineUserId, success: false, error: e.message });
-      failedNames.push(p.customerName || '宛名なし');
+      failedNames.push(`${p.customerName || '宛名なし'} (${p.lineUserId})`);
     }
   }
 
