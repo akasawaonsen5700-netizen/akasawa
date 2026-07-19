@@ -208,7 +208,8 @@ async function dispatchMessages() {
             email: customer.email,
             lineUserId: customer.lineUserId,
             subject: msg.subject,
-            message: msg.body
+            message: msg.body,
+            customerName: fullName(customer)
           };
         });
 
@@ -225,15 +226,31 @@ async function dispatchMessages() {
         const result = await res.json();
         if (!res.ok || !result.ok) throw new Error(result.error || JSON.stringify(result));
 
+        let errLog = '';
+        if (result.results) {
+          const skipped = new Set();
+          const failed = new Set();
+          result.results.forEach(r => {
+            if (r.skippedNames) r.skippedNames.forEach(n => skipped.add(n));
+            if (r.failedNames) r.failedNames.forEach(n => failed.add(n));
+          });
+          
+          if (failed.size > 0 || skipped.size > 0) {
+            errLog += '\n\n❌ 以下の宛先には送信できませんでした:\n';
+            failed.forEach(n => errLog += `・${n} (送信エラー)\n`);
+            skipped.forEach(n => errLog += `・${n} (宛先アドレスなし)\n`);
+          }
+        }
+
         state.logs.unshift({
           id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
           customerName: `【一括配信】${chunk.length}件のバッチ送信`,
           scenario: state.scenario,
           channel: el.channelSelect.value,
-          status: 'success',
+          status: (errLog ? 'error' : 'success'),
           response: result,
-          message: `【件名】${payloads[0]?.subject}\n\n...（他 ${chunk.length}件一括送信）`
+          message: `【件名】${payloads[0]?.subject}\n\n...（他 ${chunk.length}件一括送信）${errLog}`
         });
         persist();
         renderLogs();

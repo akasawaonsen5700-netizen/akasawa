@@ -30,16 +30,20 @@ async function sendEmailBatch(payloads) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.MAIL_FROM;
   
+  const validPayloads = payloads.filter(p => p.email);
+  const skippedNames = payloads.filter(p => !p.email).map(p => p.customerName || '宛名なし');
+
   if (!apiKey || !from) {
     return { 
       type: 'email', 
       status: 'mock', 
-      count: payloads.length,
-      sample: payloads.slice(0, 2)
+      count: validPayloads.length,
+      sample: validPayloads.slice(0, 2),
+      skippedNames
     };
   }
 
-  const batchRequests = payloads.filter(p => p.email).map(p => {
+  const batchRequests = validPayloads.map(p => {
     const req = {
       from,
       to: p.email,
@@ -53,7 +57,7 @@ async function sendEmailBatch(payloads) {
   });
 
   if (batchRequests.length === 0) {
-    return { type: 'email', status: 'skipped', reason: 'no valid emails in payload' };
+    return { type: 'email', status: 'skipped', reason: 'no valid emails in payload', skippedNames };
   }
 
   const res = await fetch('https://api.resend.com/emails/batch', {
@@ -73,26 +77,32 @@ async function sendEmailBatch(payloads) {
     status: 'sent', 
     provider: 'resend-batch', 
     count: batchRequests.length,
-    data 
+    data,
+    skippedNames,
+    failedNames: [] // Resend Batch API doesn't return per-item failures reliably here, so mock it for now
   };
 }
 
 async function sendLineBatch(payloads) {
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  const validPayloads = payloads.filter(p => p.lineUserId);
+  const skippedNames = payloads.filter(p => !p.lineUserId).map(p => p.customerName || '宛名なし');
+
   if (!token) {
     return { 
       type: 'line', 
       status: 'mock', 
-      count: payloads.length 
+      count: validPayloads.length,
+      skippedNames
     };
   }
 
-  const validPayloads = payloads.filter(p => p.lineUserId);
   if (validPayloads.length === 0) {
-    return { type: 'line', status: 'skipped', reason: 'no valid lineUserIds in payload' };
+    return { type: 'line', status: 'skipped', reason: 'no valid lineUserIds in payload', skippedNames };
   }
 
   const results = [];
+  const failedNames = [];
   for (const p of validPayloads) {
     try {
       const res = await fetch('https://api.line.me/v2/bot/message/push', {
@@ -110,11 +120,13 @@ async function sendLineBatch(payloads) {
       if (!res.ok) {
         const err = await res.text();
         results.push({ to: p.lineUserId, success: false, error: err });
+        failedNames.push(p.customerName || '宛名なし');
       } else {
         results.push({ to: p.lineUserId, success: true });
       }
     } catch (e) {
       results.push({ to: p.lineUserId, success: false, error: e.message });
+      failedNames.push(p.customerName || '宛名なし');
     }
   }
 
@@ -123,7 +135,7 @@ async function sendLineBatch(payloads) {
     throw new Error(`LINE batch send completely failed. First error: ${results[0].error}`);
   }
 
-  return { type: 'line', status: 'sent', provider: 'line', count: successCount, total: results.length, details: results };
+  return { type: 'line', status: 'sent', provider: 'line', count: successCount, total: results.length, details: results, skippedNames, failedNames };
 }
 
 function runtimeMode() {
