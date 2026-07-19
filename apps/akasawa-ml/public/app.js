@@ -9,6 +9,8 @@ const state = {
   logs: load(STORAGE_KEYS.logs, [])
 };
 
+let currentMode = 'csv';
+
 const templates = {
   reservation_confirm: {
     emailSubject: '【赤沢温泉旅館】ご予約ありがとうございます',
@@ -47,6 +49,11 @@ TEL: 0287-46-5700　FAX：0287-46-5699
 ------------------------------`;
 
 const el = {
+  tabCsv: document.getElementById('tabCsv'),
+  tabManual: document.getElementById('tabManual'),
+  modeCsv: document.getElementById('modeCsv'),
+  modeManual: document.getElementById('modeManual'),
+  
   customerForm: document.getElementById('customerForm'),
   customerTableBody: document.getElementById('customerTableBody'),
   customerTableContainer: document.getElementById('customerTableContainer'),
@@ -62,6 +69,7 @@ const el = {
   previewBox: document.getElementById('previewBox'),
   channelSelect: document.getElementById('channelSelect'),
   audienceSelect: document.getElementById('audienceSelect'),
+  audienceSelectContainer: document.getElementById('audienceSelectContainer'),
   customSubject: document.getElementById('customSubject'),
   customMessage: document.getElementById('customMessage'),
   seedBtn: document.getElementById('seedBtn'),
@@ -70,6 +78,39 @@ const el = {
   downloadSampleBtn: document.getElementById('downloadSampleBtn'),
   logItemTemplate: document.getElementById('logItemTemplate')
 };
+
+// タブ切り替え処理
+el.tabCsv.addEventListener('click', () => setMode('csv'));
+el.tabManual.addEventListener('click', () => setMode('manual'));
+
+function setMode(mode) {
+  currentMode = mode;
+  if (mode === 'csv') {
+    el.tabCsv.classList.remove('ghost');
+    el.tabCsv.style.border = 'none';
+    el.tabManual.classList.add('ghost');
+    el.tabManual.style.border = '1px solid var(--line)';
+    
+    el.modeCsv.style.display = 'contents';
+    el.modeManual.style.display = 'none';
+    el.audienceSelectContainer.style.display = 'block';
+  } else {
+    el.tabManual.classList.remove('ghost');
+    el.tabManual.style.border = 'none';
+    el.tabCsv.classList.add('ghost');
+    el.tabCsv.style.border = '1px solid var(--line)';
+    
+    el.modeManual.style.display = 'contents';
+    el.modeCsv.style.display = 'none';
+    el.audienceSelectContainer.style.display = 'none';
+  }
+  preview();
+}
+
+// 入力フォームの変更時にプレビューを更新
+el.customerForm.addEventListener('input', () => {
+  if (currentMode === 'manual') preview();
+});
 
 document.querySelectorAll('.scenario').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -84,18 +125,6 @@ document.querySelectorAll('.scenario').forEach(btn => {
 document.querySelectorAll('.scenario').forEach(x => x.classList.remove('active'));
 document.querySelector(`[data-scenario="${state.scenario}"]`).classList.add('active');
 el.customSubject.value = templates[state.scenario].emailSubject;
-
-el.customerForm.addEventListener('submit', e => {
-  e.preventDefault();
-  const fd = new FormData(el.customerForm);
-  const customer = normalizeCustomer(Object.fromEntries(fd.entries()));
-  state.customers.unshift(customer);
-  persist();
-  el.customerForm.reset();
-  el.customerForm.source.value = 'manual';
-  el.customerForm.language.value = 'ja';
-  render();
-});
 
 el.csvFile.addEventListener('change', async e => {
   const file = e.target.files[0];
@@ -155,7 +184,7 @@ function preview() {
   const targets = getTargets();
   if (!targets.length) {
     el.previewBox.classList.remove('hidden');
-    el.previewBox.textContent = '対象顧客がいません。';
+    el.previewBox.textContent = '対象顧客がいません。手入力モードの場合はメールアドレスまたはLINE IDを入力してください。';
     return;
   }
   const message = buildMessage(targets[0]);
@@ -164,16 +193,14 @@ function preview() {
 }
 
 async function dispatchMessages() {
-  const mode = document.querySelector('input[name="dispatchMode"]:checked').value;
-  const targets = mode === 'batch' ? state.customers : getTargets();
-
-  if (!targets.length) return alert('対象顧客がいません');
+  const targets = getTargets();
+  if (!targets.length) return alert('対象顧客がいません。手入力の場合はメールアドレスまたはLINE IDが必須です。');
 
   el.dispatchBtn.disabled = true;
   el.dispatchBtn.textContent = '配信中...';
 
   try {
-    if (mode === 'batch') {
+    if (currentMode === 'csv') {
       const chunkSize = 100;
       for (let i = 0; i < targets.length; i += chunkSize) {
         const chunk = targets.slice(i, i + chunkSize);
@@ -217,42 +244,43 @@ async function dispatchMessages() {
       }
       alert(`${targets.length}件のバッチ配信処理をすべて完了しました`);
     } else {
-      const requests = targets.map(async customer => {
-        const message = buildMessage(customer);
-        const payload = {
-          customer,
-          scenario: state.scenario,
-          channel: el.channelSelect.value,
-          subject: message.subject,
-          message: message.body
-        };
-        const res = await fetch('/api/dispatch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        if (!res.ok || !result.ok) {
-          console.error('API Dispatch Error Details:', result);
-          throw new Error(result.error || JSON.stringify(result));
-        }
-        state.logs.unshift({
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-          customerName: fullName(customer),
-          scenario: state.scenario,
-          channel: el.channelSelect.value,
-          status: result.ok ? 'success' : 'error',
-          response: result,
-          message: message.body
-        });
-        return result;
+      // Manual Mode
+      const customer = targets[0];
+      const message = buildMessage(customer);
+      const payload = {
+        customer,
+        scenario: state.scenario,
+        channel: el.channelSelect.value,
+        subject: message.subject,
+        message: message.body
+      };
+      
+      const res = await fetch('/api/dispatch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
-
-      await Promise.all(requests);
+      const result = await res.json();
+      if (!res.ok || !result.ok) {
+        throw new Error(result.error || JSON.stringify(result));
+      }
+      
+      state.logs.unshift({
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        customerName: fullName(customer),
+        scenario: state.scenario,
+        channel: el.channelSelect.value,
+        status: result.ok ? 'success' : 'error',
+        response: result,
+        message: message.body
+      });
+      
       persist();
       renderLogs();
-      alert(`${targets.length}件の個別配信処理を実行しました`);
+      alert(`個別手入力での配信が完了しました`);
+      el.customerForm.reset();
+      preview(); // reset preview
     }
   } catch (err) {
     alert(`配信エラー: ${err.message}`);
@@ -263,11 +291,18 @@ async function dispatchMessages() {
 }
 
 function getTargets() {
-  const audience = el.audienceSelect.value;
-  if (audience === 'all') return filteredCustomers();
-  const selectedIds = [...document.querySelectorAll('.row-select:checked')].map(x => x.value);
-  if (selectedIds.length) return state.customers.filter(c => selectedIds.includes(c.id));
-  return filteredCustomers();
+  if (currentMode === 'manual') {
+    const fd = new FormData(el.customerForm);
+    const customer = normalizeCustomer(Object.fromEntries(fd.entries()));
+    if (!customer.email && !customer.lineUserId) return [];
+    return [customer];
+  } else {
+    const audience = el.audienceSelect.value;
+    if (audience === 'all') return state.customers;
+    const selectedIds = [...document.querySelectorAll('.row-select:checked')].map(x => x.value);
+    if (selectedIds.length) return state.customers.filter(c => selectedIds.includes(c.id));
+    return filteredCustomers();
+  }
 }
 
 function buildMessage(customer) {
@@ -295,10 +330,9 @@ function renderCustomers() {
   const list = filteredCustomers();
   el.customerSummary.textContent = `${state.customers.length}件 読み込み済み`;
   
-  // if list > 500, maybe warning or just render it. The browser can handle 5000 rows.
   el.customerTableBody.innerHTML = list.map(customer => `
     <tr>
-      <td><input class="row-select" type="checkbox" value="${customer.id}" /></td>
+      <td><input class="row-select" type="checkbox" value="${customer.id}" checked /></td>
       <td>${escapeHtml(fullName(customer))}</td>
       <td>${escapeHtml(customer.source || '-')}</td>
       <td>${escapeHtml(customer.email || customer.lineUserId || customer.phone || '-')}</td>
@@ -350,8 +384,7 @@ function seedCustomers() {
   const addDays = n => new Date(today.getTime() + n * 86400000).toISOString().slice(0, 10);
   const seeds = [
     normalizeCustomer({ source: 'staysee', lastName: '山田', firstName: '花', email: 'hana@example.com', lineUserId: 'U-demo-hana', language: 'ja', tags: '猫好き,女性ひとり旅', checkInDate: addDays(3), checkOutDate: addDays(4), reservationId: 'ST-1001', stayCount: 2 }),
-    normalizeCustomer({ source: 'neppan', lastName: '佐藤', firstName: '健', email: 'ken@example.com', lineUserId: 'U-demo-ken', language: 'ja', tags: '長湯好き,静かな部屋希望', checkInDate: addDays(7), checkOutDate: addDays(8), reservationId: 'NP-2001', stayCount: 1 }),
-    normalizeCustomer({ source: 'manual', lastName: 'Wang', firstName: 'Li', email: 'li@example.com', lineUserId: '', language: 'zh', tags: 'inbound,repeat', checkInDate: addDays(-2), checkOutDate: addDays(-1), reservationId: 'IN-3001', stayCount: 3 })
+    normalizeCustomer({ source: 'neppan', lastName: '佐藤', firstName: '健', email: 'ken@example.com', lineUserId: 'U-demo-ken', language: 'ja', tags: '長湯好き,静かな部屋希望', checkInDate: addDays(7), checkOutDate: addDays(8), reservationId: 'NP-2001', stayCount: 1 })
   ];
   state.customers = [...seeds, ...state.customers];
   persist();
@@ -496,7 +529,6 @@ function mapJapaneseHeaders(row) {
   for (const [engKey, jpKeys] of Object.entries(mapping)) {
     const foundKey = Object.keys(row).find(k => {
       const kl = k.trim().toLowerCase();
-      // 1文字のキー（「姓」「名」「氏」など）は完全一致のみを許可し、誤爆（「氏名」が「氏」と「名」両方に一致してしまう等）を防ぐ
       return jpKeys.some(jpKey => 
         kl === jpKey.toLowerCase() || (jpKey.length > 1 && kl.includes(jpKey.toLowerCase()))
       );
@@ -504,7 +536,6 @@ function mapJapaneseHeaders(row) {
     normalizedRow[engKey] = foundKey ? row[foundKey] : '';
   }
   
-  // 姓名が「名前」「氏名」として1つのカラムに入っている場合のフォールバック分割処理
   if (!normalizedRow.lastName && !normalizedRow.firstName) {
     const nameKeys = ['お名前', '名前', '氏名', '顧客名', 'name'];
     const foundNameKey = Object.keys(row).find(k => {
@@ -535,4 +566,4 @@ function deleteCustomer(id) {
 }
 
 render();
-preview();
+setMode('csv');

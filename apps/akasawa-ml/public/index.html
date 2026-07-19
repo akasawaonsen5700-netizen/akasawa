@@ -19,6 +19,11 @@
     </div>
   </header>
 
+  <div style="display:flex; justify-content:center; gap:16px; margin:24px 20px 0;">
+    <button id="tabCsv" style="width:220px; border-radius:30px; box-shadow: 0 4px 12px rgba(106,210,255,.2);">CSV一括配信モード</button>
+    <button id="tabManual" class="ghost" style="width:220px; border-radius:30px; border:1px solid var(--line);">個別手入力モード</button>
+  </div>
+
   <main class="grid">
     <section class="card span-2">
       <div class="card-head">
@@ -37,50 +42,90 @@
       <p class="muted">本デモは、顧客台帳・テンプレート・配信履歴をブラウザ保存。Netlify Functions に環境変数を入れると実送信、未設定ならモック送信になります。</p>
     </section>
 
-    <section class="card">
-      <div class="card-head"><h2>顧客リスト取込</h2></div>
-      <div class="stack">
-        <label class="filebox">
-          <span>CSVアップロード</span>
-          <input type="file" id="csvFile" accept=".csv" />
-        </label>
-        <p class="mini">推奨列: source,lastName,firstName,email,lineUserId,phone,language,tags,checkInDate,checkOutDate,reservationId,stayCount</p>
-        <button id="downloadSampleBtn" class="ghost">CSV見本を保存</button>
-      </div>
-    </section>
+    <!-- CSVモード用エリア -->
+    <div id="modeCsv" style="display: contents;">
+      <section class="card span-2" style="grid-column: span 2;">
+        <div class="card-head"><h2>顧客リスト取込</h2></div>
+        <div class="stack">
+          <label class="filebox">
+            <span>CSVアップロード</span>
+            <input type="file" id="csvFile" accept=".csv" />
+          </label>
+          <p class="mini">推奨列: source,lastName,firstName,email,lineUserId,phone,language,tags,checkInDate,checkOutDate,reservationId,stayCount</p>
+          <button id="downloadSampleBtn" class="ghost">CSV見本を保存</button>
+        </div>
+      </section>
 
-    <section class="card">
-      <div class="card-head"><h2>顧客手入力</h2></div>
-      <form id="customerForm" class="stack">
-        <div class="cols-2">
-          <input name="source" placeholder="流入元 例: staysee / neppan / manual" value="manual" />
-          <input name="language" placeholder="言語 例: ja" value="ja" />
+      <section class="card span-2" style="grid-column: span 2;">
+        <div class="card-head">
+          <h2>顧客リスト</h2>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span id="customerSummary" class="text-sm" style="font-weight:bold; color:var(--color-primary);">0件 読み込み済み</span>
+            <button id="toggleCustomerListBtn" class="ghost" style="padding: 2px 8px; font-size: 11px;">リストを確認</button>
+          </div>
         </div>
-        <div class="cols-2">
-          <input name="lastName" placeholder="姓" required />
-          <input name="firstName" placeholder="名" required />
-        </div>
-        <div class="cols-2">
-          <input name="email" placeholder="メール" />
-          <input name="lineUserId" placeholder="LINEユーザーID" />
-        </div>
-        <div class="cols-2">
-          <input name="phone" placeholder="電話番号" />
-          <input name="reservationId" placeholder="予約番号" />
-        </div>
-        <div class="cols-2">
-          <input name="checkInDate" type="date" />
-          <input name="checkOutDate" type="date" />
-        </div>
-        <div class="cols-2">
-          <input name="stayCount" type="number" min="0" value="1" placeholder="宿泊回数" />
-          <input name="tags" placeholder="タグ 例: 猫好き,長湯好き" />
-        </div>
-        <button type="submit">顧客を追加</button>
-      </form>
-    </section>
 
-    <section class="card span-2">
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <input type="text" id="searchInput" placeholder="検索: 名前 / メール / タグ">
+          <select id="tagFilter" style="width: auto;">
+            <option value="">全タグ</option>
+          </select>
+        </div>
+
+        <div id="customerTableContainer" class="table-container hidden">
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width: 40px;"><input type="checkbox" id="selectAll" checked></th>
+                <th>氏名</th>
+                <th>流入元</th>
+                <th>連絡先</th>
+                <th>宿泊日</th>
+                <th>タグ</th>
+                <th>回数</th>
+                <th style="width: 60px;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="customerTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div> <!-- /modeCsv -->
+
+    <!-- 個別手入力モード用エリア -->
+    <div id="modeManual" style="display: none;">
+      <section class="card span-2" style="grid-column: span 2;">
+        <div class="card-head"><h2>個別顧客入力</h2><span class="muted text-sm">※フォームに入力した内容宛てに即時送信されます</span></div>
+        <form id="customerForm" class="stack">
+          <div class="cols-2">
+            <input name="source" placeholder="流入元 例: staysee / neppan / manual" value="manual" />
+            <input name="language" placeholder="言語 例: ja" value="ja" />
+          </div>
+          <div class="cols-2">
+            <input name="lastName" placeholder="姓" />
+            <input name="firstName" placeholder="名" />
+          </div>
+          <div class="cols-2">
+            <input id="manualEmail" name="email" placeholder="メールアドレス" />
+            <input id="manualLineId" name="lineUserId" placeholder="LINEユーザーID" />
+          </div>
+          <div class="cols-2">
+            <input name="phone" placeholder="電話番号" />
+            <input name="reservationId" placeholder="予約番号" />
+          </div>
+          <div class="cols-2">
+            <label style="display:flex; flex-direction:column; gap:4px;"><span class="text-xs muted">チェックイン日</span><input name="checkInDate" type="date" /></label>
+            <label style="display:flex; flex-direction:column; gap:4px;"><span class="text-xs muted">チェックアウト日</span><input name="checkOutDate" type="date" /></label>
+          </div>
+          <div class="cols-2">
+            <input name="stayCount" type="number" min="0" value="1" placeholder="宿泊回数" />
+            <input name="tags" placeholder="タグ 例: 猫好き,長湯好き" />
+          </div>
+        </form>
+      </section>
+    </div> <!-- /modeManual -->
+
+    <section class="card span-2" style="grid-column: span 2;">
       <div class="card-head">
         <h2>配信シナリオ</h2>
         <span class="badge success">4本実装</span>
@@ -101,20 +146,11 @@
             <option value="both">両方（可能な場合）</option>
           </select>
         </div>
-        <div>
-          <label>配信モード</label>
-          <div style="display:flex; gap:10px; align-items:center; height:36px; margin-top:4px;">
-            <label style="display:flex; align-items:center; gap:4px; font-weight:normal; margin-bottom:0;"><input type="radio" name="dispatchMode" value="batch" checked> 一括（全件）</label>
-            <label style="display:flex; align-items:center; gap:4px; font-weight:normal; margin-bottom:0;"><input type="radio" name="dispatchMode" value="individual"> 個別（選択のみ）</label>
-          </div>
-        </div>
-      </div>
-      <div class="cols-2 top-gap">
-        <div>
-          <label>対象</label>
+        <div id="audienceSelectContainer">
+          <label>対象 (CSVモード時)</label>
           <select id="audienceSelect">
-            <option value="filtered">絞り込み結果</option>
             <option value="all">全顧客</option>
+            <option value="filtered">絞り込み結果（チェックを入れた人）</option>
           </select>
         </div>
       </div>
@@ -136,59 +172,13 @@
       <div id="previewBox" class="preview hidden"></div>
     </section>
 
-    <section class="card span-2" style="grid-row: span 2;">
-      <div class="card-head">
-        <h2>顧客リスト</h2>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <span id="customerSummary" class="text-sm" style="font-weight:bold; color:var(--color-primary);">0件 読み込み済み</span>
-          <button id="toggleCustomerListBtn" class="ghost" style="padding: 2px 8px; font-size: 11px;">リストを確認</button>
-        </div>
-      </div>
-
-      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-        <input type="text" id="searchInput" placeholder="検索: 名前 / メール / タグ">
-        <select id="tagFilter" style="width: auto;">
-          <option value="">全タグ</option>
-        </select>
-      </div>
-
-      <div id="customerTableContainer" class="table-container hidden">
-        <table class="table">
-          <thead>
-            <tr>
-              <th style="width: 40px;"><input type="checkbox" id="selectAll" checked></th>
-              <th>氏名</th>
-              <th>流入元</th>
-              <th>連絡先</th>
-              <th>宿泊日</th>
-              <th>タグ</th>
-              <th>回数</th>
-              <th style="width: 60px;">操作</th>
-            </tr>
-          </thead>
-          <tbody id="customerTableBody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card span-2">
+    <section class="card span-2" style="grid-column: span 2;">
       <div class="card-head">
         <h2>配信履歴</h2>
       </div>
       <div id="logList" class="stack"></div>
     </section>
   </main>
-
-  <template id="logItemTemplate">
-    <article class="log-item">
-      <div class="log-head">
-        <strong class="log-title"></strong>
-        <span class="log-status"></span>
-      </div>
-      <p class="log-meta"></p>
-      <pre class="log-body"></pre>
-    </article>
-  </template>
 
   <script src="./app.js"></script>
 </body>
