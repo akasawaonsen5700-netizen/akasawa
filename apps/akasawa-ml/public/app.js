@@ -49,6 +49,9 @@ TEL: 0287-46-5700　FAX：0287-46-5699
 const el = {
   customerForm: document.getElementById('customerForm'),
   customerTableBody: document.getElementById('customerTableBody'),
+  customerTableContainer: document.getElementById('customerTableContainer'),
+  customerSummary: document.getElementById('customerSummary'),
+  toggleCustomerListBtn: document.getElementById('toggleCustomerListBtn'),
   logList: document.getElementById('logList'),
   csvFile: document.getElementById('csvFile'),
   searchInput: document.getElementById('searchInput'),
@@ -114,6 +117,12 @@ el.selectAll.addEventListener('change', () => {
   document.querySelectorAll('.row-select').forEach(cb => cb.checked = el.selectAll.checked);
 });
 
+el.toggleCustomerListBtn.addEventListener('click', () => {
+  el.customerTableContainer.classList.toggle('hidden');
+  const isHidden = el.customerTableContainer.classList.contains('hidden');
+  el.toggleCustomerListBtn.textContent = isHidden ? 'リストを確認' : 'リストを隠す';
+});
+
 el.previewBtn.addEventListener('click', preview);
 el.clearPreviewBtn.addEventListener('click', () => {
   el.previewBox.classList.add('hidden');
@@ -155,49 +164,96 @@ function preview() {
 }
 
 async function dispatchMessages() {
-  const targets = getTargets();
+  const mode = document.querySelector('input[name="dispatchMode"]:checked').value;
+  const targets = mode === 'batch' ? state.customers : getTargets();
+
   if (!targets.length) return alert('対象顧客がいません');
 
   el.dispatchBtn.disabled = true;
   el.dispatchBtn.textContent = '配信中...';
 
   try {
-    const requests = targets.map(async customer => {
-      const message = buildMessage(customer);
-      const payload = {
-        customer,
-        scenario: state.scenario,
-        channel: el.channelSelect.value,
-        subject: message.subject,
-        message: message.body
-      };
-      const res = await fetch('/api/dispatch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const result = await res.json();
-      if (!res.ok || !result.ok) {
-        console.error('API Dispatch Error Details:', result);
-        alert(`送信エラーが発生しました。\n詳細: ${result.error || JSON.stringify(result)}`);
-      }
-      state.logs.unshift({
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-        customerName: fullName(customer),
-        scenario: state.scenario,
-        channel: el.channelSelect.value,
-        status: result.ok ? 'success' : 'error',
-        response: result,
-        message: message.body
-      });
-      return result;
-    });
+    if (mode === 'batch') {
+      const chunkSize = 100;
+      for (let i = 0; i < targets.length; i += chunkSize) {
+        const chunk = targets.slice(i, i + chunkSize);
+        el.dispatchBtn.textContent = `一括配信中... (${i + 1}〜${Math.min(i + chunkSize, targets.length)} / ${targets.length})`;
+        
+        const payloads = chunk.map(customer => {
+          const msg = buildMessage(customer);
+          return {
+            email: customer.email,
+            lineUserId: customer.lineUserId,
+            subject: msg.subject,
+            message: msg.body
+          };
+        });
 
-    await Promise.all(requests);
-    persist();
-    renderLogs();
-    alert(`${targets.length}件の配信処理を実行しました`);
+        const res = await fetch('/api/dispatch-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            payloads,
+            scenario: state.scenario,
+            channel: el.channelSelect.value
+          })
+        });
+
+        const result = await res.json();
+        if (!res.ok || !result.ok) throw new Error(result.error || JSON.stringify(result));
+
+        state.logs.unshift({
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          customerName: `【一括配信】${chunk.length}件のバッチ送信`,
+          scenario: state.scenario,
+          channel: el.channelSelect.value,
+          status: 'success',
+          response: result,
+          message: `【件名】${payloads[0]?.subject}\n\n...（他 ${chunk.length}件一括送信）`
+        });
+        persist();
+        renderLogs();
+      }
+      alert(`${targets.length}件のバッチ配信処理をすべて完了しました`);
+    } else {
+      const requests = targets.map(async customer => {
+        const message = buildMessage(customer);
+        const payload = {
+          customer,
+          scenario: state.scenario,
+          channel: el.channelSelect.value,
+          subject: message.subject,
+          message: message.body
+        };
+        const res = await fetch('/api/dispatch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (!res.ok || !result.ok) {
+          console.error('API Dispatch Error Details:', result);
+          throw new Error(result.error || JSON.stringify(result));
+        }
+        state.logs.unshift({
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          customerName: fullName(customer),
+          scenario: state.scenario,
+          channel: el.channelSelect.value,
+          status: result.ok ? 'success' : 'error',
+          response: result,
+          message: message.body
+        });
+        return result;
+      });
+
+      await Promise.all(requests);
+      persist();
+      renderLogs();
+      alert(`${targets.length}件の個別配信処理を実行しました`);
+    }
   } catch (err) {
     alert(`配信エラー: ${err.message}`);
   } finally {
@@ -237,6 +293,9 @@ function render() {
 
 function renderCustomers() {
   const list = filteredCustomers();
+  el.customerSummary.textContent = `${state.customers.length}件 読み込み済み`;
+  
+  // if list > 500, maybe warning or just render it. The browser can handle 5000 rows.
   el.customerTableBody.innerHTML = list.map(customer => `
     <tr>
       <td><input class="row-select" type="checkbox" value="${customer.id}" /></td>
@@ -437,7 +496,10 @@ function mapJapaneseHeaders(row) {
   for (const [engKey, jpKeys] of Object.entries(mapping)) {
     const foundKey = Object.keys(row).find(k => {
       const kl = k.trim().toLowerCase();
-      return jpKeys.some(jpKey => kl === jpKey.toLowerCase() || kl.includes(jpKey.toLowerCase()));
+      // 1文字のキー（「姓」「名」「氏」など）は完全一致のみを許可し、誤爆（「氏名」が「氏」と「名」両方に一致してしまう等）を防ぐ
+      return jpKeys.some(jpKey => 
+        kl === jpKey.toLowerCase() || (jpKey.length > 1 && kl.includes(jpKey.toLowerCase()))
+      );
     });
     normalizedRow[engKey] = foundKey ? row[foundKey] : '';
   }

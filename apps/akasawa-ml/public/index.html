@@ -94,13 +94,22 @@
       </div>
       <div class="cols-2 top-gap">
         <div>
-          <label>配信チャネル</label>
+          <label>配信先</label>
           <select id="channelSelect">
-            <option value="email">メール</option>
-            <option value="line">LINE</option>
-            <option value="both">両方</option>
+            <option value="email">メールのみ</option>
+            <option value="line">LINEのみ</option>
+            <option value="both">両方（可能な場合）</option>
           </select>
         </div>
+        <div>
+          <label>配信モード</label>
+          <div style="display:flex; gap:10px; align-items:center; height:36px; margin-top:4px;">
+            <label style="display:flex; align-items:center; gap:4px; font-weight:normal; margin-bottom:0;"><input type="radio" name="dispatchMode" value="batch" checked> 一括（全件）</label>
+            <label style="display:flex; align-items:center; gap:4px; font-weight:normal; margin-bottom:0;"><input type="radio" name="dispatchMode" value="individual"> 個別（選択のみ）</label>
+          </div>
+        </div>
+      </div>
+      <div class="cols-2 top-gap">
         <div>
           <label>対象</label>
           <select id="audienceSelect">
@@ -127,28 +136,34 @@
       <div id="previewBox" class="preview hidden"></div>
     </section>
 
-    <section class="card span-2">
+    <section class="card span-2" style="grid-row: span 2;">
       <div class="card-head">
-        <h2>顧客一覧</h2>
-        <div class="filters">
-          <input id="searchInput" placeholder="検索: 名前 / メール / タグ" />
-          <select id="tagFilter">
-            <option value="">全タグ</option>
-          </select>
+        <h2>顧客リスト</h2>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <span id="customerSummary" class="text-sm" style="font-weight:bold; color:var(--color-primary);">0件 読み込み済み</span>
+          <button id="toggleCustomerListBtn" class="ghost" style="padding: 2px 8px; font-size: 11px;">リストを確認</button>
         </div>
       </div>
-      <div class="table-wrap">
-        <table>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <input type="text" id="searchInput" placeholder="検索: 名前 / メール / タグ">
+        <select id="tagFilter" style="width: auto;">
+          <option value="">全タグ</option>
+        </select>
+      </div>
+
+      <div id="customerTableContainer" class="table-container hidden">
+        <table class="table">
           <thead>
             <tr>
-              <th><input id="selectAll" type="checkbox" /></th>
+              <th style="width: 40px;"><input type="checkbox" id="selectAll" checked></th>
               <th>氏名</th>
               <th>流入元</th>
               <th>連絡先</th>
               <th>宿泊日</th>
               <th>タグ</th>
               <th>回数</th>
-              <th>操作</th>
+              <th style="width: 60px;">操作</th>
             </tr>
           </thead>
           <tbody id="customerTableBody"></tbody>
