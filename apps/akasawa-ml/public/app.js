@@ -12,27 +12,20 @@ const state = {
 let currentMode = 'csv';
 
 const templates = {
-  reservation_confirm: {
-    emailSubject: '【赤沢温泉旅館】ご予約ありがとうございます',
-    message: ({ greeting, reservationId, checkInDate }) =>
-      `${greeting}\n\nご不明な点がございましたら、下記のお問い合わせフォームよりご連絡ください。\nhttps://akasawaonsen.com/inquire/`
-  },
-  pre_stay_3days: {
-    emailSubject: '【赤沢温泉旅館】ご宿泊3日前のご案内',
-    message: ({ greeting, checkInDate }) =>
-      `${greeting}\n\n${fmtDate(checkInDate)} ご宿泊前のご案内です。\n\n・アクセス方法の最終確認\n・送迎ご希望の方は締切前にご連絡ください\n・猫 / 自然環境 / ぬる湯の特徴を事前にご確認ください\n\n当日はお気をつけてお越しください。\nご質問等ございましたら、下記よりお問い合わせください。\nhttps://akasawaonsen.com/inquire/`
-  },
-  post_stay_thanks: {
-    emailSubject: '【赤沢温泉旅館】ご宿泊ありがとうございました',
+  seasonal: {
+    emailSubject: '【赤沢温泉旅館】季節のお便り',
     message: ({ greeting }) =>
-      `${greeting}\n\nこのたびはご宿泊ありがとうございました。\nご感想をお聞かせいただけると励みになります。\n\nまた、猫とぬる湯と静けさの時間を味わいにいらしてください。\nその他、ご不明点などがございましたら下記よりお問い合わせください。\nhttps://akasawaonsen.com/inquire/`
+      `${greeting}\n\n平素より赤沢温泉旅館をご愛顧いただき、誠にありがとうございます。\n\n季節の変わり目となりましたが、いかがお過ごしでしょうか。\n当館の看板猫たちも、ぽかぽかとした日差しの中、のんびりと日向ぼっこを楽しんでおります。\n\n豊かな自然と、じんわり温まる「ぬる湯」をご用意してお待ちしております。\nぜひまた、日常の喧騒を離れて静かな時間をお過ごしにいらしてください。\n\nご予約・お問い合わせは下記より承ります。\nhttps://akasawaonsen.com/`
   },
-  repeat_offer: {
-    emailSubject: '【赤沢温泉旅館】再訪ご優待のご案内',
-    message: ({ greeting, tags }) => {
-      const tagText = tags.includes('猫好き') ? '看板猫の近況もぜひお楽しみください。' : tags.includes('長湯好き') ? 'ぬる湯でゆっくり過ごす静養滞在におすすめです。' : '季節の静養滞在をご案内します。';
-      return `${greeting}\n\n再訪者さま向けのご案内です。\n${tagText}\n\nLINE登録者限定のご優待や、静かな季節のおすすめ日程もご案内できます。\nお問い合わせやご相談は下記フォームより承ります。\nhttps://akasawaonsen.com/inquire/`;
-    }
+  special_plan: {
+    emailSubject: '【赤沢温泉旅館】LINE・メルマガ会員様限定 特別プランのご案内',
+    message: ({ greeting }) =>
+      `${greeting}\n\nいつも赤沢温泉旅館をご利用いただきありがとうございます。\n\n本日は、過去にご宿泊いただいたお客様限定の「特別プラン」のご案内です。\n\n【会員様限定特典】\n・アーリーチェックイン（14:00〜）無料\n・夕食時のドリンク1杯サービス\n\nご希望の日程が埋まってしまう前に、ぜひ下記より詳細をご確認くださいませ。\nご来館を心よりお待ち申し上げております。\n\nhttps://akasawaonsen.com/`
+  },
+  re_engagement: {
+    emailSubject: '【赤沢温泉旅館】ご無沙汰しております。いかがお過ごしでしょうか',
+    message: ({ greeting }) =>
+      `${greeting}\n\n赤沢温泉旅館でございます。\n前回のご宿泊からしばらく経ちましたが、その後いかがお過ごしでしょうか。\n\n当館の「ぬる湯」は、長湯することで心身の疲れをじんわりと癒やす効果がございます。\n日々のお疲れが溜まっているようでしたら、ぜひまた当館の温泉と猫たちに癒やされにお越しください。\n\nまたお目にかかれる日を、スタッフ・猫一同、楽しみにお待ち申し上げております。\n\nhttps://akasawaonsen.com/`
   },
   custom: {
     emailSubject: '',
@@ -514,7 +507,7 @@ function load(key, fallback) {
 function fullName(customer) { return `${customer.lastName || ''} ${customer.firstName || ''}`.trim() || '赤沢温泉旅館ご利用者様'; }
 function fmtDate(value) { return value ? new Date(value).toLocaleDateString('ja-JP') : '-'; }
 function labelScenario(key) {
-  return ({ reservation_confirm: '予約直後', pre_stay_3days: '宿泊3日前', post_stay_thanks: '宿泊翌日', repeat_offer: '再訪促進', custom: '自由入力' })[key] || key;
+  return ({ seasonal: '季節のお便り', special_plan: '特別プラン', re_engagement: 'ご無沙汰', custom: '自由入力' })[key] || key;
 }
 function escapeHtml(str) {
   return String(str).replace(/[&<>\"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
