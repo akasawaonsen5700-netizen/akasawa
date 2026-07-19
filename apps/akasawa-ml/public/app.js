@@ -4,7 +4,7 @@ const STORAGE_KEYS = {
 };
 
 const state = {
-  scenario: 'reservation_confirm',
+  scenario: 'custom',
   customers: load(STORAGE_KEYS.customers, []),
   logs: load(STORAGE_KEYS.logs, [])
 };
@@ -44,12 +44,10 @@ const SIGNATURE = `
 〒329-2921 栃木県那須塩原市塩原1149
 TEL: 0287-46-5700　FAX：0287-46-5699
 公式サイト：https://akasawaonsen.com/
-お問い合わせ：https://akasawaonsen.com/inquire/
 ------------------------------`;
 
 const el = {
   customerForm: document.getElementById('customerForm'),
-  clearLogsBtn: document.getElementById('clearLogsBtn'),
   customerTableBody: document.getElementById('customerTableBody'),
   logList: document.getElementById('logList'),
   csvFile: document.getElementById('csvFile'),
@@ -80,7 +78,8 @@ document.querySelectorAll('.scenario').forEach(btn => {
   });
 });
 
-document.querySelector('.scenario').classList.add('active');
+document.querySelectorAll('.scenario').forEach(x => x.classList.remove('active'));
+document.querySelector(`[data-scenario="${state.scenario}"]`).classList.add('active');
 el.customSubject.value = templates[state.scenario].emailSubject;
 
 el.customerForm.addEventListener('submit', e => {
@@ -125,18 +124,21 @@ el.customMessage.addEventListener('input', preview);
 el.dispatchBtn.addEventListener('click', dispatchMessages);
 el.seedBtn.addEventListener('click', seedCustomers);
 el.clearBtn.addEventListener('click', clearAll);
-el.clearLogsBtn.addEventListener('click', () => {
-  if (!confirm('配信履歴のみをすべて削除しますか？')) return;
-  state.logs = [];
-  persist();
-  renderLogs();
-});
 el.downloadSampleBtn.addEventListener('click', downloadSampleCsv);
 
 el.customerTableBody.addEventListener('click', e => {
   if (e.target.classList.contains('delete-customer-btn')) {
     const id = e.target.dataset.id;
     deleteCustomer(id);
+  }
+});
+
+el.logList.addEventListener('click', e => {
+  if (e.target.classList.contains('delete-log-btn')) {
+    const i = parseInt(e.target.dataset.index, 10);
+    state.logs.splice(i, 1);
+    persist();
+    renderLogs();
   }
 });
 
@@ -250,15 +252,20 @@ function renderCustomers() {
 }
 
 function renderLogs() {
-  el.logList.innerHTML = '';
-  state.logs.slice(0, 30).forEach(log => {
-    const node = el.logItemTemplate.content.cloneNode(true);
-    node.querySelector('.log-title').textContent = `${log.customerName} / ${labelScenario(log.scenario)} / ${log.channel}`;
-    node.querySelector('.log-status').textContent = log.status;
-    node.querySelector('.log-meta').textContent = new Date(log.createdAt).toLocaleString('ja-JP');
-    node.querySelector('.log-body').textContent = log.message;
-    el.logList.appendChild(node);
-  });
+  if (state.logs.length === 0) { el.logList.innerHTML = '<p class="text-secondary text-sm">履歴はありません。</p>'; return; }
+  el.logList.innerHTML = state.logs.map((log, i) => `
+    <div class="card bg-gray-50 text-sm" style="margin-bottom: 8px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+        <strong>${escapeHtml(log.customerName)} / ${labelScenario(log.scenario)} / ${log.channel}</strong>
+        <div>
+          <span class="text-xs" style="color: ${log.status === 'success' ? '#2e7d32' : '#d32f2f'}; margin-right: 8px;">${log.status}</span>
+          <button class="danger delete-log-btn" data-index="${i}" style="padding: 2px 6px; font-size: 10px; min-height: 0;">削除</button>
+        </div>
+      </div>
+      <div class="text-xs text-secondary">${new Date(log.createdAt).toLocaleString('ja-JP')}</div>
+      <div style="white-space: pre-wrap; font-size: 12px; margin-top: 4px; border-top: 1px solid #ddd; padding-top: 4px;">${escapeHtml(log.message)}</div>
+    </div>
+  `).join('');
 }
 
 function renderTagFilter() {
