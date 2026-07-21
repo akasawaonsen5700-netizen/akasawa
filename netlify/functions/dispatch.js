@@ -25,8 +25,8 @@ async function sendEmail(customer, subject, message) {
   if (!customer.email) return { type: 'email', status: 'skipped', reason: 'email missing' };
 
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.MAIL_FROM;
-  if (!apiKey || !from) {
+  const from = process.env.MAIL_FROM || '赤沢温泉旅館 <info@akasawaonsen.com>';
+  if (!apiKey) {
     return { type: 'email', status: 'mock', to: customer.email, subject };
   }
 

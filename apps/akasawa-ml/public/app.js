@@ -281,7 +281,13 @@ function preview() {
   }
   const message = buildMessage(targets[0]);
   el.previewBox.classList.remove('hidden');
-  el.previewBox.textContent = `件名: ${message.subject}\n\n${message.body}`;
+  
+  let spamWarning = '';
+  if (/[！!]{3,}|[★☆]{3,}|激安|100%無料/i.test(message.subject + ' ' + message.body)) {
+    spamWarning = '\n\n------------------------------\n💡 【メイントレイ到達のコツ】\n件名や本文に過度な記号（！！！、★★★）や強いセールスワードが含まれているため、Gmailの「プロモーション」タブに入りやすくなる可能性があります。';
+  }
+
+  el.previewBox.textContent = `差出人: 赤沢温泉旅館 <info@akasawaonsen.com>\n件名: ${message.subject}\n\n${message.body}${spamWarning}`;
 }
 
 async function dispatchMessages() {
