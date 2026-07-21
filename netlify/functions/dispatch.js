@@ -30,18 +30,24 @@ async function sendEmail(customer, subject, message) {
     return { type: 'email', status: 'mock', to: customer.email, subject };
   }
 
+  const payload = {
+    from,
+    to: customer.email,
+    subject,
+    text: message
+  };
+
+  if (process.env.REPLY_TO) {
+    payload.reply_to = process.env.REPLY_TO;
+  }
+
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      from,
-      to: customer.email,
-      subject,
-      text: message
-    })
+    body: JSON.stringify(payload)
   });
 
   const data = await res.json();

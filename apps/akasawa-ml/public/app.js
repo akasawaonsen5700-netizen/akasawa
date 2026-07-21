@@ -13,10 +13,20 @@ const PLANS = {
   normal: { id: 'normal', name: '【1泊2食付】通常プラン', price: 18000, url: 'https://x.gd/tnpmh', code: 'PL00041431' },
   lastminute: { id: 'lastminute', name: '【1泊2食付】直前割プラン', price: 15000, url: 'https://x.gd/WmKVp', code: 'PL00041437' },
   bbq: { id: 'bbq', name: '特製ジンギスカンコース', price: 16500, url: 'https://x.gd/IupHf', code: 'PL00041433' },
-  hp: { id: 'hp', name: '公式HP基本プラン', price: 14000, url: 'https://akasawaonsen.com', code: 'HP_DIRECT' }
+  hp: { id: 'hp', name: '公式HP基本プラン', price: 14000, url: 'https://akasawaonsen.com/', code: 'PL00041430' }
 };
 
-let currentMode = 'csv';
+function cleanTextLineBreaks(str) {
+  if (!str) return '';
+  return str
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .map(line => line.trimEnd())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 const templates = {
   summer_recommend: {
@@ -26,15 +36,9 @@ const templates = {
 
 毎日、本当に暑い日が続いていますね。こんな暑さが続くと、「どこかでゆっくりしたいな」と思うことはありませんか？
 
- 
-
 赤沢温泉の湯は、源泉100％かけ流しの「ぬる湯」、川のせせらぎを聞きながら、時間を忘れてゆっくり温泉を楽しめます、のんびり長湯をしながら、リセットしませんか？
 
- 
-
 お盆前でしたら、まだご案内できるお日にちがございます。　混み合う時期の前に、少しだけ日常を離れて、のんびりしに来ませんか?
-
- 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 ■ おすすめのプラン
@@ -54,14 +58,10 @@ const templates = {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 上記のリンクのように公式ホームページからご予約いただき、チェックインの際に声をかけてくださった方、【那須塩原産ジュースあるいは同等品】をお一人様につき1本プレゼントいたします！　akasawaonsen.com
 
- 
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 ■ ネコカフェも週末中心にオープン中
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 赤沢温泉旅館から歩いて10分、あかさわネコカフェ＆ダイニングの保護ネコ5匹と子猫5匹が皆様をお待ちしております。現在金曜～日曜のお昼前後に定期営業中、其の他の時間はご予約制です。可愛いよ！https://maps.app.goo.gl/ZPh5vgDMHsLEXhBC7
-
- 
 
 皆様にお会いできる日を、スタッフ一同心より楽しみにしております。`
   },
@@ -73,7 +73,7 @@ const templates = {
   special_plan: {
     emailSubject: '【赤沢温泉旅館】LINE・メルマガ会員様限定 特別プランのご案内',
     message: ({ greeting }) =>
-      `${greeting}\n\nいつも赤沢温泉旅館をご利用いただきありがとうございます。\n\n本日は、過去にご宿泊いただいたお客様限定の「特別プラン」のご案内です。\n\n【会員様限定特典】\n・アーリーチェックイン（14:00〜）無料\n・夕食時のドリンク1杯サービス\n\nご希望の日程が埋まってしまう前に、ぜひ下記より詳細をご確認くださいませ。\nご来館を心よりお待ち申し上げております。\n\nhttps://akasawaonsen.com/`
+      `${greeting}\n\nいつも赤沢温泉旅館をごご利用いただきありがとうございます。\n\n本日は、過去にご宿泊いただいたお客様限定の「特別プラン」のご案内です。\n\n【会員様限定特典】\n・アーリーチェックイン（14:00〜）無料\n・夕食時のドリンク1杯サービス\n\nご希望の日程が埋まってしまう前に、ぜひ下記より詳細をご確認くださいませ。\nご来館を心よりお待ち申し上げております。\n\nhttps://akasawaonsen.com/`
   },
   re_engagement: {
     emailSubject: '【赤沢温泉旅館】ご無沙汰しております。いかがお過ごしでしょうか',
@@ -125,6 +125,7 @@ const el = {
   channelSelect: document.getElementById('channelSelect'),
   customSubject: document.getElementById('customSubject'),
   customMessage: document.getElementById('customMessage'),
+  formatCustomMsgBtn: document.getElementById('formatCustomMsgBtn'),
   seedBtn: document.getElementById('seedBtn'),
   clearBtn: document.getElementById('clearBtn'),
   clearPreviewBtn: document.getElementById('clearPreviewBtn'),
@@ -217,6 +218,28 @@ el.clearPreviewBtn.addEventListener('click', () => {
 });
 el.customSubject.addEventListener('input', preview);
 el.customMessage.addEventListener('input', preview);
+
+if (el.customMessage) {
+  el.customMessage.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+    const cleanedText = cleanTextLineBreaks(pastedText);
+    const start = el.customMessage.selectionStart;
+    const end = el.customMessage.selectionEnd;
+    const val = el.customMessage.value;
+    el.customMessage.value = val.substring(0, start) + cleanedText + val.substring(end);
+    el.customMessage.selectionStart = el.customMessage.selectionEnd = start + cleanedText.length;
+    preview();
+  });
+}
+
+if (el.formatCustomMsgBtn) {
+  el.formatCustomMsgBtn.addEventListener('click', () => {
+    el.customMessage.value = cleanTextLineBreaks(el.customMessage.value);
+    preview();
+  });
+}
+
 el.dispatchBtn.addEventListener('click', dispatchMessages);
 el.seedBtn.addEventListener('click', seedCustomers);
 el.clearBtn.addEventListener('click', clearAll);
@@ -407,7 +430,7 @@ function buildMessage(customer) {
     return url.includes('?') ? `${url}&ref=ml_demo` : `${url}${trackingParam}`;
   });
 
-  const customMsg = el.customMessage.value;
+  const customMsg = cleanTextLineBreaks(el.customMessage.value);
   const body = [tplMsg, customMsg].filter(Boolean).join('\n\n') + '\n' + SIGNATURE;
   const subject = el.customSubject.value.trim() || tpl.emailSubject;
   return { subject, body };
