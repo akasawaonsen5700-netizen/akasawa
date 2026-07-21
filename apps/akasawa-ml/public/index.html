@@ -126,9 +126,13 @@
           </div>
           <div style="grid-column: span 2; margin-top: 8px;">
             <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-              <input type="checkbox" name="unsubscribed" value="true" />
+              <input type="checkbox" id="manualUnsubscribed" name="unsubscribed" value="true" />
               <span class="text-sm" style="color: #d32f2f; font-weight: bold;">メール送信はもういらない（配信停止・送信除外）</span>
             </label>
+            <div id="manualUnsubAlert" class="text-xs" style="margin-top: 4px; color: #ff7d7d; display: none; align-items: center; gap: 8px;">
+              <span>※このアドレスはすでに配信停止リストに入っています。</span>
+              <button type="button" id="manualResubscribeBtn" class="ghost" style="width: auto; padding: 2px 8px; font-size: 11px; border: 1px solid var(--line); border-radius: 4px; display: inline-block; cursor: pointer; color: var(--text); background: transparent;">配信を復活させる</button>
+            </div>
           </div>
         </form>
       </section>

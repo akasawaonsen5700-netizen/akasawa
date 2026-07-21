@@ -60,6 +60,11 @@ const el = {
   searchInput: document.getElementById('searchInput'),
   tagFilter: document.getElementById('tagFilter'),
   csvFilter: document.getElementById('csvFilter'),
+  manualEmail: document.getElementById('manualEmail'),
+  manualLineId: document.getElementById('manualLineId'),
+  manualUnsubscribed: document.getElementById('manualUnsubscribed'),
+  manualUnsubAlert: document.getElementById('manualUnsubAlert'),
+  manualResubscribeBtn: document.getElementById('manualResubscribeBtn'),
   selectAll: document.getElementById('selectAll'),
   previewBtn: document.getElementById('previewBtn'),
   dispatchBtn: document.getElementById('dispatchBtn'),
@@ -102,7 +107,10 @@ function setMode(mode) {
 
 // 入力フォームの変更時にプレビューを更新
 el.customerForm.addEventListener('input', () => {
-  if (currentMode === 'manual') preview();
+  if (currentMode === 'manual') {
+    checkManualEmailStatus();
+    preview();
+  }
 });
 
 document.querySelectorAll('.scenario').forEach(btn => {
@@ -160,6 +168,7 @@ el.dispatchBtn.addEventListener('click', dispatchMessages);
 el.seedBtn.addEventListener('click', seedCustomers);
 el.clearBtn.addEventListener('click', clearAll);
 el.downloadSampleBtn.addEventListener('click', downloadSampleCsv);
+el.manualResubscribeBtn.addEventListener('click', handleManualResubscribe);
 
 el.customerTableBody.addEventListener('click', e => {
   if (e.target.classList.contains('delete-customer-btn')) {
@@ -352,8 +361,10 @@ function renderCustomers() {
   
   el.customerTableBody.innerHTML = list.map(customer => {
     const isUnsubscribed = !!customer.unsubscribed;
+    
+    // 左端のチェックボックス列: 配信停止の場合は「復活する」ボタンにする
     const checkboxHtml = isUnsubscribed 
-      ? `<span class="badge danger" style="background-color:#d32f2f; color:white; font-size:10px; padding: 2px 6px; border-radius: 4px; display: inline-block;">配信停止</span>`
+      ? `<button class="danger toggle-subscribe-btn" data-id="${customer.id}" style="background-color:#d32f2f; color:white; font-size:10px; padding: 4px 8px; border:none; border-radius: 4px; display: inline-block; cursor:pointer; width:auto; font-weight:bold; min-height:0; white-space:nowrap;">配信停止(復活する)</button>`
       : `<input class="row-select" type="checkbox" value="${customer.id}" checked />`;
     
     const sendBtnHtml = isUnsubscribed
@@ -361,11 +372,11 @@ function renderCustomers() {
       : `<button class="primary dispatch-single-btn" data-id="${customer.id}" style="padding: 2px 8px; font-size: 11px; margin: 0; min-height: 0; white-space: nowrap; background: linear-gradient(90deg, #33a0ff 0%, #6ad2ff 100%); color: #04111d;">送信</button>`;
 
     return `
-      <tr style="${isUnsubscribed ? 'opacity: 0.6; background-color: #fafafa;' : ''}">
-        <td>${checkboxHtml}</td>
+      <tr style="${isUnsubscribed ? 'opacity: 0.7; background-color: #fafafa;' : ''}">
+        <td style="vertical-align: middle; text-align: center;">${checkboxHtml}</td>
         <td>${escapeHtml(fullName(customer))}</td>
         <td>${escapeHtml(customer.source || '-')}</td>
-        <td style="${isUnsubscribed ? 'text-decoration: line-through; color: #999;' : ''}">${escapeHtml(customer.email || customer.lineUserId || customer.phone || '-')}</td>
+        <td style="${isUnsubscribed ? 'color: #aebad8;' : ''}">${escapeHtml(customer.email || customer.lineUserId || customer.phone || '-')}</td>
         <td>${escapeHtml(fmtDate(customer.checkInDate))} ~ ${escapeHtml(fmtDate(customer.checkOutDate))}</td>
         <td>${customer.tags.map(tag => `<span class="badge">${escapeHtml(tag)}</span>`).join(' ')}</td>
         <td>${Number(customer.stayCount || 0)}</td>
@@ -707,6 +718,52 @@ async function dispatchSingleMessage(id) {
     btn.disabled = false;
     btn.textContent = originalText;
   }
+}
+
+function checkManualEmailStatus() {
+  const email = el.manualEmail.value.trim();
+  const lineUserId = el.manualLineId.value.trim();
+  
+  if (!email && !lineUserId) {
+    el.manualUnsubAlert.style.display = 'none';
+    return;
+  }
+  
+  const isAlreadyUnsubscribed = state.customers.some(c => 
+    c.unsubscribed && 
+    ((email && c.email === email) || (lineUserId && c.lineUserId === lineUserId))
+  );
+  
+  if (isAlreadyUnsubscribed) {
+    el.manualUnsubscribed.checked = true;
+    el.manualUnsubAlert.style.display = 'flex';
+  } else {
+    el.manualUnsubAlert.style.display = 'none';
+  }
+}
+
+function handleManualResubscribe() {
+  const email = el.manualEmail.value.trim();
+  const lineUserId = el.manualLineId.value.trim();
+  
+  if (!email && !lineUserId) return;
+  
+  // 同一の連絡先を持つ全ての既存顧客を復活させる
+  state.customers.forEach(c => {
+    const matchesEmail = email && c.email === email;
+    const matchesLine = lineUserId && c.lineUserId === lineUserId;
+    if (matchesEmail || matchesLine) {
+      c.unsubscribed = false;
+    }
+  });
+  
+  persist();
+  render();
+  
+  el.manualUnsubscribed.checked = false;
+  el.manualUnsubAlert.style.display = 'none';
+  preview();
+  alert('この連絡先の配信停止状態を解除し、配信を復活させました。');
 }
 
 render();
