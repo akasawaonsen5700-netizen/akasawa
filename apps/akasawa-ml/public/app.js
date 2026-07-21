@@ -4,7 +4,7 @@ const STORAGE_KEYS = {
 };
 
 const state = {
-  scenario: 'summer_recommend',
+  scenario: 'custom',
   customers: load(STORAGE_KEYS.customers, []),
   logs: load(STORAGE_KEYS.logs, [])
 };
