@@ -42,6 +42,35 @@
       <p class="muted">本デモは、顧客台帳・テンプレート・配信履歴をブラウザ保存。Netlify Functions に環境変数を入れると実送信、未設定ならモック送信になります。</p>
     </section>
 
+    <!-- メール成果（コンバージョン）ダッシュボード -->
+    <section class="card span-2" style="background: linear-gradient(135deg, rgba(20, 40, 75, 0.95), rgba(15, 25, 50, 0.98)); border: 1px solid rgba(106, 212, 255, 0.3);">
+      <div class="card-head">
+        <h2>🎉 メール・LINE経由 予約成果レポート（プラン別自動認識）</h2>
+        <span class="badge success">リアルタイム集計</span>
+      </div>
+      <div class="cols-4" style="margin-top: 12px; text-align: center;">
+        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+          <div class="text-xs muted" style="margin-bottom: 4px;">メール経由予約数</div>
+          <div id="statTotalBookings" style="font-size: 24px; font-weight: bold; color: var(--accent-2);">0 件</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+          <div class="text-xs muted" style="margin-bottom: 4px;">予約転換率 (CVR)</div>
+          <div id="statCvr" style="font-size: 24px; font-weight: bold; color: var(--accent);">0.0%</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+          <div class="text-xs muted" style="margin-bottom: 4px;">メール経由 獲得売上</div>
+          <div id="statTotalRevenue" style="font-size: 24px; font-weight: bold; color: #ffd700;">¥0</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+          <div class="text-xs muted" style="margin-bottom: 4px;">一番人気のプラン</div>
+          <div id="statTopPlan" style="font-size: 14px; font-weight: bold; color: #fff; margin-top: 6px;">-</div>
+        </div>
+      </div>
+      <div id="planBreakdownContainer" style="margin-top: 14px; font-size: 13px; color: var(--muted); border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+        <!-- 動的にプラン内訳を表示 -->
+      </div>
+    </section>
+
     <!-- CSVモード用エリア -->
     <div id="modeCsv" style="display: contents;">
       <section class="card span-2" style="grid-column: span 2;">
@@ -144,10 +173,11 @@
         <span class="badge success">4本実装</span>
       </div>
       <div class="scenario-buttons" id="scenarioButtons">
+        <button class="scenario-btn active" data-scenario="summer_recommend">お盆前おすすめプラン(実文面)</button>
         <button class="scenario-btn" data-scenario="seasonal">季節のお便り</button>
         <button class="scenario-btn" data-scenario="special_plan">特別プランのご案内</button>
         <button class="scenario-btn" data-scenario="re_engagement">ご無沙汰しております</button>
-        <button class="scenario-btn active" data-scenario="custom">自由入力</button>
+        <button class="scenario-btn" data-scenario="custom">自由入力</button>
       </div>
       <div class="cols-2 top-gap">
         <div>

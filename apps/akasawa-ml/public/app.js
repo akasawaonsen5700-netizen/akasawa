@@ -4,14 +4,67 @@ const STORAGE_KEYS = {
 };
 
 const state = {
-  scenario: 'custom',
+  scenario: 'summer_recommend',
   customers: load(STORAGE_KEYS.customers, []),
   logs: load(STORAGE_KEYS.logs, [])
+};
+
+const PLANS = {
+  normal: { id: 'normal', name: '【1泊2食付】通常プラン', price: 18000, url: 'https://x.gd/tnpmh', code: 'PL00041431' },
+  lastminute: { id: 'lastminute', name: '【1泊2食付】直前割プラン', price: 15000, url: 'https://x.gd/WmKVp', code: 'PL00041437' },
+  bbq: { id: 'bbq', name: '特製ジンギスカンコース', price: 16500, url: 'https://x.gd/IupHf', code: 'PL00041433' },
+  hp: { id: 'hp', name: '公式HP基本プラン', price: 14000, url: 'https://akasawaonsen.com', code: 'HP_DIRECT' }
 };
 
 let currentMode = 'csv';
 
 const templates = {
+  summer_recommend: {
+    emailSubject: '【赤沢温泉旅館】お盆前のおすすめプランと涼やかな温泉のご案内',
+    message: ({ greeting }) =>
+`${greeting}
+
+毎日、本当に暑い日が続いていますね。こんな暑さが続くと、「どこかでゆっくりしたいな」と思うことはありませんか？
+
+ 
+
+赤沢温泉の湯は、源泉100％かけ流しの「ぬる湯」、川のせせらぎを聞きながら、時間を忘れてゆっくり温泉を楽しめます、のんびり長湯をしながら、リセットしませんか？
+
+ 
+
+お盆前でしたら、まだご案内できるお日にちがございます。　混み合う時期の前に、少しだけ日常を離れて、のんびりしに来ませんか?
+
+ 
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ おすすめのプラン
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+【1泊2食付】旅を楽しむ温泉宿♪
+四季を彩る創作料理と疲れを癒す赤沢源泉
+
+今の季節は、国産牛を使ったジューシーなローストビーフ、自家製赤ワインソース付をご提供、当館一番人気のプランです。（公式　通常）https://x.gd/tnpmh　（公式　直前割）　https://x.gd/WmKVp
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 夏は外でBBQという方に、ジンギスカンコース
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+鹿、豚、鶏肉をアレンジした特製ジンギスカンをアウトドアテラスで楽しむ、自然たっぷり当館ならではの、ちょっとワイルドなジンギスカンです。ご希望に応じ、特定の肉を他の肉で代替することも承ります。（公式）　https://x.gd/IupHf
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ HP予約がお得、ささやかなプレゼント🎁
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+上記のリンクのように公式ホームページからご予約いただき、チェックインの際に声をかけてくださった方、【那須塩原産ジュースあるいは同等品】をお一人様につき1本プレゼントいたします！　akasawaonsen.com
+
+ 
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ ネコカフェも週末中心にオープン中
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+赤沢温泉旅館から歩いて10分、あかさわネコカフェ＆ダイニングの保護ネコ5匹と子猫5匹が皆様をお待ちしております。現在金曜～日曜のお昼前後に定期営業中、其の他の時間はご予約制です。可愛いよ！https://maps.app.goo.gl/ZPh5vgDMHsLEXhBC7
+
+ 
+
+皆様にお会いできる日を、スタッフ一同心より楽しみにしております。`
+  },
   seasonal: {
     emailSubject: '【赤沢温泉旅館】季節のお便り',
     message: ({ greeting }) =>
@@ -25,7 +78,7 @@ const templates = {
   re_engagement: {
     emailSubject: '【赤沢温泉旅館】ご無沙汰しております。いかがお過ごしでしょうか',
     message: ({ greeting }) =>
-      `${greeting}\n\n赤沢温泉旅館でございます。\n前回のご宿泊からしばらく経ちましたが、その後いかがお過ごしでしょうか。\n\n当館の「ぬる湯」は、長湯することで心身の疲れをじんわりと癒やす効果がございます。\n日々のお疲れが溜まっているようでしたら、ぜひまた当館の温泉と猫たちに癒やされにお越しください。\n\nまたお目にかかれる日を、スタッフ・猫一同、楽しみにお待ち申し上げております。\n\nhttps://akasawaonsen.com/`
+      `${greeting}\n\n赤沢温泉旅館でございます。\n前回のご宿泊からしばらく経ちましたが、その後いかがお過ごしでしょうか。\n\n当館の「ぬる湯」は、長湯することで心身の疲れをじんわりと癒やす効果がございます。\n日々のお疲れが溜まっているようでしたら、ぜひまた当館の温泉と猫たちに癒やされにお越しください。\n\nまたお目にかかれる日を, スタッフ・猫一同、楽しみにお待ち申し上げております。\n\nhttps://akasawaonsen.com/`
   },
   custom: {
     emailSubject: '',
@@ -181,6 +234,9 @@ el.customerTableBody.addEventListener('click', e => {
   } else if (e.target.classList.contains('dispatch-single-btn')) {
     const id = e.target.dataset.id;
     dispatchSingleMessage(id);
+  } else if (e.target.classList.contains('simulate-booking-btn')) {
+    const id = e.target.dataset.id;
+    simulateBooking(id);
   }
 });
 
@@ -342,7 +398,15 @@ function buildMessage(customer) {
     name,
     greeting: name === '赤沢温泉旅館ご利用者様' ? '赤沢温泉旅館ご利用者様' : `${name} 様`
   };
-  const tplMsg = tpl.message(customerWithFullName);
+  let tplMsg = tpl.message(customerWithFullName);
+  
+  // 予約URLに自動識別パラメータをアタッチ
+  const trackingParam = `?ref=ml_demo&cid=${customer.id}&scenario=${state.scenario}`;
+  tplMsg = tplMsg.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+    if (url.includes('unsubscribe') || url.includes('maps.app')) return url;
+    return url.includes('?') ? `${url}&ref=ml_demo` : `${url}${trackingParam}`;
+  });
+
   const customMsg = el.customMessage.value;
   const body = [tplMsg, customMsg].filter(Boolean).join('\n\n') + '\n' + SIGNATURE;
   const subject = el.customSubject.value.trim() || tpl.emailSubject;
@@ -354,6 +418,7 @@ function render() {
   renderLogs();
   renderTagFilter();
   renderCsvFilter();
+  renderConversionDashboard();
 }
 
 function renderCustomers() {
@@ -362,6 +427,7 @@ function renderCustomers() {
   
   el.customerTableBody.innerHTML = list.map(customer => {
     const isUnsubscribed = !!customer.unsubscribed;
+    const isBooked = !!customer.bookedPlanName;
     
     // 左端のチェックボックス列: 配信停止の場合は「復活する」ボタンにする
     const checkboxHtml = isUnsubscribed 
@@ -372,18 +438,30 @@ function renderCustomers() {
       ? `<button class="ghost" disabled style="padding: 2px 8px; font-size: 11px; margin: 0; min-height: 0; white-space: nowrap; opacity: 0.5; cursor: not-allowed; border: 1px solid var(--line);">送信</button>`
       : `<button class="primary dispatch-single-btn" data-id="${customer.id}" style="padding: 2px 8px; font-size: 11px; margin: 0; min-height: 0; white-space: nowrap; background: linear-gradient(90deg, #33a0ff 0%, #6ad2ff 100%); color: #04111d;">送信</button>`;
 
+    const bookingBadge = isBooked 
+      ? `<div style="margin-top: 4px;"><span class="badge success" style="font-size: 11px; font-weight: bold; background: rgba(141,240,200,0.2); border-color: rgba(141,240,200,0.5);">🎉 ${escapeHtml(customer.bookedPlanName)} 予約済 (¥${Number(customer.bookedAmount).toLocaleString()})</span></div>`
+      : '';
+
+    const testBookingBtn = isUnsubscribed
+      ? ''
+      : `<button class="ghost simulate-booking-btn" data-id="${customer.id}" style="padding: 2px 6px; font-size: 10px; margin: 0; min-height: 0; white-space: nowrap; border: 1px dashed var(--accent); color: var(--accent);">予約テスト</button>`;
+
     return `
       <tr style="${isUnsubscribed ? 'opacity: 0.7; background-color: #fafafa;' : ''}">
         <td style="vertical-align: middle; text-align: center;">${checkboxHtml}</td>
-        <td>${escapeHtml(fullName(customer))}</td>
+        <td>
+          ${escapeHtml(fullName(customer))}
+          ${bookingBadge}
+        </td>
         <td>${escapeHtml(customer.source || '-')}</td>
         <td style="${isUnsubscribed ? 'color: #aebad8;' : ''}">${escapeHtml(customer.email || customer.lineUserId || customer.phone || '-')}</td>
         <td>${escapeHtml(fmtDate(customer.checkInDate))} ~ ${escapeHtml(fmtDate(customer.checkOutDate))}</td>
         <td>${customer.tags.map(tag => `<span class="badge">${escapeHtml(tag)}</span>`).join(' ')}</td>
         <td>${Number(customer.stayCount || 0)}</td>
         <td>
-          <div style="display:flex; gap:4px;">
+          <div style="display:flex; gap:4px; flex-wrap: wrap;">
             ${sendBtnHtml}
+            ${testBookingBtn}
             <button class="ghost toggle-subscribe-btn" data-id="${customer.id}" style="padding: 2px 8px; font-size: 11px; margin: 0; min-height: 0; white-space: nowrap; border: 1px solid var(--line);">
               ${isUnsubscribed ? '購読再開' : '配信停止'}
             </button>
@@ -436,7 +514,7 @@ function seedCustomers() {
   const today = new Date();
   const addDays = n => new Date(today.getTime() + n * 86400000).toISOString().slice(0, 10);
   const seeds = [
-    normalizeCustomer({ source: 'staysee', lastName: '山田', firstName: '花', email: 'hana@example.com', lineUserId: 'U-demo-hana', language: 'ja', tags: '猫好き,女性ひとり旅', checkInDate: addDays(3), checkOutDate: addDays(4), reservationId: 'ST-1001', stayCount: 2, importFileName: 'sample_staysee.csv' }),
+    normalizeCustomer({ source: 'staysee', lastName: '山田', firstName: '花', email: 'hana@example.com', lineUserId: 'U-demo-hana', language: 'ja', tags: '猫好き,女性ひとり旅', checkInDate: addDays(3), checkOutDate: addDays(4), reservationId: 'ST-1001', stayCount: 2, importFileName: 'sample_staysee.csv', bookedPlanName: '【1泊2食付】直前割プラン', bookedAmount: 15000, bookedAt: new Date().toISOString() }),
     normalizeCustomer({ source: 'neppan', lastName: '佐藤', firstName: '健', email: 'ken@example.com', lineUserId: 'U-demo-ken', language: 'ja', tags: '長湯好き,静かな部屋希望', checkInDate: addDays(7), checkOutDate: addDays(8), reservationId: 'NP-2001', stayCount: 1, importFileName: 'sample_neppan.csv' }),
     normalizeCustomer({ source: 'staysee', lastName: '鈴木', firstName: '一郎', email: 'ichiro@example.com', lineUserId: 'U-demo-ichiro', language: 'ja', tags: 'リピーター', checkInDate: addDays(1), checkOutDate: addDays(2), reservationId: 'ST-0999', stayCount: 5, unsubscribed: true, importFileName: 'sample_staysee.csv' })
   ];
@@ -502,7 +580,10 @@ function normalizeCustomer(input) {
     stayCount: Number(input.stayCount || 0),
     unsubscribed: isAlreadyUnsubscribed || inputUnsubscribed,
     importFileName: input.importFileName || '',
-    importedAt: input.importedAt || ''
+    importedAt: input.importedAt || '',
+    bookedPlanName: input.bookedPlanName || '',
+    bookedAmount: Number(input.bookedAmount || 0),
+    bookedAt: input.bookedAt || ''
   };
 }
 
@@ -800,6 +881,95 @@ function handleManualResubscribe() {
   el.manualUnsubAlert.style.display = 'none';
   preview();
   alert('この連絡先の配信停止状態を解除し、配信を復活させました。');
+}
+
+function renderConversionDashboard() {
+  const totalCustomers = state.customers.length;
+  const bookedCustomers = state.customers.filter(c => c.bookedPlanName);
+  const totalBookings = bookedCustomers.length;
+  const totalRevenue = bookedCustomers.reduce((sum, c) => sum + (Number(c.bookedAmount) || 0), 0);
+  const totalSent = state.logs.length || totalCustomers || 1;
+  const cvr = ((totalBookings / totalSent) * 100).toFixed(1);
+
+  const elBookings = document.getElementById('statTotalBookings');
+  const elCvr = document.getElementById('statCvr');
+  const elRevenue = document.getElementById('statTotalRevenue');
+  const elTopPlan = document.getElementById('statTopPlan');
+
+  if (elBookings) elBookings.textContent = `${totalBookings} 件`;
+  if (elCvr) elCvr.textContent = `${cvr}%`;
+  if (elRevenue) elRevenue.textContent = `¥${totalRevenue.toLocaleString()}`;
+
+  const planCounts = {};
+  const planRevenues = {};
+  bookedCustomers.forEach(c => {
+    planCounts[c.bookedPlanName] = (planCounts[c.bookedPlanName] || 0) + 1;
+    planRevenues[c.bookedPlanName] = (planRevenues[c.bookedPlanName] || 0) + (Number(c.bookedAmount) || 0);
+  });
+
+  let topPlan = '-';
+  let maxCount = 0;
+  for (const [planName, count] of Object.entries(planCounts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      topPlan = planName;
+    }
+  }
+  if (elTopPlan) elTopPlan.textContent = topPlan;
+
+  const breakdownContainer = document.getElementById('planBreakdownContainer');
+  if (breakdownContainer) {
+    if (totalBookings === 0) {
+      breakdownContainer.innerHTML = '<span style="color:var(--muted);">※顧客リスト右側の <strong>[予約テスト]</strong> ボタンを押すと、プラン別メール予約の発生シミュレーションテストを実行できます。</span>';
+    } else {
+      const planItems = Object.entries(PLANS).map(([key, p]) => {
+        const cnt = planCounts[p.name] || 0;
+        const rev = planRevenues[p.name] || 0;
+        const bg = cnt > 0 ? 'rgba(141, 240, 200, 0.15)' : 'rgba(255,255,255,0.03)';
+        const border = cnt > 0 ? 'rgba(141, 240, 200, 0.4)' : 'rgba(255,255,255,0.08)';
+        const color = cnt > 0 ? 'var(--accent-2)' : 'var(--muted)';
+        return `
+          <div style="background:${bg}; border:1px solid ${border}; padding:6px 12px; border-radius:8px; font-size:12px;">
+            <strong style="color:${color};">${escapeHtml(p.name)}</strong>: <span style="font-size:14px; font-weight:bold; color:#fff;">${cnt}件</span> <span style="color:#ffd700; font-size:11px;">(¥${rev.toLocaleString()})</span>
+          </div>
+        `;
+      }).join('');
+      breakdownContainer.innerHTML = `<div style="font-weight:bold; color:var(--accent); width:100%; margin-bottom:4px;">【プラン別予約成果 内訳データ】</div> ${planItems}`;
+    }
+  }
+}
+
+function simulateBooking(id) {
+  const customer = state.customers.find(c => c.id === id);
+  if (!customer) return;
+  if (customer.unsubscribed) {
+    alert('配信停止中のお客様は予約テストを実行できません。');
+    return;
+  }
+  
+  const planPromptText = [
+    `${fullName(customer)} 様のメール経由予約テストです。`,
+    '予約されたプランの番号を入力してください：',
+    '1: 一番人気 通常プラン (¥18,000)',
+    '2: 一番人気 直前割プラン (¥15,000)',
+    '3: 特製ジンギスカンコース (¥16,500)',
+    '4: 公式HP基本プラン (¥14,000)'
+  ].join('\n');
+
+  const choice = prompt(planPromptText, '2');
+  if (!choice) return;
+
+  const keyMap = { '1': 'normal', '2': 'lastminute', '3': 'bbq', '4': 'hp' };
+  const planKey = keyMap[choice.trim()] || 'lastminute';
+  const plan = PLANS[planKey];
+
+  customer.bookedPlanName = plan.name;
+  customer.bookedAmount = plan.price;
+  customer.bookedAt = new Date().toISOString();
+
+  persist();
+  render();
+  alert(`${fullName(customer)} 様の「${plan.name}（¥${plan.price.toLocaleString()}）」からのメール予約発生を自動認識・記録しました！`);
 }
 
 render();
