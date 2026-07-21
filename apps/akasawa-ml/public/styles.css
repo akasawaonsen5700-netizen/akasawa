@@ -67,6 +67,11 @@ th, td { border-bottom: 1px solid rgba(255,255,255,.07); padding: 10px; text-ali
 .log-meta { color: var(--muted); margin: 8px 0; }
 .log-body { margin: 0; white-space: pre-wrap; color: #dfe8ff; }
 .scenario { min-height: 56px; }
+#customMessage {
+  min-height: 200px;
+  line-height: 1.6;
+  resize: vertical;
+}
 @media (max-width: 920px) {
   .grid { grid-template-columns: 1fr; }
   .span-2 { grid-column: span 1; }
