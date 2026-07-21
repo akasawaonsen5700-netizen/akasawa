@@ -121,6 +121,12 @@
             <input name="stayCount" type="number" min="0" value="1" placeholder="宿泊回数" />
             <input name="tags" placeholder="タグ 例: 猫好き,長湯好き" />
           </div>
+          <div style="grid-column: span 2; margin-top: 8px;">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" name="unsubscribed" value="true" />
+              <span class="text-sm" style="color: #d32f2f; font-weight: bold;">メール送信はもういらない（配信停止・送信除外）</span>
+            </label>
+          </div>
         </form>
       </section>
     </div> <!-- /modeManual -->

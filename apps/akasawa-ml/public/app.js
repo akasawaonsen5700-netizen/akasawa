@@ -39,7 +39,9 @@ const SIGNATURE = `
 〒329-2921 栃木県那須塩原市塩原1149
 TEL: 0287-46-5700　FAX：0287-46-5699
 公式サイト：https://akasawaonsen.com/
-------------------------------`;
+------------------------------
+※メール配信の停止（もういらない）をご希望の方は、下記URLよりお手続きをお願いいたします。
+https://akasawaonsen.com/unsubscribe`;
 
 const el = {
   tabCsv: document.getElementById('tabCsv'),
@@ -157,6 +159,9 @@ el.customerTableBody.addEventListener('click', e => {
   if (e.target.classList.contains('delete-customer-btn')) {
     const id = e.target.dataset.id;
     deleteCustomer(id);
+  } else if (e.target.classList.contains('toggle-subscribe-btn')) {
+    const id = e.target.dataset.id;
+    toggleSubscription(id);
   }
 });
 
@@ -301,11 +306,12 @@ function getTargets() {
     const fd = new FormData(el.customerForm);
     const customer = normalizeCustomer(Object.fromEntries(fd.entries()));
     if (!customer.email && !customer.lineUserId) return [];
+    if (customer.unsubscribed) return []; // 配信停止の場合は送信対象外
     return [customer];
   } else {
     // 常にチェックボックスの状態（絞り込み時は絞り込まれた結果）を正とする
     const selectedIds = [...document.querySelectorAll('.row-select:checked')].map(x => x.value);
-    return state.customers.filter(c => selectedIds.includes(c.id));
+    return state.customers.filter(c => selectedIds.includes(c.id) && !c.unsubscribed);
   }
 }
 
@@ -334,18 +340,31 @@ function renderCustomers() {
   const list = filteredCustomers();
   el.customerSummary.textContent = `${state.customers.length}件 読み込み済み`;
   
-  el.customerTableBody.innerHTML = list.map(customer => `
-    <tr>
-      <td><input class="row-select" type="checkbox" value="${customer.id}" checked /></td>
-      <td>${escapeHtml(fullName(customer))}</td>
-      <td>${escapeHtml(customer.source || '-')}</td>
-      <td>${escapeHtml(customer.email || customer.lineUserId || customer.phone || '-')}</td>
-      <td>${escapeHtml(fmtDate(customer.checkInDate))} ~ ${escapeHtml(fmtDate(customer.checkOutDate))}</td>
-      <td>${customer.tags.map(tag => `<span class="badge">${escapeHtml(tag)}</span>`).join(' ')}</td>
-      <td>${Number(customer.stayCount || 0)}</td>
-      <td><button class="danger delete-customer-btn" data-id="${customer.id}" style="padding: 2px 8px; font-size: 11px; margin: 0;">削除</button></td>
-    </tr>
-  `).join('');
+  el.customerTableBody.innerHTML = list.map(customer => {
+    const isUnsubscribed = !!customer.unsubscribed;
+    const checkboxHtml = isUnsubscribed 
+      ? `<span class="badge danger" style="background-color:#d32f2f; color:white; font-size:10px; padding: 2px 6px; border-radius: 4px; display: inline-block;">配信停止</span>`
+      : `<input class="row-select" type="checkbox" value="${customer.id}" checked />`;
+    return `
+      <tr style="${isUnsubscribed ? 'opacity: 0.6; background-color: #fafafa;' : ''}">
+        <td>${checkboxHtml}</td>
+        <td>${escapeHtml(fullName(customer))}</td>
+        <td>${escapeHtml(customer.source || '-')}</td>
+        <td style="${isUnsubscribed ? 'text-decoration: line-through; color: #999;' : ''}">${escapeHtml(customer.email || customer.lineUserId || customer.phone || '-')}</td>
+        <td>${escapeHtml(fmtDate(customer.checkInDate))} ~ ${escapeHtml(fmtDate(customer.checkOutDate))}</td>
+        <td>${customer.tags.map(tag => `<span class="badge">${escapeHtml(tag)}</span>`).join(' ')}</td>
+        <td>${Number(customer.stayCount || 0)}</td>
+        <td>
+          <div style="display:flex; gap:4px;">
+            <button class="ghost toggle-subscribe-btn" data-id="${customer.id}" style="padding: 2px 8px; font-size: 11px; margin: 0; min-height: 0; white-space: nowrap; border: 1px solid var(--line);">
+              ${isUnsubscribed ? '購読再開' : '配信停止'}
+            </button>
+            <button class="danger delete-customer-btn" data-id="${customer.id}" style="padding: 2px 8px; font-size: 11px; margin: 0; min-height: 0; white-space: nowrap;">削除</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function renderLogs() {
@@ -388,7 +407,8 @@ function seedCustomers() {
   const addDays = n => new Date(today.getTime() + n * 86400000).toISOString().slice(0, 10);
   const seeds = [
     normalizeCustomer({ source: 'staysee', lastName: '山田', firstName: '花', email: 'hana@example.com', lineUserId: 'U-demo-hana', language: 'ja', tags: '猫好き,女性ひとり旅', checkInDate: addDays(3), checkOutDate: addDays(4), reservationId: 'ST-1001', stayCount: 2 }),
-    normalizeCustomer({ source: 'neppan', lastName: '佐藤', firstName: '健', email: 'ken@example.com', lineUserId: 'U-demo-ken', language: 'ja', tags: '長湯好き,静かな部屋希望', checkInDate: addDays(7), checkOutDate: addDays(8), reservationId: 'NP-2001', stayCount: 1 })
+    normalizeCustomer({ source: 'neppan', lastName: '佐藤', firstName: '健', email: 'ken@example.com', lineUserId: 'U-demo-ken', language: 'ja', tags: '長湯好き,静かな部屋希望', checkInDate: addDays(7), checkOutDate: addDays(8), reservationId: 'NP-2001', stayCount: 1 }),
+    normalizeCustomer({ source: 'staysee', lastName: '鈴木', firstName: '一郎', email: 'ichiro@example.com', lineUserId: 'U-demo-ichiro', language: 'ja', tags: 'リピーター', checkInDate: addDays(1), checkOutDate: addDays(2), reservationId: 'ST-0999', stayCount: 5, unsubscribed: true })
   ];
   state.customers = [...seeds, ...state.customers];
   persist();
@@ -405,9 +425,10 @@ function clearAll() {
 
 function downloadSampleCsv() {
   const csv = [
-    'source,lastName,firstName,email,lineUserId,phone,language,tags,checkInDate,checkOutDate,reservationId,stayCount',
-    'staysee,山田,花,hana@example.com,U-demo-hana,09000000001,ja,"猫好き,女性ひとり旅",2026-07-10,2026-07-11,ST-1001,2',
-    'neppan,佐藤,健,ken@example.com,U-demo-ken,09000000002,ja,"長湯好き,静かな部屋希望",2026-07-15,2026-07-16,NP-2001,1'
+    'source,lastName,firstName,email,lineUserId,phone,language,tags,checkInDate,checkOutDate,reservationId,stayCount,unsubscribed',
+    'staysee,山田,花,hana@example.com,U-demo-hana,09000000001,ja,"猫好き,女性ひとり旅",2026-07-10,2026-07-11,ST-1001,2,',
+    'neppan,佐藤,健,ken@example.com,U-demo-ken,09000000002,ja,"長湯好き,静かな部屋希望",2026-07-15,2026-07-16,NP-2001,1,',
+    'staysee,鈴木,一郎,ichiro@example.com,U-demo-ichiro,09000000003,ja,"リピーター",2026-07-18,2026-07-19,ST-0999,5,配信停止'
   ].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -419,20 +440,37 @@ function downloadSampleCsv() {
 }
 
 function normalizeCustomer(input) {
+  const email = (input.email || '').trim();
+  const lineUserId = (input.lineUserId || '').trim();
+
+  // 既存のリスト内に、同一メールアドレスまたはLINE IDで配信停止になっている人がいるか確認
+  const isAlreadyUnsubscribed = (typeof state !== 'undefined' && state.customers) && state.customers.some(c => 
+    c.unsubscribed && 
+    ((email && c.email === email) || (lineUserId && c.lineUserId === lineUserId))
+  );
+
+  const inputUnsubscribed = input.unsubscribed === true || 
+    String(input.unsubscribed || '').toLowerCase() === 'true' || 
+    String(input.unsubscribed || '') === '1' || 
+    String(input.unsubscribed || '').includes('停止') || 
+    String(input.unsubscribed || '').includes('不要') || 
+    String(input.unsubscribed || '').includes('いらない');
+
   return {
     id: input.id || crypto.randomUUID(),
     source: (input.source || 'manual').trim(),
     lastName: (input.lastName || '').trim(),
     firstName: (input.firstName || '').trim(),
-    email: (input.email || '').trim(),
-    lineUserId: (input.lineUserId || '').trim(),
+    email,
+    lineUserId,
     phone: (input.phone || '').trim(),
     language: (input.language || 'ja').trim(),
     tags: Array.isArray(input.tags) ? input.tags : String(input.tags || '').split(',').map(x => x.trim()).filter(Boolean),
     checkInDate: input.checkInDate || '',
     checkOutDate: input.checkOutDate || '',
     reservationId: (input.reservationId || '').trim(),
-    stayCount: Number(input.stayCount || 0)
+    stayCount: Number(input.stayCount || 0),
+    unsubscribed: isAlreadyUnsubscribed || inputUnsubscribed
   };
 }
 
@@ -525,7 +563,8 @@ function mapJapaneseHeaders(row) {
     reservationId: ['予約番号', '予約id', '予約no', '受付番号', 'reservation_id', 'reservationid'],
     stayCount: ['宿泊回数', '宿泊回数(累計)', '利用回数', '回数', 'stay_count', 'staycount'],
     tags: ['タグ', '属性', 'tags', 'tag'],
-    source: ['流入元', '予約経路', 'source']
+    source: ['流入元', '予約経路', 'source'],
+    unsubscribed: ['配信停止', '配信除外', '購読解除', 'メール不要', 'unsubscribed', 'optout', '送信不要', 'もういらない', 'オプトアウト']
   };
 
   const normalizedRow = {};
@@ -565,6 +604,27 @@ function mapJapaneseHeaders(row) {
 function deleteCustomer(id) {
   if (!confirm('この顧客データを削除しますか？')) return;
   state.customers = state.customers.filter(c => c.id !== id);
+  persist();
+  render();
+}
+
+function toggleSubscription(id) {
+  const targetCustomer = state.customers.find(c => c.id === id);
+  if (!targetCustomer) return;
+  
+  const targetEmail = targetCustomer.email;
+  const targetLineId = targetCustomer.lineUserId;
+  const newStatus = !targetCustomer.unsubscribed;
+  
+  // 同一の連絡先（email / lineUserId）を持つ全ての顧客を連動して切り替える
+  state.customers.forEach(c => {
+    const matchesEmail = targetEmail && c.email === targetEmail;
+    const matchesLine = targetLineId && c.lineUserId === targetLineId;
+    if (c.id === id || matchesEmail || matchesLine) {
+      c.unsubscribed = newStatus;
+    }
+  });
+  
   persist();
   render();
 }
