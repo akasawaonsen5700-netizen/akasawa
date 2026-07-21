@@ -59,6 +59,7 @@ const el = {
   csvFile: document.getElementById('csvFile'),
   searchInput: document.getElementById('searchInput'),
   tagFilter: document.getElementById('tagFilter'),
+  csvFilter: document.getElementById('csvFilter'),
   selectAll: document.getElementById('selectAll'),
   previewBtn: document.getElementById('previewBtn'),
   dispatchBtn: document.getElementById('dispatchBtn'),
@@ -121,9 +122,12 @@ el.customSubject.value = templates[state.scenario].emailSubject;
 el.csvFile.addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
+  const fileName = file.name;
   const text = await file.text();
   const rows = parseCsv(text).map(row => {
     const mapped = mapJapaneseHeaders(row);
+    mapped.importFileName = fileName;
+    mapped.importedAt = new Date().toISOString();
     return normalizeCustomer(mapped);
   }).filter(x => x.lastName || x.email || x.lineUserId);
   state.customers = [...rows, ...state.customers];
@@ -134,6 +138,7 @@ el.csvFile.addEventListener('change', async e => {
 
 el.searchInput.addEventListener('input', render);
 el.tagFilter.addEventListener('change', render);
+el.csvFilter.addEventListener('change', render);
 el.selectAll.addEventListener('change', () => {
   document.querySelectorAll('.row-select').forEach(cb => cb.checked = el.selectAll.checked);
 });
@@ -163,6 +168,9 @@ el.customerTableBody.addEventListener('click', e => {
   } else if (e.target.classList.contains('toggle-subscribe-btn')) {
     const id = e.target.dataset.id;
     toggleSubscription(id);
+  } else if (e.target.classList.contains('dispatch-single-btn')) {
+    const id = e.target.dataset.id;
+    dispatchSingleMessage(id);
   }
 });
 
@@ -335,6 +343,7 @@ function render() {
   renderCustomers();
   renderLogs();
   renderTagFilter();
+  renderCsvFilter();
 }
 
 function renderCustomers() {
@@ -346,6 +355,11 @@ function renderCustomers() {
     const checkboxHtml = isUnsubscribed 
       ? `<span class="badge danger" style="background-color:#d32f2f; color:white; font-size:10px; padding: 2px 6px; border-radius: 4px; display: inline-block;">配信停止</span>`
       : `<input class="row-select" type="checkbox" value="${customer.id}" checked />`;
+    
+    const sendBtnHtml = isUnsubscribed
+      ? `<button class="ghost" disabled style="padding: 2px 8px; font-size: 11px; margin: 0; min-height: 0; white-space: nowrap; opacity: 0.5; cursor: not-allowed; border: 1px solid var(--line);">送信</button>`
+      : `<button class="primary dispatch-single-btn" data-id="${customer.id}" style="padding: 2px 8px; font-size: 11px; margin: 0; min-height: 0; white-space: nowrap; background: linear-gradient(90deg, #33a0ff 0%, #6ad2ff 100%); color: #04111d;">送信</button>`;
+
     return `
       <tr style="${isUnsubscribed ? 'opacity: 0.6; background-color: #fafafa;' : ''}">
         <td>${checkboxHtml}</td>
@@ -357,6 +371,7 @@ function renderCustomers() {
         <td>${Number(customer.stayCount || 0)}</td>
         <td>
           <div style="display:flex; gap:4px;">
+            ${sendBtnHtml}
             <button class="ghost toggle-subscribe-btn" data-id="${customer.id}" style="padding: 2px 8px; font-size: 11px; margin: 0; min-height: 0; white-space: nowrap; border: 1px solid var(--line);">
               ${isUnsubscribed ? '購読再開' : '配信停止'}
             </button>
@@ -395,11 +410,13 @@ function renderTagFilter() {
 function filteredCustomers() {
   const q = el.searchInput.value.trim().toLowerCase();
   const tag = el.tagFilter.value;
+  const csvFile = el.csvFilter.value;
   return state.customers.filter(c => {
     const hay = `${fullName(c)} ${c.email || ''} ${c.lineUserId || ''} ${c.tags.join(' ')}`.toLowerCase();
     const matchQ = !q || hay.includes(q);
     const matchTag = !tag || c.tags.includes(tag);
-    return matchQ && matchTag;
+    const matchCsv = !csvFile || c.importFileName === csvFile;
+    return matchQ && matchTag && matchCsv;
   });
 }
 
@@ -407,9 +424,9 @@ function seedCustomers() {
   const today = new Date();
   const addDays = n => new Date(today.getTime() + n * 86400000).toISOString().slice(0, 10);
   const seeds = [
-    normalizeCustomer({ source: 'staysee', lastName: '山田', firstName: '花', email: 'hana@example.com', lineUserId: 'U-demo-hana', language: 'ja', tags: '猫好き,女性ひとり旅', checkInDate: addDays(3), checkOutDate: addDays(4), reservationId: 'ST-1001', stayCount: 2 }),
-    normalizeCustomer({ source: 'neppan', lastName: '佐藤', firstName: '健', email: 'ken@example.com', lineUserId: 'U-demo-ken', language: 'ja', tags: '長湯好き,静かな部屋希望', checkInDate: addDays(7), checkOutDate: addDays(8), reservationId: 'NP-2001', stayCount: 1 }),
-    normalizeCustomer({ source: 'staysee', lastName: '鈴木', firstName: '一郎', email: 'ichiro@example.com', lineUserId: 'U-demo-ichiro', language: 'ja', tags: 'リピーター', checkInDate: addDays(1), checkOutDate: addDays(2), reservationId: 'ST-0999', stayCount: 5, unsubscribed: true })
+    normalizeCustomer({ source: 'staysee', lastName: '山田', firstName: '花', email: 'hana@example.com', lineUserId: 'U-demo-hana', language: 'ja', tags: '猫好き,女性ひとり旅', checkInDate: addDays(3), checkOutDate: addDays(4), reservationId: 'ST-1001', stayCount: 2, importFileName: 'sample_staysee.csv' }),
+    normalizeCustomer({ source: 'neppan', lastName: '佐藤', firstName: '健', email: 'ken@example.com', lineUserId: 'U-demo-ken', language: 'ja', tags: '長湯好き,静かな部屋希望', checkInDate: addDays(7), checkOutDate: addDays(8), reservationId: 'NP-2001', stayCount: 1, importFileName: 'sample_neppan.csv' }),
+    normalizeCustomer({ source: 'staysee', lastName: '鈴木', firstName: '一郎', email: 'ichiro@example.com', lineUserId: 'U-demo-ichiro', language: 'ja', tags: 'リピーター', checkInDate: addDays(1), checkOutDate: addDays(2), reservationId: 'ST-0999', stayCount: 5, unsubscribed: true, importFileName: 'sample_staysee.csv' })
   ];
   state.customers = [...seeds, ...state.customers];
   persist();
@@ -471,7 +488,9 @@ function normalizeCustomer(input) {
     checkOutDate: input.checkOutDate || '',
     reservationId: (input.reservationId || '').trim(),
     stayCount: Number(input.stayCount || 0),
-    unsubscribed: isAlreadyUnsubscribed || inputUnsubscribed
+    unsubscribed: isAlreadyUnsubscribed || inputUnsubscribed,
+    importFileName: input.importFileName || '',
+    importedAt: input.importedAt || ''
   };
 }
 
@@ -628,6 +647,66 @@ function toggleSubscription(id) {
   
   persist();
   render();
+}
+
+function renderCsvFilter() {
+  const current = el.csvFilter.value;
+  const fileNames = [...new Set(state.customers.map(c => c.importFileName))].filter(Boolean).sort();
+  el.csvFilter.innerHTML = `<option value="">すべてのCSV</option>${fileNames.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')}`;
+  el.csvFilter.value = fileNames.includes(current) ? current : '';
+}
+
+async function dispatchSingleMessage(id) {
+  const customer = state.customers.find(c => c.id === id);
+  if (!customer) return;
+  if (customer.unsubscribed) {
+    alert('配信停止中のお客様には送信できません。');
+    return;
+  }
+  const name = fullName(customer);
+  if (!confirm(`${name} 様へ個別に現在のメッセージを送信しますか？`)) return;
+
+  const btn = document.querySelector(`.dispatch-single-btn[data-id="${id}"]`);
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '送信中...';
+
+  try {
+    const message = buildMessage(customer);
+    const payload = {
+      customer,
+      scenario: state.scenario,
+      channel: el.channelSelect.value,
+      subject: message.subject,
+      message: message.body
+    };
+    
+    const res = await fetch('/api/dispatch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!res.ok || !result.ok) throw new Error(result.error || JSON.stringify(result));
+    
+    state.logs.unshift({
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      customerName: name,
+      scenario: state.scenario,
+      channel: el.channelSelect.value,
+      status: 'success',
+      response: result,
+      message: message.body
+    });
+    persist();
+    render();
+    alert(`${name} 様への個別送信が完了しました`);
+  } catch (err) {
+    alert(`個別送信エラー: ${err.message}`);
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
 render();
