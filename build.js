@@ -76,16 +76,21 @@ copyFolderSync(path.join(__dirname, 'apps', 'akasawa-ml', 'public'), path.join(d
 console.log('Copying akasawa-sns...');
 copyFolderSync(path.join(__dirname, 'apps', 'akasawa-sns', 'public'), path.join(distDir, 'akasawa-sns'));
 
-// 6. apps/akasawa.dp のコピー（React版ダッシュボード）
-console.log('Building akasawa.dp React dashboard...');
-const dpPath = path.join(__dirname, 'apps', 'akasawa.dp');
+// 6. apps/akasawa-dp のコピー（React版ダッシュボード）
+console.log('Building akasawa-dp React dashboard...');
+let dpPath = path.join(__dirname, 'apps', 'akasawa-dp');
+if (!fs.existsSync(dpPath)) {
+  dpPath = path.join(__dirname, 'apps', 'akasawa.dp');
+}
 const adminPath = path.join(dpPath, 'apps', 'admin');
 try {
-  execSync('npm install --legacy-peer-deps', { cwd: dpPath, stdio: 'inherit' });
-  execSync('npx vite build', { cwd: adminPath, stdio: 'inherit' });
-  copyFolderSync(path.join(adminPath, 'dist'), path.join(distDir, 'akasawa-dp'));
+  if (fs.existsSync(dpPath)) {
+    execSync('npm install --legacy-peer-deps', { cwd: dpPath, stdio: 'inherit', shell: true });
+    execSync('npx vite build', { cwd: adminPath, stdio: 'inherit', shell: true });
+    copyFolderSync(path.join(adminPath, 'dist'), path.join(distDir, 'akasawa-dp'));
+  }
 } catch (err) {
-  console.error('Failed to build akasawa.dp:', err.message);
+  console.error('Failed to build akasawa-dp:', err.message);
   process.exit(1);
 }
 
