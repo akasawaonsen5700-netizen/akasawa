@@ -33,6 +33,7 @@ const templates = {
   }
 };
 
+const isSubdir = window.location.pathname.includes('/akasawa-ml');
 const SIGNATURE = `
 ------------------------------
 赤沢温泉株式会社/赤沢温泉旅館 遠藤正俊
@@ -41,7 +42,7 @@ TEL: 0287-46-5700　FAX：0287-46-5699
 公式サイト：https://akasawaonsen.com/
 ------------------------------
 ※メール配信の停止（もういらない）をご希望の方は、下記URLよりお手続きをお願いいたします。
-https://akasawaonsen.com/unsubscribe`;
+${window.location.origin}${isSubdir ? '/akasawa-ml' : ''}/unsubscribe.html`;
 
 const el = {
   tabCsv: document.getElementById('tabCsv'),
