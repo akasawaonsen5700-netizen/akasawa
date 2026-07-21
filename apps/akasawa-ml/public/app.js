@@ -428,16 +428,19 @@ function buildMessage(customer) {
     greeting: name === '赤沢温泉旅館ご利用者様' ? '赤沢温泉旅館ご利用者様' : `${name} 様`
   };
   let tplMsg = tpl.message(customerWithFullName);
-  
-  // 予約URLに自動識別パラメータをアタッチ
+  const customMsg = cleanTextLineBreaks(el.customMessage.value);
+
+  // テンプレート文章と自由入力文章を結合
+  let fullContent = [tplMsg, customMsg].filter(Boolean).join('\n\n');
+
+  // 自由文章を含む全URLに自動識別・トラッキング用パラメータ(cid, scenario)をアタッチ
   const trackingParam = `?ref=ml_demo&cid=${customer.id}&scenario=${state.scenario}`;
-  tplMsg = tplMsg.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+  fullContent = fullContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
     if (url.includes('unsubscribe') || url.includes('maps.app')) return url;
-    return url.includes('?') ? `${url}&ref=ml_demo` : `${url}${trackingParam}`;
+    return url.includes('?') ? `${url}&ref=ml_demo&cid=${customer.id}` : `${url}${trackingParam}`;
   });
 
-  const customMsg = cleanTextLineBreaks(el.customMessage.value);
-  const body = [tplMsg, customMsg].filter(Boolean).join('\n\n') + '\n' + SIGNATURE;
+  const body = fullContent + '\n' + SIGNATURE;
   const subject = el.customSubject.value.trim() || tpl.emailSubject;
   return { subject, body };
 }
