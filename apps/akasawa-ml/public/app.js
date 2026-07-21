@@ -169,6 +169,7 @@ el.seedBtn.addEventListener('click', seedCustomers);
 el.clearBtn.addEventListener('click', clearAll);
 el.downloadSampleBtn.addEventListener('click', downloadSampleCsv);
 el.manualResubscribeBtn.addEventListener('click', handleManualResubscribe);
+el.manualUnsubscribed.addEventListener('change', syncManualOptOutStatus);
 
 el.customerTableBody.addEventListener('click', e => {
   if (e.target.classList.contains('delete-customer-btn')) {
@@ -740,6 +741,41 @@ function checkManualEmailStatus() {
   } else {
     el.manualUnsubAlert.style.display = 'none';
   }
+}
+
+function syncManualOptOutStatus() {
+  const email = el.manualEmail.value.trim();
+  const lineUserId = el.manualLineId.value.trim();
+  const isUnsubscribed = el.manualUnsubscribed.checked;
+  
+  if (!email && !lineUserId) return;
+
+  let found = false;
+  state.customers.forEach(c => {
+    const matchesEmail = email && c.email === email;
+    const matchesLine = lineUserId && c.lineUserId === lineUserId;
+    if (matchesEmail || matchesLine) {
+      c.unsubscribed = isUnsubscribed;
+      found = true;
+    }
+  });
+
+  if (!found && isUnsubscribed) {
+    const fd = new FormData(el.customerForm);
+    const newCustomer = normalizeCustomer(Object.fromEntries(fd.entries()));
+    newCustomer.unsubscribed = true;
+    state.customers.unshift(newCustomer);
+  }
+
+  if (isUnsubscribed) {
+    el.manualUnsubAlert.style.display = 'flex';
+  } else {
+    el.manualUnsubAlert.style.display = 'none';
+  }
+
+  persist();
+  render();
+  preview();
 }
 
 function handleManualResubscribe() {
