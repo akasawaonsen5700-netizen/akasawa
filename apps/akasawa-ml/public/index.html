@@ -81,7 +81,11 @@
             <input type="file" id="csvFile" accept=".csv" />
           </label>
           <p class="mini">推奨列: source,lastName,firstName,email,lineUserId,phone,language,tags,checkInDate,checkOutDate,reservationId,stayCount</p>
-          <button id="downloadSampleBtn" class="ghost">CSV見本を保存</button>
+          <div style="display: flex; gap: 8px;">
+            <button id="downloadSampleBtn" class="ghost" style="flex: 1;">CSV見本を保存</button>
+            <button id="seedBtn" class="ghost" style="flex: 1;">デモデータを追加</button>
+            <button id="clearBtn" class="ghost danger" style="flex: 1;">全データ削除</button>
+          </div>
         </div>
       </section>
 
