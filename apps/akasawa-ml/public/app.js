@@ -428,7 +428,16 @@ function buildMessage(customer) {
     greeting: name === '赤沢温泉旅館ご利用者様' ? '赤沢温泉旅館ご利用者様' : `${name} 様`
   };
   let tplMsg = tpl.message(customerWithFullName);
-  const customMsg = cleanTextLineBreaks(el.customMessage.value);
+  let customMsg = cleanTextLineBreaks(el.customMessage.value);
+
+  // 【重複ガード】テンプレート文章と追記文章が重複・同一の場合は2重出力を自動防止
+  if (customMsg && tplMsg && state.scenario !== 'custom') {
+    const cleanT = cleanTextLineBreaks(tplMsg.replace(customerWithFullName.greeting, '')).trim();
+    const cleanC = cleanTextLineBreaks(customMsg.replace(customerWithFullName.greeting, '')).trim();
+    if (cleanC && cleanT && (cleanC.includes(cleanT.substring(0, 50)) || cleanT.includes(cleanC.substring(0, 50)))) {
+      tplMsg = ''; // 重複している場合は追記内容を優先し、テンプレートの2重化を排除
+    }
+  }
 
   // テンプレート文章と自由入力文章を結合
   let fullContent = [tplMsg, customMsg].filter(Boolean).join('\n\n');
