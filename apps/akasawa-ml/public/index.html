@@ -201,9 +201,12 @@
           <input type="text" id="customSubject" placeholder="件名を入力 (空欄の場合はデフォルトの件名が使用されます)">
         </div>
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
             <label style="margin: 0;">テンプレート追記</label>
-            <button type="button" id="formatCustomMsgBtn" class="ghost" style="width: auto; padding: 2px 8px; font-size: 11px; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; min-height: 0;">✨ 余分な行間を自動整頓</button>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" id="formatMainInboxBtn" class="ghost" style="width: auto; padding: 2px 8px; font-size: 11px; border: 1px solid var(--accent-2); color: var(--accent-2); cursor: pointer; min-height: 0;">🎯 メイントレイ優先に整頓 (プロモーション回避)</button>
+              <button type="button" id="formatCustomMsgBtn" class="ghost" style="width: auto; padding: 2px 8px; font-size: 11px; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; min-height: 0;">✨ 余分な行間を自動整頓</button>
+            </div>
           </div>
           <textarea id="customMessage" rows="8" placeholder="追加したい文面を入力（コピー＆ペースト時の余分な空行は自動整頓されます）"></textarea>
         </div>

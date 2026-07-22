@@ -126,6 +126,7 @@ const el = {
   customSubject: document.getElementById('customSubject'),
   customMessage: document.getElementById('customMessage'),
   formatCustomMsgBtn: document.getElementById('formatCustomMsgBtn'),
+  formatMainInboxBtn: document.getElementById('formatMainInboxBtn'),
   seedBtn: document.getElementById('seedBtn'),
   clearBtn: document.getElementById('clearBtn'),
   clearPreviewBtn: document.getElementById('clearPreviewBtn'),
@@ -237,6 +238,17 @@ if (el.formatCustomMsgBtn) {
   el.formatCustomMsgBtn.addEventListener('click', () => {
     el.customMessage.value = cleanTextLineBreaks(el.customMessage.value);
     preview();
+  });
+}
+
+if (el.formatMainInboxBtn) {
+  el.formatMainInboxBtn.addEventListener('click', () => {
+    el.customMessage.value = optimizeForMainInbox(el.customMessage.value);
+    if (el.customSubject.value) {
+      el.customSubject.value = el.customSubject.value.replace(/[！!]{2,}/g, '！').replace(/[★☆]{2,}/g, '★');
+    }
+    preview();
+    alert('🎯 文面を「メイントレイ到達優先(プロモーション回避)」スタイルに自動整形しました。');
   });
 }
 

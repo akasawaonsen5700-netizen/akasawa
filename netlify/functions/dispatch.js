@@ -34,7 +34,12 @@ async function sendEmail(customer, subject, message) {
     from,
     to: customer.email,
     subject,
-    text: message
+    text: message,
+    headers: {
+      'X-Priority': '3',
+      'X-MSMail-Priority': 'Normal',
+      'Importance': 'Normal'
+    }
   };
 
   if (process.env.REPLY_TO) {
