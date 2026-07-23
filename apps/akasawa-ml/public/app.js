@@ -390,20 +390,76 @@ function preview() {
 }
 
 async function dispatchMessages() {
-  const targets = getTargets();
-  if (!targets.length) return alert('対象顧客がいません。手入力の場合はメールアドレスまたはLINE IDが必須です。');
+  const allTargets = getTargets();
+  if (!allTargets.length) return alert('対象顧客がいません。手入力の場合はメールアドレスまたはLINE IDが必須です。');
 
   el.dispatchBtn.disabled = true;
   el.dispatchBtn.textContent = '配信中...';
 
-  // 【配信前一斉チェック】送信対象のメールアドレスに1件でも規格違反や不正なものがあれば、1通も送らずにその場でエラー停止する
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  const invalidTargets = [];
+  const channel = el.channelSelect.value;
 
-  targets.forEach(customer => {
-    if (el.channelSelect.value === 'email' || el.channelSelect.value === 'both') {
+  // === 宛先の重複排除 (同一メールアドレスまたはLINE IDへの多重送信を物理的に防ぐ) ===
+  const seenEmails = new Set();
+  const seenLineUsers = new Set();
+  const targets = [];
+
+  allTargets.forEach(customer => {
+    let isDuplicate = false;
+    if (channel === 'email' || channel === 'both') {
+      if (customer.email) {
+        const cleanEmail = String(customer.email).trim().toLowerCase();
+        if (seenEmails.has(cleanEmail)) {
+          isDuplicate = true;
+        } else {
+          seenEmails.add(cleanEmail);
+        }
+      }
+    }
+    if (channel === 'line' || channel === 'both') {
+      if (customer.lineUserId) {
+        const cleanLine = String(customer.lineUserId).trim();
+        if (seenLineUsers.has(cleanLine)) {
+          isDuplicate = true;
+        } else {
+          seenLineUsers.add(cleanLine);
+        }
+      }
+    }
+    if (!isDuplicate) {
+      targets.push(customer);
+    } else {
+      // 重複した顧客は自動的に選択（チェックボックス）から除外する
+      const idx = state.selectedCustomerIds.indexOf(customer.id);
+      if (idx !== -1) {
+        state.selectedCustomerIds.splice(idx, 1);
+      }
+    }
+  });
+  // === 重複排除終了 ===
+
+  // 【配信前一斉チェック】規格違反や情報不足、本文空欄等があれば1通も送らずにその場でエラー停止する
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const invalidEmails = [];
+  const invalidLineUsers = [];
+  const invalidMessages = [];
+  const invalidSubjects = [];
+
+  targets.forEach((customer, idx) => {
+    const name = fullName(customer) || `No.${idx + 1}`;
+    const msg = buildMessage(customer);
+
+    // 本文の検証
+    if (!msg.body || String(msg.body).trim() === '') {
+      invalidMessages.push(`・${name}: 本文が空欄です`);
+    }
+
+    if (channel === 'email' || channel === 'both') {
+      // 件名の検証
+      if (!msg.subject || String(msg.subject).trim() === '') {
+        invalidSubjects.push(`・${name}: 件名が空欄です`);
+      }
       if (!customer.email) {
-        invalidTargets.push(`・${fullName(customer)} (アドレスが空欄です)`);
+        invalidEmails.push(`・${name}: メールアドレスが空欄です`);
         return;
       }
       const cleanEmail = String(customer.email).trim();
@@ -411,28 +467,59 @@ async function dispatchMessages() {
       const hasRfcViolation = cleanEmail.includes('..') || cleanEmail.includes('.@');
       
       if (!isFormatValid || hasRfcViolation) {
-        invalidTargets.push(`・${fullName(customer)}: ${customer.email} (無効またはRFC規格違反)`);
+        invalidEmails.push(`・${name}: ${customer.email} (無効またはRFC規格違反)`);
+      }
+    }
+
+    if (channel === 'line' || channel === 'both') {
+      if (!customer.lineUserId) {
+        invalidLineUsers.push(`・${name}: LINE IDが登録されていません`);
       }
     }
   });
 
-  if (invalidTargets.length > 0) {
+  const allErrors = [...invalidEmails, ...invalidLineUsers, ...invalidMessages, ...invalidSubjects];
+  if (allErrors.length > 0) {
     alert([
       '【配信エラー：送信は1通も開始されていません】',
-      'リスト内に送信できない無効または規格違反（RFC違反）のメールアドレスが検出されました。',
-      '安全のため、送信を一切行わずに処理を中止しました。該当するアドレスを修正してください。',
+      '送信先リストまたはメッセージ内容に不備が検出されました。',
+      '安全のため、送信を一切行わずに処理を中止しました。該当箇所を修正してください。',
       '--------------------------------',
-      invalidTargets.slice(0, 10).join('\n'),
-      invalidTargets.length > 10 ? `...他 ${invalidTargets.length - 10} 件` : ''
-    ].filter(Boolean).join('\n'));
+      allErrors.slice(0, 10).join('\n'),
+      allErrors.length > 10 ? `...他 ${allErrors.length - 10} 件` : ''
+    ].join('\n'));
     
     el.dispatchBtn.disabled = false;
     el.dispatchBtn.textContent = '配信実行';
+    // 重複排除による選択解除を反映
+    renderCustomers();
     return;
   }
 
   try {
     if (currentMode === 'csv') {
+      let totalUnreached = 0;
+      const failedNamesList = [];
+      const skippedNamesList = [];
+
+      // 配信処理全体を表すログレコードを1つだけ作成して追加
+      const logId = crypto.randomUUID();
+      const overallLog = {
+        id: logId,
+        createdAt: new Date().toISOString(),
+        customerName: `【一括配信】${targets.length}件の配信結果`,
+        scenario: state.scenario,
+        channel,
+        status: 'sending', // 送信中
+        totalCount: targets.length,
+        unreachedCount: 0,
+        unreachedDetails: '',
+        message: `【件名】${buildMessage(targets[0]).subject || '(件名なし)'}`
+      };
+      state.logs.unshift(overallLog);
+      persist();
+      renderLogs();
+
       const chunkSize = 100;
       for (let i = 0; i < targets.length; i += chunkSize) {
         const chunk = targets.slice(i, i + chunkSize);
@@ -458,81 +545,114 @@ async function dispatchMessages() {
             body: JSON.stringify({
               payloads,
               scenario: state.scenario,
-              channel: el.channelSelect.value
+              channel
             })
           });
           result = await res.json();
         } catch (fetchErr) {
-          // 通信・サーバー障害等の致命的エラーもログとして画面に残す
-          state.logs.unshift({
-            id: crypto.randomUUID(),
-            createdAt: new Date().toISOString(),
-            customerName: `【配信失敗】${chunk.length}件の送信エラー`,
-            scenario: state.scenario,
-            channel: el.channelSelect.value,
-            status: 'error',
-            totalCount: chunk.length,
-            unreachedCount: chunk.length,
-            unreachedDetails: chunk.map(p => `・${fullName(p)}: ${p.email || '連絡先なし'} (通信エラー/サーバー応答なし)`).join('\n'),
-            message: `【エラー詳細】送信処理中にサーバーエラーが発生しました: ${fetchErr.message}`
-          });
-          persist();
-          renderLogs();
+          // 通信・サーバー障害発生時：残りの全件を未到達として追加更新
+          const remainingCount = targets.length - i;
+          totalUnreached += remainingCount;
+          chunk.forEach(c => failedNamesList.push(`・${fullName(c)}: 送信エラー (ネットワーク障害: ${fetchErr.message})`));
+          
+          const foundLog = state.logs.find(l => l.id === logId);
+          if (foundLog) {
+            foundLog.status = 'error';
+            foundLog.unreachedCount = totalUnreached;
+            foundLog.unreachedDetails = [...failedNamesList, ...skippedNamesList].join('\n');
+            persist();
+            renderLogs();
+          }
           throw fetchErr;
         }
 
         if (!res.ok || !result.ok) {
-          // Resend 422 などのバリデーションエラーが発生した場合
           const errMsg = result.error || JSON.stringify(result);
-          state.logs.unshift({
-            id: crypto.randomUUID(),
-            createdAt: new Date().toISOString(),
-            customerName: `【配信失敗】${chunk.length}件の送信エラー`,
-            scenario: state.scenario,
-            channel: el.channelSelect.value,
-            status: 'error',
-            totalCount: chunk.length,
-            unreachedCount: chunk.length,
-            unreachedDetails: chunk.map(p => `・${fullName(p)}: ${p.email || '連絡先なし'}`).join('\n'),
-            message: `【エラー詳細】送信サーバーからエラーが返されました:\n${errMsg}`
-          });
-          persist();
-          renderLogs();
+          const remainingCount = targets.length - i;
+          totalUnreached += remainingCount;
+          chunk.forEach(c => failedNamesList.push(`・${fullName(c)}: 送信エラー (${errMsg})`));
+          
+          const foundLog = state.logs.find(l => l.id === logId);
+          if (foundLog) {
+            foundLog.status = 'error';
+            foundLog.unreachedCount = totalUnreached;
+            foundLog.unreachedDetails = [...failedNamesList, ...skippedNamesList].join('\n');
+            persist();
+            renderLogs();
+          }
           throw new Error(errMsg);
         }
 
-        // 送信が成功した場合（バウンス等は個別にカウント）
-        const totalCount = chunk.length;
-        const failedList = [];
-        const skippedList = [];
-        if (result && result.results) {
-          result.results.forEach(r => {
-            if (r.failedNames) r.failedNames.forEach(n => failedList.push(n));
-            if (r.skippedNames) r.skippedNames.forEach(n => skippedList.push(n));
-          });
-        }
-        const unreachedCount = failedList.length + skippedList.length;
-        const unreachedDetails = unreachedCount > 0
-          ? [...failedList.map(f => `・${f} (送信エラー)`), ...skippedList.map(s => `・${s} (宛先アドレスなし/配信停止)`)].join('\n')
-          : '';
+        // 送信完了結果の合算と蓄積
+        const results = result.results || {};
+        let chunkUnreached = 0;
 
-        state.logs.unshift({
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-          customerName: `【一括配信】${totalCount}件のバッチ送信`,
-          scenario: state.scenario,
-          channel: el.channelSelect.value,
-          status: (unreachedCount > 0 ? 'error' : 'success'),
-          totalCount,
-          unreachedCount,
-          unreachedDetails,
-          response: result,
-          message: `【件名】${payloads[0]?.subject}`
+        if (results.email) {
+          const em = results.email;
+          if (em.status === 'failed') {
+            chunk.forEach(c => failedNamesList.push(`・${fullName(c)}: メール送信エラー (${em.error || 'サーバー応答なし'})`));
+            chunkUnreached += chunk.length;
+          } else {
+            if (em.failedNames) {
+              em.failedNames.forEach(n => failedNamesList.push(`・${n}: メール送信エラー`));
+              chunkUnreached += em.failedNames.length;
+            }
+            if (em.skippedNames && em.skippedNames.length > 0) {
+              skippedNamesList.push(`・メール送信スキップ (オプトアウト等) ${em.skippedNames.length} 件`);
+              chunkUnreached += em.skippedNames.length;
+            }
+          }
+        }
+
+        if (results.line) {
+          const ln = results.line;
+          if (ln.status === 'failed') {
+            chunk.forEach(c => failedNamesList.push(`・${fullName(c)}: LINE送信エラー (${ln.error || 'サーバー応答なし'})`));
+            chunkUnreached += chunk.length;
+          } else {
+            if (ln.failedNames) {
+              ln.failedNames.forEach(n => failedNamesList.push(`・${n}: LINE送信エラー`));
+              chunkUnreached += ln.failedNames.length;
+            }
+            if (ln.skippedNames && ln.skippedNames.length > 0) {
+              skippedNamesList.push(`・LINE送信スキップ (ID未登録等) ${ln.skippedNames.length} 件`);
+              chunkUnreached += ln.skippedNames.length;
+            }
+          }
+        }
+
+        totalUnreached += chunkUnreached;
+
+        // 進行中のログの中間更新
+        const foundLog = state.logs.find(l => l.id === logId);
+        if (foundLog) {
+          foundLog.unreachedCount = totalUnreached;
+          foundLog.unreachedDetails = [...failedNamesList, ...skippedNamesList].join('\n');
+          persist();
+          renderLogs();
+        }
+
+        // 配信処理が実行された顧客は即座に選択解除する（再試行保護）
+        chunk.forEach(c => {
+          const idx = state.selectedCustomerIds.indexOf(c.id);
+          if (idx !== -1) {
+            state.selectedCustomerIds.splice(idx, 1);
+          }
         });
+
+        persist();
+        renderCustomers();
+      }
+
+      // すべてのチャンクが正常完了した後の最終ステータス更新
+      const foundLog = state.logs.find(l => l.id === logId);
+      if (foundLog) {
+        foundLog.status = totalUnreached > 0 ? 'error' : 'success';
         persist();
         renderLogs();
       }
-      alert(`${targets.length}件のバッチ配信処理をすべて完了しました`);
+
+      alert(`${targets.length}件の配信処理が完了しました。\n送信成功: ${targets.length - totalUnreached} 件\n未送信/未到達: ${totalUnreached} 件`);
     } else {
       // Manual Mode
       const customer = targets[0];
@@ -555,18 +675,47 @@ async function dispatchMessages() {
         throw new Error(result.error || JSON.stringify(result));
       }
       
+      const results = result.results || {};
+      let isSuccess = result.ok;
+      const failedDetails = [];
+      
+      if (channel === 'email' || channel === 'both') {
+        if (results.email && results.email.status === 'failed') {
+          isSuccess = false;
+          failedDetails.push(`メール送信エラー (${results.email.error || 'サーバー応答なし'})`);
+        }
+      }
+      if (channel === 'line' || channel === 'both') {
+        if (results.line && results.line.status === 'failed') {
+          isSuccess = false;
+          failedDetails.push(`LINE送信エラー (${results.line.error || 'サーバー応答なし'})`);
+        }
+      }
+
+      const unreachedCount = isSuccess ? 0 : 1;
+      const unreachedDetails = isSuccess ? '' : `・${fullName(customer)}: ${failedDetails.join(' / ') || '配信失敗'}`;
+
       state.logs.unshift({
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
-        customerName: fullName(customer),
+        customerName: `【個別配信】${fullName(customer)} 様`,
         scenario: state.scenario,
-        channel: el.channelSelect.value,
-        status: result.ok ? 'success' : 'error',
-        response: result,
-        message: message.body
+        channel,
+        status: isSuccess ? 'success' : 'error',
+        totalCount: 1,
+        unreachedCount,
+        unreachedDetails,
+        message: `【件名】${message.subject || '(件名なし)'}`
       });
       
+      // 個別配信の場合も、対象から除外（チェック解除）
+      const idx = state.selectedCustomerIds.indexOf(customer.id);
+      if (idx !== -1) {
+        state.selectedCustomerIds.splice(idx, 1);
+      }
+
       persist();
+      renderCustomers();
       renderLogs();
       alert(`個別手入力での配信が完了しました`);
       el.customerForm.reset();
