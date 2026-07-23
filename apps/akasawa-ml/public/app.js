@@ -148,6 +148,7 @@ const el = {
   clearPreviewBtn: document.getElementById('clearPreviewBtn'),
   downloadSampleBtn: document.getElementById('downloadSampleBtn'),
   deleteSelectedCsvBtn: document.getElementById('deleteSelectedCsvBtn'),
+  viewOptOutBtn: document.getElementById('viewOptOutBtn'),
   logItemTemplate: document.getElementById('logItemTemplate')
 };
 
@@ -204,16 +205,48 @@ el.csvFile.addEventListener('change', async e => {
   if (!file) return;
   const fileName = file.name;
   const text = await file.text();
-  const rows = parseCsv(text).map(row => {
+
+  // 過去に配信停止（オプトアウト）されたメールアドレス・LINE IDのリストを取得
+  const optOutEmails = new Set(
+    state.customers
+      .filter(c => c.unsubscribed && c.email)
+      .map(c => c.email.trim().toLowerCase())
+  );
+  const optOutLines = new Set(
+    state.customers
+      .filter(c => c.unsubscribed && c.lineUserId)
+      .map(c => c.lineUserId.trim())
+  );
+
+  const excludedAddresses = [];
+  const parsedRows = parseCsv(text).map(row => {
     const mapped = mapJapaneseHeaders(row);
     mapped.importFileName = fileName;
     mapped.importedAt = new Date().toISOString();
     return normalizeCustomer(mapped);
   }).filter(x => x.lastName || x.email || x.lineUserId);
-  state.customers = [...rows, ...state.customers];
+
+  // 配信停止されたアドレスがあれば自動除外・完全削除
+  const validRows = [];
+  parsedRows.forEach(c => {
+    const em = (c.email || '').trim().toLowerCase();
+    const lId = (c.lineUserId || '').trim();
+    if ((em && optOutEmails.has(em)) || (lId && optOutLines.has(lId)) || c.unsubscribed) {
+      excludedAddresses.push(em || lId || fullName(c));
+    } else {
+      validRows.push(c);
+    }
+  });
+
+  state.customers = [...validRows, ...state.customers];
   persist();
   render();
-  alert(`${rows.length}件を取り込みました`);
+
+  if (excludedAddresses.length > 0) {
+    alert(`CSV「${fileName}」から ${validRows.length} 件を取り込みました。\n\n※ 過去に配信停止されたメールアドレス ${excludedAddresses.length} 件は自動除外・削除いたしました:\n・${excludedAddresses.slice(0, 5).join('\n・')}${excludedAddresses.length > 5 ? '\n...他' : ''}`);
+  } else {
+    alert(`CSV「${fileName}」から ${validRows.length} 件を取り込みました。`);
+  }
 });
 
 el.searchInput.addEventListener('input', render);
@@ -227,6 +260,18 @@ el.csvFilter.addEventListener('change', () => {
 
 if (el.deleteSelectedCsvBtn) {
   el.deleteSelectedCsvBtn.addEventListener('click', deleteSelectedCsv);
+}
+
+if (el.viewOptOutBtn) {
+  el.viewOptOutBtn.addEventListener('click', () => {
+    const optOuts = state.customers.filter(c => c.unsubscribed);
+    if (!optOuts.length) {
+      alert('現在、配信停止（オプトアウト）されているメールアドレスはありません。');
+      return;
+    }
+    const list = optOuts.map(c => `・${fullName(c)}: ${c.email || c.lineUserId || '連絡先なし'}`).join('\n');
+    alert(`【配信停止（オプトアウト）アドレス一覧 (${optOuts.length}件)】\n※新しいCSVをインストールした際、下記のアドレスは全自動で除外・削除されます。\n\n${list}`);
+  });
 }
 
 function deleteSelectedCsv() {
@@ -398,16 +443,32 @@ async function dispatchMessages() {
           }
         }
 
-        const addrList = payloads.map(p => `・${p.customerName || '宛名なし'}: ${p.email || p.lineUserId || '連絡先なし'}`).join('\n');
+        const totalCount = chunk.length;
+        const failedList = [];
+        const skippedList = [];
+        if (result && result.results) {
+          result.results.forEach(r => {
+            if (r.failedNames) r.failedNames.forEach(n => failedList.push(n));
+            if (r.skippedNames) r.skippedNames.forEach(n => skippedList.push(n));
+          });
+        }
+        const unreachedCount = failedList.length + skippedList.length;
+        const unreachedDetails = unreachedCount > 0
+          ? [...failedList.map(f => `・${f} (送信エラー)`), ...skippedList.map(s => `・${s} (宛先アドレスなし/配信停止)`)].join('\n')
+          : '';
+
         state.logs.unshift({
           id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
-          customerName: `【一括配信】${chunk.length}件のバッチ送信`,
+          customerName: `【一括配信】${totalCount}件のバッチ送信`,
           scenario: state.scenario,
           channel: el.channelSelect.value,
-          status: (errLog ? 'error' : 'success'),
+          status: (unreachedCount > 0 ? 'error' : 'success'),
+          totalCount,
+          unreachedCount,
+          unreachedDetails,
           response: result,
-          message: `【件名】${payloads[0]?.subject}\n\n【配信先アドレス一覧 (${chunk.length}件)】\n${addrList}${errLog}`
+          message: `【件名】${payloads[0]?.subject}`
         });
         persist();
         renderLogs();
@@ -560,31 +621,23 @@ function renderLogs() {
   if (state.logs.length === 0) { el.logList.innerHTML = '<p class="text-secondary text-sm" style="padding:12px;">履歴はありません。</p>'; return; }
   el.logList.innerHTML = state.logs.map((log, i) => {
     const msg = log.message || '';
-    let contentHtml = '';
-    
-    if (msg.includes('【配信先アドレス一覧')) {
-      const parts = msg.split('【配信先アドレス一覧');
-      const headerPart = escapeHtml(parts[0]);
-      const listPart = escapeHtml('【配信先アドレス一覧' + parts.slice(1).join('【配信先アドレス一覧'));
-      const listLines = listPart.split('\n');
-      const titleLine = listLines[0];
-      const bodyLines = listLines.slice(1).join('\n');
+    const total = log.totalCount || 100;
+    const unreached = typeof log.unreachedCount === 'number' ? log.unreachedCount : 0;
+    const unreachedDetails = log.unreachedDetails || '';
 
-      contentHtml = `
-        <div style="white-space: pre-wrap; font-size: 12px; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 6px;">${headerPart}</div>
-        <details open style="margin-top: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--line); border-radius: 8px; padding: 8px;">
-          <summary style="cursor: pointer; font-weight: bold; color: var(--accent); font-size: 12px;">${titleLine} (クリックで開閉)</summary>
-          <div style="white-space: pre-wrap; font-size: 11px; color: var(--text); max-height: 350px; overflow-y: auto; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line);">${bodyLines}</div>
+    let statusBadgeHtml = '';
+    let unreachedBoxHtml = '';
+
+    if (unreached > 0) {
+      statusBadgeHtml = `<span class="badge" style="background:rgba(255,125,125,0.2); color:var(--danger); border-color:rgba(255,125,125,0.4); margin-right:8px;">⚠️ ${total}件中 ${unreached}件未到達</span>`;
+      unreachedBoxHtml = `
+        <details style="margin-top: 8px; background: rgba(255, 125, 125, 0.08); border: 1px solid rgba(255, 125, 125, 0.3); border-radius: 8px; padding: 8px;">
+          <summary style="cursor: pointer; font-weight: bold; color: var(--danger); font-size: 12px;">❌ ${total}件中 ${unreached}件未到達メール (クリックで未到達アドレスを表示)</summary>
+          <div style="white-space: pre-wrap; font-size: 11px; color: #ffbcbc; max-height: 250px; overflow-y: auto; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,125,125,0.3);">${escapeHtml(unreachedDetails)}</div>
         </details>
       `;
     } else {
-      // 過去の送信ログ（古い形式のログ）でもクリックして全内容を展開・確認できるように共通対応
-      contentHtml = `
-        <details open style="margin-top: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--line); border-radius: 8px; padding: 8px;">
-          <summary style="cursor: pointer; font-weight: bold; color: var(--accent); font-size: 12px;">🔍 配信ログの詳細・文面を確認 (クリックで開閉)</summary>
-          <div style="white-space: pre-wrap; font-size: 12px; color: var(--text); max-height: 350px; overflow-y: auto; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line);">${escapeHtml(msg)}</div>
-        </details>
-      `;
+      statusBadgeHtml = `<span class="badge success" style="margin-right:8px;">✅ ${total}件中 0件未到達 (全件届きました)</span>`;
     }
 
     return `
@@ -592,12 +645,13 @@ function renderLogs() {
         <div class="log-head">
           <strong>${escapeHtml(log.customerName)} / ${labelScenario(log.scenario)} / ${log.channel}</strong>
           <div>
-            <span class="badge ${log.status === 'success' ? 'success' : ''}" style="margin-right: 8px;">${log.status}</span>
+            ${statusBadgeHtml}
             <button type="button" class="danger delete-log-btn" data-index="${i}" style="width: auto; padding: 2px 8px; font-size: 11px; min-height: 0; display: inline-block;">削除</button>
           </div>
         </div>
         <div class="log-meta" style="font-size: 11px;">${new Date(log.createdAt).toLocaleString('ja-JP')}</div>
-        ${contentHtml}
+        <div style="white-space: pre-wrap; font-size: 12px; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 4px;">${escapeHtml(msg)}</div>
+        ${unreachedBoxHtml}
       </div>
     `;
   }).join('');
