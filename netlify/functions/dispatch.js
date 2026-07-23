@@ -38,7 +38,8 @@ async function sendEmail(customer, subject, message) {
     headers: {
       'X-Priority': '3',
       'X-MSMail-Priority': 'Normal',
-      'Importance': 'Normal'
+      'Importance': 'Normal',
+      'X-Mailer': 'Apple Mail (2.3654.120.0.1.13)'
     }
   };
 
