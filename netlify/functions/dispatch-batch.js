@@ -30,8 +30,11 @@ async function sendEmailBatch(payloads) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.MAIL_FROM;
   
-  const validPayloads = payloads.filter(p => p.email);
-  const skippedNames = payloads.filter(p => !p.email).map(p => `${p.customerName || '宛名なし'} (連絡先なし)`);
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const validPayloads = payloads.filter(p => p.email && emailRegex.test(p.email.trim()));
+  const skippedNames = payloads.filter(p => !p.email || !emailRegex.test(String(p.email).trim())).map(p => {
+    return `${p.customerName || '宛名なし'} (無効なアドレス: ${p.email || '空欄'})`;
+  });
 
   if (!apiKey || !from) {
     return { 
