@@ -398,6 +398,7 @@ async function dispatchMessages() {
           }
         }
 
+        const addrList = payloads.map(p => `・${p.customerName || '宛名なし'}: ${p.email || p.lineUserId || '連絡先なし'}`).join('\n');
         state.logs.unshift({
           id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
@@ -406,7 +407,7 @@ async function dispatchMessages() {
           channel: el.channelSelect.value,
           status: (errLog ? 'error' : 'success'),
           response: result,
-          message: `【件名】${payloads[0]?.subject}\n\n...（他 ${chunk.length}件一括送信）${errLog}`
+          message: `【件名】${payloads[0]?.subject}\n\n【配信先アドレス一覧 (${chunk.length}件)】\n${addrList}${errLog}`
         });
         persist();
         renderLogs();
@@ -556,20 +557,44 @@ function renderCustomers() {
 }
 
 function renderLogs() {
-  if (state.logs.length === 0) { el.logList.innerHTML = '<p class="text-secondary text-sm">履歴はありません。</p>'; return; }
-  el.logList.innerHTML = state.logs.map((log, i) => `
-    <div class="card bg-gray-50 text-sm" style="margin-bottom: 8px;">
-      <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
-        <strong>${escapeHtml(log.customerName)} / ${labelScenario(log.scenario)} / ${log.channel}</strong>
-        <div>
-          <span class="text-xs" style="color: ${log.status === 'success' ? '#2e7d32' : '#d32f2f'}; margin-right: 8px;">${log.status}</span>
-          <button class="danger delete-log-btn" data-index="${i}" style="padding: 2px 6px; font-size: 10px; min-height: 0;">削除</button>
+  if (state.logs.length === 0) { el.logList.innerHTML = '<p class="text-secondary text-sm" style="padding:12px;">履歴はありません。</p>'; return; }
+  el.logList.innerHTML = state.logs.map((log, i) => {
+    const msg = log.message || '';
+    let contentHtml = '';
+    
+    if (msg.includes('【配信先アドレス一覧')) {
+      const parts = msg.split('【配信先アドレス一覧');
+      const headerPart = escapeHtml(parts[0]);
+      const listPart = escapeHtml('【配信先アドレス一覧' + parts.slice(1).join('【配信先アドレス一覧'));
+      const listLines = listPart.split('\n');
+      const titleLine = listLines[0];
+      const bodyLines = listLines.slice(1).join('\n');
+
+      contentHtml = `
+        <div style="white-space: pre-wrap; font-size: 12px; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 6px;">${headerPart}</div>
+        <details style="margin-top: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--line); border-radius: 8px; padding: 8px;">
+          <summary style="cursor: pointer; font-weight: bold; color: var(--accent); font-size: 12px;">${titleLine} (クリックで確認)</summary>
+          <div style="white-space: pre-wrap; font-size: 11px; color: var(--text); max-height: 300px; overflow-y: auto; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line);">${bodyLines}</div>
+        </details>
+      `;
+    } else {
+      contentHtml = `<div style="white-space: pre-wrap; font-size: 12px; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 4px;">${escapeHtml(msg)}</div>`;
+    }
+
+    return `
+      <div class="log-item" style="margin-bottom: 10px;">
+        <div class="log-head">
+          <strong>${escapeHtml(log.customerName)} / ${labelScenario(log.scenario)} / ${log.channel}</strong>
+          <div>
+            <span class="badge ${log.status === 'success' ? 'success' : ''}" style="margin-right: 8px;">${log.status}</span>
+            <button type="button" class="danger delete-log-btn" data-index="${i}" style="width: auto; padding: 2px 8px; font-size: 11px; min-height: 0; display: inline-block;">削除</button>
+          </div>
         </div>
+        <div class="log-meta" style="font-size: 11px;">${new Date(log.createdAt).toLocaleString('ja-JP')}</div>
+        ${contentHtml}
       </div>
-      <div class="text-xs text-secondary">${new Date(log.createdAt).toLocaleString('ja-JP')}</div>
-      <div style="white-space: pre-wrap; font-size: 12px; margin-top: 4px; border-top: 1px solid #ddd; padding-top: 4px;">${escapeHtml(log.message)}</div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function renderTagFilter() {
