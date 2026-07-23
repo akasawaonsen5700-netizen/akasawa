@@ -504,10 +504,14 @@ async function dispatchMessages() {
 
       // 配信処理全体を表すログレコードを1つだけ作成して追加
       const logId = crypto.randomUUID();
+      const firstCustomer = targets[0];
+      const importName = (firstCustomer && firstCustomer.importFileName) ? firstCustomer.importFileName : '自由入力';
+      const logTitle = `【CSV配信】${importName} (${targets.length}件)`;
+
       const overallLog = {
         id: logId,
         createdAt: new Date().toISOString(),
-        customerName: `【一括配信】${targets.length}件の配信結果`,
+        customerName: logTitle,
         scenario: state.scenario,
         channel,
         status: 'sending', // 送信中
