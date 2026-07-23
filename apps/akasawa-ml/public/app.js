@@ -112,13 +112,6 @@ TEL: 0287-46-5700　FAX：0287-46-5699
 ※メール配信の停止（もういらない）をご希望の方は、下記URLよりお手続きをお願いいたします。
 ${window.location.origin}${isSubdir ? '/akasawa-ml' : ''}/unsubscribe.html`;
 
-const SIMPLE_SIGNATURE = `
-------------------------------
-赤沢温泉旅館 遠藤正俊
-〒329-2921 栃木県那須塩原市塩原1149
-TEL: 0287-46-5700
-公式サイト: https://akasawaonsen.com/`;
-
 const el = {
   tabCsv: document.getElementById('tabCsv'),
   tabManual: document.getElementById('tabManual'),
