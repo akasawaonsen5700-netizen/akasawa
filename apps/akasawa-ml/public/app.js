@@ -396,6 +396,41 @@ async function dispatchMessages() {
   el.dispatchBtn.disabled = true;
   el.dispatchBtn.textContent = '配信中...';
 
+  // 【配信前一斉チェック】送信対象のメールアドレスに1件でも規格違反や不正なものがあれば、1通も送らずにその場でエラー停止する
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const invalidTargets = [];
+
+  targets.forEach(customer => {
+    if (el.channelSelect.value === 'email' || el.channelSelect.value === 'both') {
+      if (!customer.email) {
+        invalidTargets.push(`・${fullName(customer)} (アドレスが空欄です)`);
+        return;
+      }
+      const cleanEmail = String(customer.email).trim();
+      const isFormatValid = emailRegex.test(cleanEmail);
+      const hasRfcViolation = cleanEmail.includes('..') || cleanEmail.includes('.@');
+      
+      if (!isFormatValid || hasRfcViolation) {
+        invalidTargets.push(`・${fullName(customer)}: ${customer.email} (無効またはRFC規格違反)`);
+      }
+    }
+  });
+
+  if (invalidTargets.length > 0) {
+    alert([
+      '【配信エラー：送信は1通も開始されていません】',
+      'リスト内に送信できない無効または規格違反（RFC違反）のメールアドレスが検出されました。',
+      '安全のため、送信を一切行わずに処理を中止しました。該当するアドレスを修正してください。',
+      '--------------------------------',
+      invalidTargets.slice(0, 10).join('\n'),
+      invalidTargets.length > 10 ? `...他 ${invalidTargets.length - 10} 件` : ''
+    ].filter(Boolean).join('\n'));
+    
+    el.dispatchBtn.disabled = false;
+    el.dispatchBtn.textContent = '配信実行';
+    return;
+  }
+
   try {
     if (currentMode === 'csv') {
       const chunkSize = 100;
