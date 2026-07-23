@@ -572,13 +572,19 @@ function renderLogs() {
 
       contentHtml = `
         <div style="white-space: pre-wrap; font-size: 12px; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 6px;">${headerPart}</div>
-        <details style="margin-top: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--line); border-radius: 8px; padding: 8px;">
-          <summary style="cursor: pointer; font-weight: bold; color: var(--accent); font-size: 12px;">${titleLine} (クリックで確認)</summary>
-          <div style="white-space: pre-wrap; font-size: 11px; color: var(--text); max-height: 300px; overflow-y: auto; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line);">${bodyLines}</div>
+        <details open style="margin-top: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--line); border-radius: 8px; padding: 8px;">
+          <summary style="cursor: pointer; font-weight: bold; color: var(--accent); font-size: 12px;">${titleLine} (クリックで開閉)</summary>
+          <div style="white-space: pre-wrap; font-size: 11px; color: var(--text); max-height: 350px; overflow-y: auto; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line);">${bodyLines}</div>
         </details>
       `;
     } else {
-      contentHtml = `<div style="white-space: pre-wrap; font-size: 12px; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 4px;">${escapeHtml(msg)}</div>`;
+      // 過去の送信ログ（古い形式のログ）でもクリックして全内容を展開・確認できるように共通対応
+      contentHtml = `
+        <details open style="margin-top: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--line); border-radius: 8px; padding: 8px;">
+          <summary style="cursor: pointer; font-weight: bold; color: var(--accent); font-size: 12px;">🔍 配信ログの詳細・文面を確認 (クリックで開閉)</summary>
+          <div style="white-space: pre-wrap; font-size: 12px; color: var(--text); max-height: 350px; overflow-y: auto; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line);">${escapeHtml(msg)}</div>
+        </details>
+      `;
     }
 
     return `
