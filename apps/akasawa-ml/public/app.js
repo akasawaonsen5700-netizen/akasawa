@@ -484,14 +484,7 @@ function buildMessage(customer) {
   let tplMsg = tpl.message(customerWithFullName);
   let customMsg = el.customMessage.value;
 
-  // 【重複ガード】テンプレート文章と追記文章が重複・同一の場合は2重出力を自動防止
-  if (customMsg && tplMsg && state.scenario !== 'custom') {
-    const cleanT = tplMsg.replace(customerWithFullName.greeting, '').trim();
-    const cleanC = customMsg.replace(customerWithFullName.greeting, '').trim();
-    if (cleanC && cleanT && (cleanC.includes(cleanT.substring(0, 50)) || cleanT.includes(cleanC.substring(0, 50)))) {
-      tplMsg = '';
-    }
-  }
+  // ユーザーが選択・入力した文章を一切カット・削除せず完全に結合
 
   // ユーザーが入力・ペーストした文章をそのまま使用（一切の勝手な本文・記号の改変を行わない）
   let fullContent = [tplMsg, customMsg].filter(Boolean).join('\n\n');

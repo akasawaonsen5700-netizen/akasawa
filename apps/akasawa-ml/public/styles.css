@@ -59,7 +59,8 @@ th, td { border-bottom: 1px solid rgba(255,255,255,.07); padding: 10px; text-ali
 .top-gap { margin-top: 12px; }
 .inline-actions { display: flex; gap: 10px; }
 .preview {
-  margin-top: 14px; padding: 14px; background: #0c1430; border: 1px solid var(--line); border-radius: 14px; white-space: pre-wrap;
+  margin-top: 14px; padding: 16px; background: #0c1430; border: 1px solid var(--line); border-radius: 14px; white-space: pre-wrap;
+  max-height: 800px; overflow-y: auto; line-height: 1.6; word-break: break-word;
 }
 .hidden { display: none; }
 .log-item { padding: 12px; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; background: rgba(12,20,48,.8); }
@@ -68,7 +69,7 @@ th, td { border-bottom: 1px solid rgba(255,255,255,.07); padding: 10px; text-ali
 .log-body { margin: 0; white-space: pre-wrap; color: #dfe8ff; }
 .scenario { min-height: 56px; }
 #customMessage {
-  min-height: 200px;
+  min-height: 250px;
   line-height: 1.6;
   resize: vertical;
 }
