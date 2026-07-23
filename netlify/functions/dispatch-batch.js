@@ -4,7 +4,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { payloads, channel, scenario } = JSON.parse(event.body || '{}');
+    let { payloads, channel, scenario } = JSON.parse(event.body || '{}');
     if (!payloads || !Array.isArray(payloads) || payloads.length === 0) {
       return json(400, { ok: false, error: 'payloads array is required' });
     }
@@ -12,15 +12,128 @@ exports.handler = async (event) => {
       return json(400, { ok: false, error: 'max 100 payloads per batch request allowed' });
     }
 
-    const results = [];
-    if (channel === 'email' || channel === 'both') {
-      results.push(await sendEmailBatch(payloads));
+    // === 宛先重複排除 (同一メールアドレスまたはLINE IDへの多重送信を防止) ===
+    const seenEmails = new Set();
+    const seenLineUsers = new Set();
+    const uniquePayloads = [];
+
+    payloads.forEach(p => {
+      let isDuplicate = false;
+      if (channel === 'email' || channel === 'both') {
+        if (p.email) {
+          const cleanEmail = String(p.email).trim().toLowerCase();
+          if (seenEmails.has(cleanEmail)) {
+            isDuplicate = true;
+          } else {
+            seenEmails.add(cleanEmail);
+          }
+        }
+      }
+      if (channel === 'line' || channel === 'both') {
+        if (p.lineUserId) {
+          const cleanLine = String(p.lineUserId).trim();
+          if (seenLineUsers.has(cleanLine)) {
+            isDuplicate = true;
+          } else {
+            seenLineUsers.add(cleanLine);
+          }
+        }
+      }
+      if (!isDuplicate) {
+        uniquePayloads.push(p);
+      }
+    });
+    payloads = uniquePayloads;
+
+    // === 事前バリデーション (予測可能なエラーがある場合は、Resend送信を含め1件も送信せずに手前で即時エラー終了する) ===
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const apiKey = process.env.RESEND_API_KEY;
+    const from = process.env.MAIL_FROM;
+    const lineToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+
+    if ((channel === 'email' || channel === 'both') && (!apiKey || !from)) {
+      return json(400, { ok: false, error: 'メール配信用APIキー(RESEND_API_KEY)または送信元アドレス(MAIL_FROM)が設定されていません。送信処理は一切開始されていません。' });
     }
-    if (channel === 'line' || channel === 'both') {
-      results.push(await sendLineBatch(payloads));
+    if ((channel === 'line' || channel === 'both') && !lineToken) {
+      return json(400, { ok: false, error: 'LINE配信用のアクセストークン(LINE_CHANNEL_ACCESS_TOKEN)が設定されていません。送信処理は一切開始されていません。' });
     }
 
-    return json(200, { ok: true, scenario, channel, results, mode: runtimeMode() });
+    const invalidEmails = [];
+    const invalidLineUsers = [];
+    const invalidMessages = [];
+    const invalidSubjects = [];
+
+    payloads.forEach((p, idx) => {
+      const name = p.customerName || `No.${idx + 1}`;
+
+      // メッセージ本文の検証
+      if (!p.message || String(p.message).trim() === '') {
+        invalidMessages.push(`・${name}: メッセージ本文が空欄です`);
+      }
+
+      if (channel === 'email' || channel === 'both') {
+        // メール件名の検証
+        if (!p.subject || String(p.subject).trim() === '') {
+          invalidSubjects.push(`・${name}: メールの件名が空欄です`);
+        }
+        if (!p.email) {
+          invalidEmails.push(`・${name}: メールアドレスが空欄です`);
+        } else {
+          const cleanEmail = String(p.email).trim();
+          const isFormatValid = emailRegex.test(cleanEmail);
+          const hasRfcViolation = cleanEmail.includes('..') || cleanEmail.includes('.@');
+          if (!isFormatValid || hasRfcViolation) {
+            invalidEmails.push(`・${name}: ${p.email} (無効またはRFC規格違反)`);
+          }
+        }
+      }
+      if (channel === 'line' || channel === 'both') {
+        if (!p.lineUserId) {
+          invalidLineUsers.push(`・${name}: LINE IDが設定されていません`);
+        }
+      }
+    });
+
+    if (invalidEmails.length > 0 || invalidLineUsers.length > 0 || invalidMessages.length > 0 || invalidSubjects.length > 0) {
+      const errors = [...invalidEmails, ...invalidLineUsers, ...invalidMessages, ...invalidSubjects];
+      return json(400, { 
+        ok: false, 
+        error: '送信先リストまたはメッセージ内容に不備があるため、送信処理を一切行わずに中断しました。該当箇所を修正してください。',
+        details: errors.join('\n')
+      });
+    }
+    // === 事前バリデーション終了 ===
+
+    const results = {};
+    let hasErrors = false;
+
+    if (channel === 'email' || channel === 'both') {
+      try {
+        const emailRes = await sendEmailBatch(payloads);
+        results.email = emailRes;
+        if (emailRes.failedNames && emailRes.failedNames.length > 0) {
+          hasErrors = true;
+        }
+      } catch (err) {
+        results.email = { status: 'failed', error: err.message };
+        hasErrors = true;
+      }
+    }
+    if (channel === 'line' || channel === 'both') {
+      try {
+        const lineRes = await sendLineBatch(payloads);
+        results.line = lineRes;
+        if (lineRes.failedNames && lineRes.failedNames.length > 0) {
+          hasErrors = true;
+        }
+      } catch (err) {
+        results.line = { status: 'failed', error: err.message };
+        hasErrors = true;
+      }
+    }
+
+    // 処理自体は完了したため200を返し、各チャネルの成否と詳細をresultsオブジェクトに入れて応答する
+    return json(200, { ok: true, scenario, channel, results, hasErrors, mode: runtimeMode() });
   } catch (error) {
     return json(500, { ok: false, error: error.message, mode: runtimeMode() });
   }
