@@ -200,30 +200,17 @@
           </div>
         </div>
       </div>
-      <div style="margin-top: 10px; padding: 10px 14px; background: rgba(141, 240, 200, 0.08); border: 1px solid rgba(141, 240, 200, 0.3); border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
-        <div>
-          <strong style="color: var(--accent-2); font-size: 13px;">🎯 メイントレイ (Primary) 到達優先モード</strong>
-          <div class="mini" style="margin: 2px 0 0;">Gmailのプロモーション判定を防ぐため、追跡URL除去・個人メール風シンプル送信を行います</div>
-        </div>
-        <label style="display: flex; align-items: center; gap: 6px; margin: 0; cursor: pointer; color: var(--accent-2); font-weight: bold; font-size: 13px;">
-          <input type="checkbox" id="mainInboxModeToggle" checked style="width: 18px; height: 18px; cursor: pointer;" />
-          有効にする (推奨)
-        </label>
-      </div>
       <div class="top-gap stack">
         <div>
           <label>件名</label>
           <input type="text" id="customSubject" placeholder="件名を入力 (空欄の場合はデフォルトの件名が使用されます)">
         </div>
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
-            <label style="margin: 0;">テンプレート追記</label>
-            <div style="display: flex; gap: 6px;">
-              <button type="button" id="formatMainInboxBtn" class="ghost" style="width: auto; padding: 2px 8px; font-size: 11px; border: 1px solid var(--accent-2); color: var(--accent-2); cursor: pointer; min-height: 0;">🎯 メイントレイ優先に整頓 (プロモーション回避)</button>
-              <button type="button" id="formatCustomMsgBtn" class="ghost" style="width: auto; padding: 2px 8px; font-size: 11px; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; min-height: 0;">✨ 余分な行間を自動整頓</button>
-            </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label style="margin: 0;">テンプレート追記 (自由入力)</label>
+            <button type="button" id="formatCustomMsgBtn" class="ghost" style="width: auto; padding: 2px 8px; font-size: 11px; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; min-height: 0;">✨ 余分な空行の整頓</button>
           </div>
-          <textarea id="customMessage" rows="8" placeholder="追加したい文面を入力（コピー＆ペースト時の余分な空行は自動整頓されます）"></textarea>
+          <textarea id="customMessage" rows="8" placeholder="追加・作成したい文面を自由に入力または貼り付けしてください"></textarea>
         </div>
       </div>
       <div class="top-gap inline-actions">

@@ -489,45 +489,28 @@ function buildMessage(customer) {
     greeting: name === '赤沢温泉旅館ご利用者様' ? '赤沢温泉旅館ご利用者様' : `${name} 様`
   };
   let tplMsg = tpl.message(customerWithFullName);
-  let customMsg = cleanTextLineBreaks(el.customMessage.value);
+  let customMsg = el.customMessage.value;
 
   // 【重複ガード】テンプレート文章と追記文章が重複・同一の場合は2重出力を自動防止
   if (customMsg && tplMsg && state.scenario !== 'custom') {
-    const cleanT = cleanTextLineBreaks(tplMsg.replace(customerWithFullName.greeting, '')).trim();
-    const cleanC = cleanTextLineBreaks(customMsg.replace(customerWithFullName.greeting, '')).trim();
+    const cleanT = tplMsg.replace(customerWithFullName.greeting, '').trim();
+    const cleanC = customMsg.replace(customerWithFullName.greeting, '').trim();
     if (cleanC && cleanT && (cleanC.includes(cleanT.substring(0, 50)) || cleanT.includes(cleanC.substring(0, 50)))) {
-      tplMsg = ''; // 重複している場合は追記内容を優先し、テンプレートの2重化を排除
+      tplMsg = '';
     }
   }
 
-  // メイントレイ(Primary)到達優先モードの確認
-  const isMainInboxMode = el.mainInboxModeToggle ? el.mainInboxModeToggle.checked : true;
-
-  if (isMainInboxMode) {
-    if (tplMsg) tplMsg = optimizeForMainInbox(tplMsg);
-    if (customMsg) customMsg = optimizeForMainInbox(customMsg);
-  }
-
-  // テンプレート文章と自由入力文章を結合
+  // ユーザーが入力・ペーストした文章をそのまま使用（一切の勝手な本文・記号の改変を行わない）
   let fullContent = [tplMsg, customMsg].filter(Boolean).join('\n\n');
 
-  // メイントレイ到達性を保ちつつ、予約者を確実に自動特定するための最小限スマートID(?cid=顧客ID)を付与
+  // データ収集のため、URLに最小限の顧客特定ID(?cid=顧客ID)のみを静かにアタッチ
   fullContent = fullContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
     if (url.includes('unsubscribe') || url.includes('maps.app')) return url;
-    if (isMainInboxMode) {
-      return url.includes('?') ? `${url}&cid=${customer.id}` : `${url}?cid=${customer.id}`;
-    } else {
-      const trackingParam = `?ref=ml_demo&cid=${customer.id}&scenario=${state.scenario}`;
-      return url.includes('?') ? `${url}&ref=ml_demo&cid=${customer.id}` : `${url}${trackingParam}`;
-    }
+    return url.includes('?') ? `${url}&cid=${customer.id}` : `${url}?cid=${customer.id}`;
   });
 
-  const selectedSig = isMainInboxMode ? SIMPLE_SIGNATURE : SIGNATURE;
-  const body = fullContent + '\n' + selectedSig;
-  let subject = el.customSubject.value.trim() || tpl.emailSubject;
-  if (isMainInboxMode && subject) {
-    subject = subject.replace(/[！!]{2,}/g, '！').replace(/[★☆]{2,}/g, '★');
-  }
+  const body = fullContent + '\n' + SIGNATURE;
+  const subject = el.customSubject.value.trim() || tpl.emailSubject;
   return { subject, body };
 }
 
