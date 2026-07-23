@@ -414,35 +414,59 @@ async function dispatchMessages() {
           };
         });
 
-        const res = await fetch('/api/dispatch-batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            payloads,
-            scenario: state.scenario,
-            channel: el.channelSelect.value
-          })
-        });
-
-        const result = await res.json();
-        if (!res.ok || !result.ok) throw new Error(result.error || JSON.stringify(result));
-
-        let errLog = '';
-        if (result.results) {
-          const skipped = new Set();
-          const failed = new Set();
-          result.results.forEach(r => {
-            if (r.skippedNames) r.skippedNames.forEach(n => skipped.add(n));
-            if (r.failedNames) r.failedNames.forEach(n => failed.add(n));
+        let res;
+        let result;
+        try {
+          res = await fetch('/api/dispatch-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              payloads,
+              scenario: state.scenario,
+              channel: el.channelSelect.value
+            })
           });
-          
-          if (failed.size > 0 || skipped.size > 0) {
-            errLog += '\n\n❌ 以下の宛先には送信できませんでした:\n';
-            failed.forEach(n => errLog += `・${n} (送信エラー)\n`);
-            skipped.forEach(n => errLog += `・${n} (宛先アドレスなし)\n`);
-          }
+          result = await res.json();
+        } catch (fetchErr) {
+          // 通信・サーバー障害等の致命的エラーもログとして画面に残す
+          state.logs.unshift({
+            id: crypto.randomUUID(),
+            createdAt: new Date().toISOString(),
+            customerName: `【配信失敗】${chunk.length}件の送信エラー`,
+            scenario: state.scenario,
+            channel: el.channelSelect.value,
+            status: 'error',
+            totalCount: chunk.length,
+            unreachedCount: chunk.length,
+            unreachedDetails: chunk.map(p => `・${fullName(p)}: ${p.email || '連絡先なし'} (通信エラー/サーバー応答なし)`).join('\n'),
+            message: `【エラー詳細】送信処理中にサーバーエラーが発生しました: ${fetchErr.message}`
+          });
+          persist();
+          renderLogs();
+          throw fetchErr;
         }
 
+        if (!res.ok || !result.ok) {
+          // Resend 422 などのバリデーションエラーが発生した場合
+          const errMsg = result.error || JSON.stringify(result);
+          state.logs.unshift({
+            id: crypto.randomUUID(),
+            createdAt: new Date().toISOString(),
+            customerName: `【配信失敗】${chunk.length}件の送信エラー`,
+            scenario: state.scenario,
+            channel: el.channelSelect.value,
+            status: 'error',
+            totalCount: chunk.length,
+            unreachedCount: chunk.length,
+            unreachedDetails: chunk.map(p => `・${fullName(p)}: ${p.email || '連絡先なし'}`).join('\n'),
+            message: `【エラー詳細】送信サーバーからエラーが返されました:\n${errMsg}`
+          });
+          persist();
+          renderLogs();
+          throw new Error(errMsg);
+        }
+
+        // 送信が成功した場合（バウンス等は個別にカウント）
         const totalCount = chunk.length;
         const failedList = [];
         const skippedList = [];
@@ -624,28 +648,45 @@ function renderLogs() {
     const total = log.totalCount || 100;
     const unreached = typeof log.unreachedCount === 'number' ? log.unreachedCount : 0;
     const unreachedDetails = log.unreachedDetails || '';
+    const isErrorLog = log.status === 'error' || log.customerName.includes('エラー') || log.customerName.includes('失敗');
 
     let detailsBoxHtml = '';
 
-    if (unreached > 0) {
+    if (isErrorLog) {
+      // 配信失敗、422エラーなどのエラーログの場合（最初から開いておく）
+      detailsBoxHtml = `
+        <details open style="margin-top: 8px; background: rgba(255, 125, 125, 0.1); border: 1px solid rgba(255, 125, 125, 0.4); border-radius: 8px; padding: 12px;">
+          <summary style="cursor: pointer; font-weight: bold; color: var(--danger); font-size: 13px;">🚨 送信失敗・エラーの詳細 (クリックで開閉)</summary>
+          <div style="font-size: 12px; color: var(--text); margin-top: 8px;">
+            <div style="font-weight: bold; color: #ffbcbc; margin-bottom: 4px;">▼ エラーメッセージ:</div>
+            <div style="white-space: pre-wrap; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; font-family: monospace;">${escapeHtml(msg)}</div>
+            
+            <div style="font-weight: bold; color: #ffbcbc; margin-top: 10px; margin-bottom: 4px;">▼ この送信グループに含まれる宛先アドレス一覧 (計 ${total}件):</div>
+            <div style="white-space: pre-wrap; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; max-height: 250px; overflow-y: auto;">${escapeHtml(unreachedDetails || '宛先情報はありません')}</div>
+          </div>
+        </details>
+      `;
+    } else if (unreached > 0) {
+      // 送信は完了したが、一部に未到達・バウンスがあった場合
       detailsBoxHtml = `
         <details open style="margin-top: 8px; background: rgba(255, 125, 125, 0.08); border: 1px solid rgba(255, 125, 125, 0.3); border-radius: 8px; padding: 10px;">
-          <summary style="cursor: pointer; font-weight: bold; color: var(--danger); font-size: 13px;">❌ ${total}件中 ${unreached}件未到達メール (クリックで未到達アドレスを表示/非表示)</summary>
-          <div style="white-space: pre-wrap; font-size: 12px; color: #ffbcbc; max-height: 300px; overflow-y: auto; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,125,125,0.3);">【未到達・エラー宛先リスト】\n${escapeHtml(unreachedDetails)}</div>
+          <summary style="cursor: pointer; font-weight: bold; color: var(--danger); font-size: 13px;">⚠️ ${total}件中 ${unreached}件未到達 (クリックで宛先を表示)</summary>
+          <div style="white-space: pre-wrap; font-size: 12px; color: #ffbcbc; max-height: 250px; overflow-y: auto; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,125,125,0.3);">【不達エラー宛先リスト】\n${escapeHtml(unreachedDetails)}</div>
         </details>
       `;
     } else {
+      // 完全成功ログ
       detailsBoxHtml = `
         <details style="margin-top: 8px; background: rgba(141, 240, 200, 0.06); border: 1px solid rgba(141, 240, 200, 0.25); border-radius: 8px; padding: 10px;">
-          <summary style="cursor: pointer; font-weight: bold; color: var(--accent-2); font-size: 13px;">✅ ${total}件中 0件未到達 (全件届きました - クリックで確認)</summary>
-          <div style="white-space: pre-wrap; font-size: 12px; color: var(--text); max-height: 300px; overflow-y: auto; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(141,240,200,0.25);">【配信結果】全 ${total} 件へ正常に配信完了いたしました。(未到達アドレス: 0件)\n\n${escapeHtml(msg)}</div>
+          <summary style="cursor: pointer; font-weight: bold; color: var(--accent-2); font-size: 13px;">✅ ${total}件中 0件未到達 (全件正常配信 - クリックで詳細を表示)</summary>
+          <div style="white-space: pre-wrap; font-size: 12px; color: var(--text); max-height: 250px; overflow-y: auto; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(141, 240, 200, 0.25);">【配信結果】全 ${total} 件へ正常にリクエストを完了しました。(未到達: 0件)\n\n${escapeHtml(msg)}</div>
         </details>
       `;
     }
 
     return `
       <div class="log-item" style="margin-bottom: 12px; background: rgba(18,26,49,0.85); border: 1px solid var(--line); border-radius: 12px; padding: 14px;">
-        <div class="log-head" style="display:flex; justify-style:space-between; align-items:center;">
+        <div class="log-head" style="display:flex; justify-content:space-between; align-items:center;">
           <strong>${escapeHtml(log.customerName)} / ${labelScenario(log.scenario)} / ${log.channel}</strong>
           <button type="button" class="danger delete-log-btn" data-index="${i}" style="width: auto; padding: 2px 10px; font-size: 11px; min-height: 0;">削除</button>
         </div>
