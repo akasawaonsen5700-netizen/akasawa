@@ -27,14 +27,30 @@ exports.handler = async (event) => {
 };
 
 async function sendEmailBatch(payloads) {
+  // 英数字・主要記号のみを許可する厳格なメールアドレス正規表現（日本語やカンマ・セミコロン等を完全に弾く）
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  
+  const validPayloads = payloads.filter(p => {
+    if (!p.email) return false;
+    const cleanEmail = String(p.email).trim();
+    return emailRegex.test(cleanEmail);
+  });
+
+  const skippedNames = payloads.filter(p => {
+    if (!p.email) return true;
+    const cleanEmail = String(p.email).trim();
+    return !emailRegex.test(cleanEmail);
+  }).map(p => {
+    return `${p.customerName || '宛名なし'} (無効なアドレス形式: ${p.email || '空欄'})`;
+  });
+
+  // サーバーログに実際に送信されるアドレスをデバッグ出力
+  console.log(`[sendEmailBatch] 送信要求: ${payloads.length}件, 有効: ${validPayloads.length}件, スキップ: ${skippedNames.length}件`);
+  if (validPayloads.length > 0) {
+    console.log(`[sendEmailBatch] 送信先サンプル:`, validPayloads.slice(0, 5).map(p => p.email));
+  }
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.MAIL_FROM;
-  
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const validPayloads = payloads.filter(p => p.email && emailRegex.test(p.email.trim()));
-  const skippedNames = payloads.filter(p => !p.email || !emailRegex.test(String(p.email).trim())).map(p => {
-    return `${p.customerName || '宛名なし'} (無効なアドレス: ${p.email || '空欄'})`;
-  });
 
   if (!apiKey || !from) {
     return { 
