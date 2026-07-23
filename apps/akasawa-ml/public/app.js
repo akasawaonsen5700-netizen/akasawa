@@ -97,6 +97,13 @@ TEL: 0287-46-5700　FAX：0287-46-5699
 ※メール配信の停止（もういらない）をご希望の方は、下記URLよりお手続きをお願いいたします。
 ${window.location.origin}${isSubdir ? '/akasawa-ml' : ''}/unsubscribe.html`;
 
+const SIMPLE_SIGNATURE = `
+------------------------------
+赤沢温泉旅館 遠藤正俊
+〒329-2921 栃木県那須塩原市塩原1149
+TEL: 0287-46-5700
+公式サイト: https://akasawaonsen.com/`;
+
 const el = {
   tabCsv: document.getElementById('tabCsv'),
   tabManual: document.getElementById('tabManual'),
@@ -127,6 +134,7 @@ const el = {
   customMessage: document.getElementById('customMessage'),
   formatCustomMsgBtn: document.getElementById('formatCustomMsgBtn'),
   formatMainInboxBtn: document.getElementById('formatMainInboxBtn'),
+  mainInboxModeToggle: document.getElementById('mainInboxModeToggle'),
   seedBtn: document.getElementById('seedBtn'),
   clearBtn: document.getElementById('clearBtn'),
   clearPreviewBtn: document.getElementById('clearPreviewBtn'),
@@ -261,6 +269,10 @@ if (el.formatCustomMsgBtn) {
     el.customMessage.value = cleanTextLineBreaks(el.customMessage.value);
     preview();
   });
+}
+
+if (el.mainInboxModeToggle) {
+  el.mainInboxModeToggle.addEventListener('change', preview);
 }
 
 if (el.formatMainInboxBtn) {
@@ -473,18 +485,32 @@ function buildMessage(customer) {
     }
   }
 
+  // メイントレイ(Primary)到達優先モードの確認
+  const isMainInboxMode = el.mainInboxModeToggle ? el.mainInboxModeToggle.checked : true;
+
+  if (isMainInboxMode) {
+    if (tplMsg) tplMsg = optimizeForMainInbox(tplMsg);
+    if (customMsg) customMsg = optimizeForMainInbox(customMsg);
+  }
+
   // テンプレート文章と自由入力文章を結合
   let fullContent = [tplMsg, customMsg].filter(Boolean).join('\n\n');
 
-  // 自由文章を含む全URLに自動識別・トラッキング用パラメータ(cid, scenario)をアタッチ
-  const trackingParam = `?ref=ml_demo&cid=${customer.id}&scenario=${state.scenario}`;
-  fullContent = fullContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
-    if (url.includes('unsubscribe') || url.includes('maps.app')) return url;
-    return url.includes('?') ? `${url}&ref=ml_demo&cid=${customer.id}` : `${url}${trackingParam}`;
-  });
+  if (!isMainInboxMode) {
+    // トラッキングモードの場合のみクエリパラメータをアタッチ
+    const trackingParam = `?ref=ml_demo&cid=${customer.id}&scenario=${state.scenario}`;
+    fullContent = fullContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+      if (url.includes('unsubscribe') || url.includes('maps.app')) return url;
+      return url.includes('?') ? `${url}&ref=ml_demo&cid=${customer.id}` : `${url}${trackingParam}`;
+    });
+  }
 
-  const body = fullContent + '\n' + SIGNATURE;
-  const subject = el.customSubject.value.trim() || tpl.emailSubject;
+  const selectedSig = isMainInboxMode ? SIMPLE_SIGNATURE : SIGNATURE;
+  const body = fullContent + '\n' + selectedSig;
+  let subject = el.customSubject.value.trim() || tpl.emailSubject;
+  if (isMainInboxMode && subject) {
+    subject = subject.replace(/[！!]{2,}/g, '！').replace(/[★☆]{2,}/g, '★');
+  }
   return { subject, body };
 }
 
