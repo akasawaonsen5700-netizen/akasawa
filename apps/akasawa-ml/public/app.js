@@ -511,14 +511,16 @@ function buildMessage(customer) {
   // テンプレート文章と自由入力文章を結合
   let fullContent = [tplMsg, customMsg].filter(Boolean).join('\n\n');
 
-  if (!isMainInboxMode) {
-    // トラッキングモードの場合のみクエリパラメータをアタッチ
-    const trackingParam = `?ref=ml_demo&cid=${customer.id}&scenario=${state.scenario}`;
-    fullContent = fullContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
-      if (url.includes('unsubscribe') || url.includes('maps.app')) return url;
+  // メイントレイ到達性を保ちつつ、予約者を確実に自動特定するための最小限スマートID(?cid=顧客ID)を付与
+  fullContent = fullContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+    if (url.includes('unsubscribe') || url.includes('maps.app')) return url;
+    if (isMainInboxMode) {
+      return url.includes('?') ? `${url}&cid=${customer.id}` : `${url}?cid=${customer.id}`;
+    } else {
+      const trackingParam = `?ref=ml_demo&cid=${customer.id}&scenario=${state.scenario}`;
       return url.includes('?') ? `${url}&ref=ml_demo&cid=${customer.id}` : `${url}${trackingParam}`;
-    });
-  }
+    }
+  });
 
   const selectedSig = isMainInboxMode ? SIMPLE_SIGNATURE : SIGNATURE;
   const body = fullContent + '\n' + selectedSig;
