@@ -489,11 +489,6 @@ function buildMessage(customer) {
   // ユーザーが入力・ペーストした文章をそのまま使用（一切の勝手な本文・記号の改変を行わない）
   let fullContent = [tplMsg, customMsg].filter(Boolean).join('\n\n');
 
-  // データ収集のため、URLに最小限の顧客特定ID(?cid=顧客ID)のみを静かにアタッチ
-  fullContent = fullContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
-    if (url.includes('unsubscribe') || url.includes('maps.app')) return url;
-    return url.includes('?') ? `${url}&cid=${customer.id}` : `${url}?cid=${customer.id}`;
-  });
 
   const body = fullContent + '\n' + SIGNATURE;
   const subject = el.customSubject.value.trim() || tpl.emailSubject;
