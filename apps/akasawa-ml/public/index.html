@@ -98,14 +98,15 @@
           </div>
         </div>
 
-        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-          <input type="text" id="searchInput" placeholder="検索: 名前 / メール / タグ">
+        <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; align-items: center;">
+          <input type="text" id="searchInput" placeholder="検索: 名前 / メール / タグ" style="flex: 1;">
           <select id="tagFilter" style="width: auto;">
             <option value="">全タグ</option>
           </select>
           <select id="csvFilter" style="width: auto;">
             <option value="">すべてのCSV</option>
           </select>
+          <button id="deleteSelectedCsvBtn" class="ghost danger" style="padding: 6px 12px; font-size: 12px; display: none; width: auto; margin: 0;">🗑️ 選択中のCSVを削除</button>
         </div>
 
         <div id="customerTableContainer" class="table-container hidden">
