@@ -27,21 +27,29 @@ exports.handler = async (event) => {
 };
 
 async function sendEmailBatch(payloads) {
-  // 英数字・主要記号のみを許可する厳格なメールアドレス正規表現（日本語やカンマ・セミコロン等を完全に弾く）
+  // 英数字・主要記号のみを許可する厳格なメールアドレス正規表現
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   
   const validPayloads = payloads.filter(p => {
     if (!p.email) return false;
     const cleanEmail = String(p.email).trim();
-    return emailRegex.test(cleanEmail);
+    
+    // 1. 厳格な書式チェック
+    if (!emailRegex.test(cleanEmail)) return false;
+    // 2. 日本の古いキャリアメール等に多いRFC違反（ドット連続「..」や@直前のドット「.@」）を排除
+    if (cleanEmail.includes('..') || cleanEmail.includes('.@')) return false;
+    
+    return true;
   });
 
   const skippedNames = payloads.filter(p => {
     if (!p.email) return true;
     const cleanEmail = String(p.email).trim();
-    return !emailRegex.test(cleanEmail);
+    const isFormatValid = emailRegex.test(cleanEmail);
+    const hasRfcViolation = cleanEmail.includes('..') || cleanEmail.includes('.@');
+    return !isFormatValid || hasRfcViolation;
   }).map(p => {
-    return `${p.customerName || '宛名なし'} (無効なアドレス形式: ${p.email || '空欄'})`;
+    return `${p.customerName || '宛名なし'} (無効またはRFC違反アドレス: ${p.email || '空欄'})`;
   });
 
   // サーバーログに実際に送信されるアドレスをデバッグ出力
@@ -49,6 +57,7 @@ async function sendEmailBatch(payloads) {
   if (validPayloads.length > 0) {
     console.log(`[sendEmailBatch] 送信先サンプル:`, validPayloads.slice(0, 5).map(p => p.email));
   }
+
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.MAIL_FROM;
 
