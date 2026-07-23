@@ -22,7 +22,10 @@ exports.handler = async (event) => {
 };
 
 async function sendEmail(customer, subject, message) {
-  if (!customer.email) return { type: 'email', status: 'skipped', reason: 'email missing' };
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!customer.email || !emailRegex.test(String(customer.email).trim())) {
+    return { type: 'email', status: 'skipped', reason: 'invalid or missing email' };
+  }
 
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.MAIL_FROM || '赤沢温泉旅館 <info@akasawaonsen.com>';
