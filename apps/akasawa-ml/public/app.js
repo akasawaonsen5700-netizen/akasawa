@@ -28,6 +28,21 @@ function cleanTextLineBreaks(str) {
     .trim();
 }
 
+function optimizeForMainInbox(str) {
+  if (!str) return '';
+  return str
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/[━─═=]{5,}/g, '---')
+    .replace(/[！!]{2,}/g, '！')
+    .replace(/[★☆]{2,}/g, '★')
+    .split('\n')
+    .map(line => line.trimEnd())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 const templates = {
   summer_recommend: {
     emailSubject: '【赤沢温泉旅館】お盆前のおすすめプランと涼やかな温泉のご案内',
