@@ -625,33 +625,32 @@ function renderLogs() {
     const unreached = typeof log.unreachedCount === 'number' ? log.unreachedCount : 0;
     const unreachedDetails = log.unreachedDetails || '';
 
-    let statusBadgeHtml = '';
-    let unreachedBoxHtml = '';
+    let detailsBoxHtml = '';
 
     if (unreached > 0) {
-      statusBadgeHtml = `<span class="badge" style="background:rgba(255,125,125,0.2); color:var(--danger); border-color:rgba(255,125,125,0.4); margin-right:8px;">⚠️ ${total}件中 ${unreached}件未到達</span>`;
-      unreachedBoxHtml = `
-        <details style="margin-top: 8px; background: rgba(255, 125, 125, 0.08); border: 1px solid rgba(255, 125, 125, 0.3); border-radius: 8px; padding: 8px;">
-          <summary style="cursor: pointer; font-weight: bold; color: var(--danger); font-size: 12px;">❌ ${total}件中 ${unreached}件未到達メール (クリックで未到達アドレスを表示)</summary>
-          <div style="white-space: pre-wrap; font-size: 11px; color: #ffbcbc; max-height: 250px; overflow-y: auto; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,125,125,0.3);">${escapeHtml(unreachedDetails)}</div>
+      detailsBoxHtml = `
+        <details open style="margin-top: 8px; background: rgba(255, 125, 125, 0.08); border: 1px solid rgba(255, 125, 125, 0.3); border-radius: 8px; padding: 10px;">
+          <summary style="cursor: pointer; font-weight: bold; color: var(--danger); font-size: 13px;">❌ ${total}件中 ${unreached}件未到達メール (クリックで未到達アドレスを表示/非表示)</summary>
+          <div style="white-space: pre-wrap; font-size: 12px; color: #ffbcbc; max-height: 300px; overflow-y: auto; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,125,125,0.3);">【未到達・エラー宛先リスト】\n${escapeHtml(unreachedDetails)}</div>
         </details>
       `;
     } else {
-      statusBadgeHtml = `<span class="badge success" style="margin-right:8px;">✅ ${total}件中 0件未到達 (全件届きました)</span>`;
+      detailsBoxHtml = `
+        <details style="margin-top: 8px; background: rgba(141, 240, 200, 0.06); border: 1px solid rgba(141, 240, 200, 0.25); border-radius: 8px; padding: 10px;">
+          <summary style="cursor: pointer; font-weight: bold; color: var(--accent-2); font-size: 13px;">✅ ${total}件中 0件未到達 (全件届きました - クリックで確認)</summary>
+          <div style="white-space: pre-wrap; font-size: 12px; color: var(--text); max-height: 300px; overflow-y: auto; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(141,240,200,0.25);">【配信結果】全 ${total} 件へ正常に配信完了いたしました。(未到達アドレス: 0件)\n\n${escapeHtml(msg)}</div>
+        </details>
+      `;
     }
 
     return `
-      <div class="log-item" style="margin-bottom: 10px;">
-        <div class="log-head">
+      <div class="log-item" style="margin-bottom: 12px; background: rgba(18,26,49,0.85); border: 1px solid var(--line); border-radius: 12px; padding: 14px;">
+        <div class="log-head" style="display:flex; justify-style:space-between; align-items:center;">
           <strong>${escapeHtml(log.customerName)} / ${labelScenario(log.scenario)} / ${log.channel}</strong>
-          <div>
-            ${statusBadgeHtml}
-            <button type="button" class="danger delete-log-btn" data-index="${i}" style="width: auto; padding: 2px 8px; font-size: 11px; min-height: 0; display: inline-block;">削除</button>
-          </div>
+          <button type="button" class="danger delete-log-btn" data-index="${i}" style="width: auto; padding: 2px 10px; font-size: 11px; min-height: 0;">削除</button>
         </div>
-        <div class="log-meta" style="font-size: 11px;">${new Date(log.createdAt).toLocaleString('ja-JP')}</div>
-        <div style="white-space: pre-wrap; font-size: 12px; margin-top: 4px; border-top: 1px solid var(--line); padding-top: 4px;">${escapeHtml(msg)}</div>
-        ${unreachedBoxHtml}
+        <div class="log-meta" style="font-size: 11px; color: var(--muted); margin: 4px 0 8px;">${new Date(log.createdAt).toLocaleString('ja-JP')}</div>
+        ${detailsBoxHtml}
       </div>
     `;
   }).join('');
