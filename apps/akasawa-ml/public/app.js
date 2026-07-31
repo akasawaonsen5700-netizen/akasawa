@@ -1,12 +1,14 @@
 const STORAGE_KEYS = {
   customers: 'akasawa_demo_customers',
-  logs: 'akasawa_demo_logs'
+  logs: 'akasawa_demo_logs',
+  unreached: 'akasawa_demo_unreached'
 };
 
 const state = {
   scenario: 'custom',
   customers: load(STORAGE_KEYS.customers, []),
-  logs: load(STORAGE_KEYS.logs, [])
+  logs: load(STORAGE_KEYS.logs, []),
+  unreached: load(STORAGE_KEYS.unreached, null)
 };
 
 const PLANS = {
@@ -1040,6 +1042,9 @@ function splitCsvLine(line) {
 function persist() {
   localStorage.setItem(STORAGE_KEYS.customers, JSON.stringify(state.customers));
   localStorage.setItem(STORAGE_KEYS.logs, JSON.stringify(state.logs));
+  if (state.unreached) {
+    localStorage.setItem(STORAGE_KEYS.unreached, JSON.stringify(state.unreached));
+  }
 }
 
 function load(key, fallback) {
@@ -1367,5 +1372,236 @@ function simulateBooking(id) {
   alert(`${fullName(customer)} 様の「${plan.name}（¥${plan.price.toLocaleString()}）」からのメール予約発生を自動認識・記録しました！`);
 }
 
+// =============================================================
+// 未到着メールリスト（バウンス・不達一覧）機能の実装
+// =============================================================
+function initUnreachedFeature() {
+  const modal = document.getElementById('unreachedModal');
+  const openBtn = document.getElementById('viewUnreachedBtn');
+  const closeBtn = document.getElementById('closeUnreachedModalBtn');
+  const searchInput = document.getElementById('unreachedSearchInput');
+  const syncBtn = document.getElementById('syncResendUnreachedBtn');
+  const downloadCleanBtn = document.getElementById('downloadUnreachedCleanCsvBtn');
+  const downloadFullBtn = document.getElementById('downloadUnreachedFullExcelBtn');
+  const moveToOptOutBtn = document.getElementById('moveToOptOutBtn');
+  const tableBody = document.getElementById('unreachedTableBody');
+  const summaryText = document.getElementById('unreachedSummaryText');
+  const selectAllCheck = document.getElementById('unreachedSelectAll');
+  const headerCheck = document.getElementById('unreachedHeaderCheck');
+
+  if (!modal || !openBtn) return;
+
+  // モーダル表示
+  openBtn.addEventListener('click', async () => {
+    modal.classList.remove('hidden');
+    if (!state.unreached || state.unreached.length === 0) {
+      await fetchUnreachedData();
+    } else {
+      renderUnreachedTable();
+    }
+  });
+
+  // モーダル閉じる
+  closeBtn.addEventListener('click', () => {
+    modal.classList.add('hidden');
+  });
+
+  // APIまたはバックエンドから未到着リストを取得
+  async function fetchUnreachedData() {
+    summaryText.innerText = 'データを同期取得中...';
+    try {
+      const res = await fetch('/.netlify/functions/get-unreached');
+      if (res.ok) {
+        const result = await res.json();
+        if (result.ok && Array.isArray(result.data)) {
+          state.unreached = result.data;
+          persist();
+          renderUnreachedTable();
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Netlify function fetch failed, falling back to local dataset:', e);
+    }
+    renderUnreachedTable();
+  }
+
+  // 手動同期ボタン
+  syncBtn.addEventListener('click', async () => {
+    syncBtn.disabled = true;
+    syncBtn.innerText = '⏳ 同期中...';
+    await fetchUnreachedData();
+    syncBtn.disabled = false;
+    syncBtn.innerText = '🔄 Resend API から最新取得';
+    alert('最新の未到着メールリストを同期更新しました！');
+  });
+
+  // 検索フィルター
+  searchInput.addEventListener('input', renderUnreachedTable);
+
+  // 全選択チェックボックス
+  const toggleSelectAll = (checked) => {
+    const checks = tableBody.querySelectorAll('.unreached-row-check');
+    checks.forEach(c => c.checked = checked);
+  };
+  selectAllCheck.addEventListener('change', (e) => {
+    headerCheck.checked = e.target.checked;
+    toggleSelectAll(e.target.checked);
+  });
+  headerCheck.addEventListener('change', (e) => {
+    selectAllCheck.checked = e.target.checked;
+    toggleSelectAll(e.target.checked);
+  });
+
+  // テーブル描画
+  function renderUnreachedTable() {
+    const query = (searchInput.value || '').trim().toLowerCase();
+    let list = state.unreached || [];
+
+    if (query) {
+      list = list.filter(item => {
+        return (item.to || '').toLowerCase().includes(query) ||
+               (item.subject || '').toLowerCase().includes(query) ||
+               (item.status || '').toLowerCase().includes(query);
+      });
+    }
+
+    summaryText.innerText = `全 ${state.unreached ? state.unreached.length : 0} 件中 ${list.length} 件を表示中`;
+
+    if (list.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted);">未到着データはありません</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = list.map((item, idx) => {
+      let statusBadge = item.status;
+      let badgeStyle = 'background:rgba(255,125,125,0.15); color:#ff7d7d; border:1px solid rgba(255,125,125,0.4);';
+      if (item.status === 'bounced') {
+        statusBadge = 'バウンス (bounced)';
+      } else if (item.status === 'suppressed') {
+        statusBadge = '配信抑制 (suppressed)';
+        badgeStyle = 'background:rgba(255,190,100,0.15); color:#ffb459; border:1px solid rgba(255,190,100,0.4);';
+      }
+
+      const dateStr = item.created_at ? new Date(item.created_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '-';
+
+      return `
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+          <td style="text-align:center;"><input type="checkbox" class="unreached-row-check" data-email="${escapeHtml(item.to)}"></td>
+          <td>${idx + 1}</td>
+          <td style="font-weight:bold; color:var(--accent);">${escapeHtml(item.to)}</td>
+          <td><span style="display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; ${badgeStyle}">${escapeHtml(statusBadge)}</span></td>
+          <td style="font-size:12px; color:var(--muted);">${escapeHtml(dateStr)}</td>
+          <td style="font-size:12px;">${escapeHtml(item.subject)}</td>
+          <td style="text-align:center;">
+            <button type="button" class="ghost single-optout-btn" data-email="${escapeHtml(item.to)}" style="padding:2px 8px; font-size:11px; border:1px solid var(--danger); color:var(--danger); margin:0; width:auto;">配信停止化</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // 個別「配信停止化」ボタン
+    tableBody.querySelectorAll('.single-optout-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetEmail = e.target.getAttribute('data-email');
+        if (targetEmail) {
+          markEmailsAsOptOut([targetEmail]);
+        }
+      });
+    });
+  }
+
+  // アドレスのみ（囲み文字 " なし）のCSVダウンロード
+  downloadCleanBtn.addEventListener('click', () => {
+    if (!state.unreached || state.unreached.length === 0) {
+      alert('ダウンロード可能な未到着データがありません。');
+      return;
+    }
+
+    // 重複を排除したメールアドレスのみリスト
+    const uniqueEmails = Array.from(new Set(state.unreached.map(item => (item.to || '').trim().toLowerCase())));
+    const csvContent = '\uFEFF' + uniqueEmails.join('\r\n') + '\r\n';
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = '未到着メールアドレス_リスト.csv';
+    link.click();
+  });
+
+  // 詳細情報付き CSV/Excel 保存
+  downloadFullBtn.addEventListener('click', () => {
+    if (!state.unreached || state.unreached.length === 0) {
+      alert('ダウンロード可能な未到着データがありません。');
+      return;
+    }
+
+    let csvContent = '\uFEFF"No.","宛先メールアドレス","ステータス","送信日時(JST)","件名","送信元","Resend ID"\r\n';
+    state.unreached.forEach((item, idx) => {
+      const dateStr = item.created_at ? new Date(item.created_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '-';
+      const escape = str => `"${(str || '').replace(/"/g, '""')}"`;
+      csvContent += `${idx + 1},${escape(item.to)},${escape(item.status)},${escape(dateStr)},${escape(item.subject)},${escape(item.from)},${escape(item.id)}\r\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = '未到着メール詳細リスト_Resend.csv';
+    link.click();
+  });
+
+  // 選択アドレスを「もう送らなくていいリスト（配信停止）」へ一括移動
+  moveToOptOutBtn.addEventListener('click', () => {
+    const selectedChecks = tableBody.querySelectorAll('.unreached-row-check:checked');
+    if (selectedChecks.length === 0) {
+      alert('「もう送らなくていいリスト」に移動したいメールアドレスを選択してください。');
+      return;
+    }
+
+    const emailsToMove = Array.from(selectedChecks).map(cb => cb.getAttribute('data-email')).filter(Boolean);
+    if (confirm(`選択された ${emailsToMove.length} 件のメールアドレスを「もう送らなくていいリスト（配信停止）」に一括登録しますか？`)) {
+      markEmailsAsOptOut(emailsToMove);
+    }
+  });
+
+  // メールアドレスを unsubscribed: true に昇格させるヘルパー
+  function markEmailsAsOptOut(emails) {
+    const emailSet = new Set(emails.map(e => e.trim().toLowerCase()));
+    let updatedCount = 0;
+
+    // 既存顧客リスト内の該当アドレスを unsubscribed = true に変更
+    state.customers.forEach(c => {
+      if (c.email && emailSet.has(c.email.trim().toLowerCase())) {
+        c.unsubscribed = true;
+        updatedCount++;
+      }
+    });
+
+    // 顧客リストに存在しない場合は、新規に配信停止顧客として追加
+    emails.forEach(email => {
+      const cleanEm = email.trim();
+      const exists = state.customers.some(c => c.email && c.email.trim().toLowerCase() === cleanEm.toLowerCase());
+      if (!exists) {
+        state.customers.push({
+          id: 'c_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          source: 'unreached_import',
+          lastName: '未到達顧客',
+          firstName: '',
+          email: cleanEm,
+          unsubscribed: true,
+          importedAt: new Date().toISOString()
+        });
+        updatedCount++;
+      }
+    });
+
+    persist();
+    render();
+    alert(`計 ${emails.length} 件の未到着アドレスを「もう送らなくていいリスト（配信停止）」へ登録いたしました！`);
+  }
+}
+
 render();
 setMode('csv');
+initUnreachedFeature();
+

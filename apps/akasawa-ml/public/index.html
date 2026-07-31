@@ -107,6 +107,7 @@
             <option value="">すべてのCSV</option>
           </select>
           <button id="deleteSelectedCsvBtn" class="ghost danger" style="padding: 6px 12px; font-size: 12px; display: none; width: auto; margin: 0;">🗑️ 選択中のCSVを削除</button>
+          <button id="viewUnreachedBtn" class="ghost" style="padding: 6px 12px; font-size: 12px; border: 1px solid var(--accent); color: var(--accent); width: auto; margin: 0; cursor: pointer;">📩 未到着リスト (バウンス)</button>
           <button id="viewOptOutBtn" class="ghost" style="padding: 6px 12px; font-size: 12px; border: 1px solid var(--danger); color: var(--danger); width: auto; margin: 0; cursor: pointer;">🚫 配信停止アドレス一覧</button>
         </div>
 
@@ -230,6 +231,48 @@
     </section>
   </main>
 
-  <script src="./app.js?v=2"></script>
+  <!-- 未到着メールリスト モーダルダイアログ -->
+  <div id="unreachedModal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 900px; width: 95%;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 16px;">
+        <h2 style="margin: 0; font-size: 18px; color: var(--accent);">📩 未到着メールリスト (バウンス・不達一覧)</h2>
+        <button id="closeUnreachedModalBtn" class="ghost" style="padding: 4px 12px; font-size: 14px; margin: 0; width: auto;">✕ 閉じる</button>
+      </div>
+      
+      <div class="modal-toolbar" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+        <input type="text" id="unreachedSearchInput" placeholder="未到着メールアドレスの検索..." style="flex: 1; min-width: 200px;">
+        <button id="syncResendUnreachedBtn" class="ghost" style="padding: 6px 14px; font-size: 12px; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; width: auto; margin: 0;">🔄 Resend API から最新取得</button>
+        <button id="downloadUnreachedCleanCsvBtn" class="ghost" style="padding: 6px 14px; font-size: 12px; border: 1px solid var(--accent-2); color: var(--accent-2); cursor: pointer; width: auto; margin: 0;">📥 アドレスのみCSVを保存 ("なし)</button>
+        <button id="downloadUnreachedFullExcelBtn" class="ghost" style="padding: 6px 14px; font-size: 12px; width: auto; margin: 0;">📊 詳細Excel(CSV)保存</button>
+        <button id="moveToOptOutBtn" class="danger" style="padding: 6px 14px; font-size: 12px; cursor: pointer; width: auto; margin: 0;">🚫 選択を「もう送らなくていいリスト」に登録</button>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span id="unreachedSummaryText" style="font-size: 13px; font-weight: bold; color: var(--text);">0 件を表示中</span>
+        <label style="font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          <input type="checkbox" id="unreachedSelectAll"> すべて選択
+        </label>
+      </div>
+
+      <div class="table-container" style="max-height: 420px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+          <thead style="position: sticky; top: 0; background: #142038; z-index: 10;">
+            <tr>
+              <th style="width: 40px; text-align: center;"><input type="checkbox" id="unreachedHeaderCheck"></th>
+              <th style="width: 50px;">No.</th>
+              <th>宛先メールアドレス</th>
+              <th style="width: 140px;">ステータス</th>
+              <th style="width: 150px;">送信日時(JST)</th>
+              <th>件名</th>
+              <th style="width: 80px; text-align: center;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="unreachedTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js?v=3"></script>
 </body>
 </html>

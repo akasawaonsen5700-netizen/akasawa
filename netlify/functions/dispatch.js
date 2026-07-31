@@ -22,14 +22,11 @@ exports.handler = async (event) => {
 };
 
 async function sendEmail(customer, subject, message) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!customer.email || !emailRegex.test(String(customer.email).trim())) {
-    return { type: 'email', status: 'skipped', reason: 'invalid or missing email' };
-  }
+  if (!customer.email) return { type: 'email', status: 'skipped', reason: 'email missing' };
 
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.MAIL_FROM || '赤沢温泉旅館 <info@akasawaonsen.com>';
-  if (!apiKey) {
+  const from = process.env.MAIL_FROM;
+  if (!apiKey || !from) {
     return { type: 'email', status: 'mock', to: customer.email, subject };
   }
 
@@ -37,13 +34,7 @@ async function sendEmail(customer, subject, message) {
     from,
     to: customer.email,
     subject,
-    text: message,
-    headers: {
-      'X-Priority': '3',
-      'X-MSMail-Priority': 'Normal',
-      'Importance': 'Normal',
-      'X-Mailer': 'Apple Mail (2.3654.120.0.1.13)'
-    }
+    text: message
   };
 
   if (process.env.REPLY_TO) {
