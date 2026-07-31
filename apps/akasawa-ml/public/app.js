@@ -1377,6 +1377,7 @@ function simulateBooking(id) {
 // =============================================================
 function initUnreachedFeature() {
   const modal = document.getElementById('unreachedModal');
+  const footerCloseBtn = document.getElementById('closeUnreachedModalFooterBtn');
   const openBtn = document.getElementById('viewUnreachedBtn');
   const closeBtn = document.getElementById('closeUnreachedModalBtn');
   const searchInput = document.getElementById('unreachedSearchInput');
@@ -1391,12 +1392,15 @@ function initUnreachedFeature() {
 
   if (!modal || !openBtn) return;
 
+  const closeModal = () => modal.classList.add('hidden');
+  const openModal = () => modal.classList.remove('hidden');
+
   // 初期ロード時は確実に隠す
-  modal.classList.add('hidden');
+  closeModal();
 
   // モーダル表示
   openBtn.addEventListener('click', async () => {
-    modal.classList.remove('hidden');
+    openModal();
     if (!state.unreached || state.unreached.length === 0) {
       await fetchUnreachedData();
     } else {
@@ -1404,9 +1408,22 @@ function initUnreachedFeature() {
     }
   });
 
-  // モーダル閉じる
-  closeBtn.addEventListener('click', () => {
-    modal.classList.add('hidden');
+  // モーダル閉じる（ヘッダーボタン、フッターボタン）
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (footerCloseBtn) footerCloseBtn.addEventListener('click', closeModal);
+
+  // 背景の暗いエリアをクリックした場合にも閉じる
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
+  // Escキーを押した場合にも閉じる
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+      closeModal();
+    }
   });
 
   // APIまたはバックエンドから未到着リストを取得（タイムアウト付き）
