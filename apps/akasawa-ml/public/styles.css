@@ -87,6 +87,9 @@ th, td { border-bottom: 1px solid rgba(255,255,255,.07); padding: 10px; text-ali
   background: rgba(4, 8, 20, 0.82); backdrop-filter: blur(8px);
   display: flex; justify-content: center; align-items: center; z-index: 100;
 }
+.modal-overlay.hidden, .hidden {
+  display: none !important;
+}
 .modal-card {
   background: linear-gradient(180deg, #162244 0%, #101934 100%);
   border: 1px solid rgba(106, 210, 255, 0.3); border-radius: 20px;

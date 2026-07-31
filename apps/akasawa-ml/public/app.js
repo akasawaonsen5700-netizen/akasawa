@@ -1391,6 +1391,9 @@ function initUnreachedFeature() {
 
   if (!modal || !openBtn) return;
 
+  // 初期ロード時は確実に隠す
+  modal.classList.add('hidden');
+
   // モーダル表示
   openBtn.addEventListener('click', async () => {
     modal.classList.remove('hidden');
@@ -1406,11 +1409,16 @@ function initUnreachedFeature() {
     modal.classList.add('hidden');
   });
 
-  // APIまたはバックエンドから未到着リストを取得
+  // APIまたはバックエンドから未到着リストを取得（タイムアウト付き）
   async function fetchUnreachedData() {
     summaryText.innerText = 'データを同期取得中...';
     try {
-      const res = await fetch('/.netlify/functions/get-unreached');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+      const res = await fetch('/.netlify/functions/get-unreached', { signal: controller.signal });
+      clearTimeout(timeoutId);
+
       if (res.ok) {
         const result = await res.json();
         if (result.ok && Array.isArray(result.data)) {
@@ -1421,8 +1429,9 @@ function initUnreachedFeature() {
         }
       }
     } catch (e) {
-      console.warn('Netlify function fetch failed, falling back to local dataset:', e);
+      console.warn('Netlify function fetch failed/timed out, using current state:', e);
     }
+    if (!state.unreached) state.unreached = [];
     renderUnreachedTable();
   }
 
