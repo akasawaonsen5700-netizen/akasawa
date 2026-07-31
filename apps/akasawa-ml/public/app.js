@@ -833,43 +833,59 @@ function renderCustomers() {
 
 function renderLogs() {
   if (state.logs.length === 0) { el.logList.innerHTML = '<p class="text-secondary text-sm" style="padding:12px;">履歴はありません。</p>'; return; }
+
+  // 未到達メールの検索用Setを作成
+  const unreachedEmails = state.unreached || [];
+  const unreachedEmailSet = new Set(unreachedEmails.map(item => (item.to || '').trim().toLowerCase()));
+
   el.logList.innerHTML = state.logs.map((log, i) => {
     const msg = log.message || '';
-    const total = log.totalCount || 100;
-    const unreached = typeof log.unreachedCount === 'number' ? log.unreachedCount : 0;
-    const unreachedDetails = log.unreachedDetails || '';
+    const total = log.totalCount || (log.recipients ? log.recipients.length : 6693);
+    
+    // ログ内の不達情報、または全未到着データからのリアルタイム照合
+    let unreachedCount = typeof log.unreachedCount === 'number' && log.unreachedCount > 0 ? log.unreachedCount : 0;
+    let unreachedDetails = log.unreachedDetails || '';
+
+    // 全未到着データが存在する場合は、最新のリアルタイム照合結果を適用
+    if (unreachedEmails.length > 0 && (!unreachedCount || unreachedCount === 0)) {
+      unreachedCount = unreachedEmails.length;
+      if (!unreachedDetails) {
+        unreachedDetails = unreachedEmails.map(u => `・${u.to} (${u.status === 'bounced' ? 'バウンス' : '配信抑制'})`).join('\n');
+      }
+    }
+
     const isErrorLog = log.status === 'error' || log.customerName.includes('エラー') || log.customerName.includes('失敗');
 
     let detailsBoxHtml = '';
 
     if (isErrorLog) {
-      // 配信失敗、422エラーなどのエラーログの場合（最初から開いておく）
+      // 配信失敗・APIエラーログ
       detailsBoxHtml = `
         <details open style="margin-top: 8px; background: rgba(255, 125, 125, 0.1); border: 1px solid rgba(255, 125, 125, 0.4); border-radius: 8px; padding: 12px;">
-          <summary style="cursor: pointer; font-weight: bold; color: var(--danger); font-size: 13px;">🚨 送信失敗・エラーの詳細 (クリックで開閉)</summary>
+          <summary style="cursor: pointer; font-weight: bold; color: var(--danger); font-size: 13px;">🚨 送信エラー・配信失敗の詳細 (クリックで開閉)</summary>
           <div style="font-size: 12px; color: var(--text); margin-top: 8px;">
-            <div style="font-weight: bold; color: #ffbcbc; margin-bottom: 4px;">▼ エラーメッセージ:</div>
+            <div style="font-weight: bold; color: #ffbcbc; margin-bottom: 4px;">▼ エラー内容:</div>
             <div style="white-space: pre-wrap; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; font-family: monospace;">${escapeHtml(msg)}</div>
-            
-            <div style="font-weight: bold; color: #ffbcbc; margin-top: 10px; margin-bottom: 4px;">▼ この送信グループに含まれる宛先アドレス一覧 (計 ${total}件):</div>
-            <div style="white-space: pre-wrap; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; max-height: 250px; overflow-y: auto;">${escapeHtml(unreachedDetails || '宛先情報はありません')}</div>
           </div>
         </details>
       `;
-    } else if (unreached > 0) {
-      // 送信は完了したが、一部に未到達・バウンスがあった場合
+    } else if (unreachedCount > 0) {
+      // 未到達・バウンスが検出されている場合
       detailsBoxHtml = `
-        <details open style="margin-top: 8px; background: rgba(255, 125, 125, 0.08); border: 1px solid rgba(255, 125, 125, 0.3); border-radius: 8px; padding: 10px;">
-          <summary style="cursor: pointer; font-weight: bold; color: var(--danger); font-size: 13px;">⚠️ ${total}件中 ${unreached}件未到達 (クリックで宛先を表示)</summary>
-          <div style="white-space: pre-wrap; font-size: 12px; color: #ffbcbc; max-height: 250px; overflow-y: auto; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,125,125,0.3);">【不達エラー宛先リスト】\n${escapeHtml(unreachedDetails)}</div>
+        <details open style="margin-top: 8px; background: rgba(255, 125, 125, 0.1); border: 1px solid rgba(255, 125, 125, 0.4); border-radius: 8px; padding: 10px;">
+          <summary style="cursor: pointer; font-weight: bold; color: var(--danger); font-size: 13px;">⚠️ 送信 ${total.toLocaleString()} 件中 ${unreachedCount.toLocaleString()} 件未到達・バウンス検出 (クリックで詳細表示)</summary>
+          <div style="font-size: 12px; color: var(--text); margin-top: 8px;">
+            <div style="font-weight: bold; color: #ff7d7d; margin-bottom: 4px;">【到達失敗・バウンス宛先一覧 (計 ${unreachedCount} 件)】</div>
+            <div style="white-space: pre-wrap; font-size: 11px; color: #ffbcbc; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; max-height: 200px; overflow-y: auto;">${escapeHtml(unreachedDetails)}</div>
+          </div>
         </details>
       `;
     } else {
-      // 完全成功ログ
+      // 送信リクエスト完了
       detailsBoxHtml = `
-        <details style="margin-top: 8px; background: rgba(141, 240, 200, 0.06); border: 1px solid rgba(141, 240, 200, 0.25); border-radius: 8px; padding: 10px;">
-          <summary style="cursor: pointer; font-weight: bold; color: var(--accent-2); font-size: 13px;">✅ ${total}件中 0件未到達 (全件正常配信 - クリックで詳細を表示)</summary>
-          <div style="white-space: pre-wrap; font-size: 12px; color: var(--text); max-height: 250px; overflow-y: auto; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(141, 240, 200, 0.25);">【配信結果】全 ${total} 件へ正常にリクエストを完了しました。(未到達: 0件)\n\n${escapeHtml(msg)}</div>
+        <details style="margin-top: 8px; background: rgba(106, 210, 255, 0.08); border: 1px solid rgba(106, 210, 255, 0.3); border-radius: 8px; padding: 10px;">
+          <summary style="cursor: pointer; font-weight: bold; color: var(--accent); font-size: 13px;">📤 送信リクエスト完了 (${total.toLocaleString()} 件) - クリックで詳細</summary>
+          <div style="white-space: pre-wrap; font-size: 12px; color: var(--text); max-height: 200px; overflow-y: auto; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(106, 210, 255, 0.3);">${escapeHtml(msg)}</div>
         </details>
       `;
     }
