@@ -893,6 +893,27 @@ function closePreviewModal() {
   currentPreviewId = null;
 }
 
+// 動画ダウンロード用機能
+const downloadVideoBtn = document.getElementById('downloadVideoBtn');
+if (downloadVideoBtn) {
+  downloadVideoBtn.addEventListener('click', () => {
+    const videoUrl = reelVideo.src || (currentPreviewId ? `https://storage.googleapis.com/akasawadp.appspot.com/renders/${currentPreviewId}.mp4` : null);
+    if (!videoUrl || videoUrl.includes('about:blank')) {
+      alert('ダウンロード可能な動画ファイルが指定されていません。');
+      return;
+    }
+    
+    // aタグを生成して直接ダウンロード保存
+    const a = document.createElement('a');
+    a.href = videoUrl;
+    a.download = `endo_avatar_video_${Date.now()}.mp4`;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  });
+}
+
 function startPreview(isRealVideo = false) {
   playBtn.disabled = true;
   pauseBtn.disabled = false;
