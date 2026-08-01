@@ -1,84 +1,141 @@
-const fs = require('fs');
-const path = require('path');
+const FormData = require('form-data');
 
+/**
+ * endo-snsの画面から画像をアップロードするだけで、
+ * HeyGen APIに自動で「画像アップロード→フォトアバター登録→動画生成」を一括実行する関数
+ */
 exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' }, body: '' };
+  }
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  try {
-    const { script, audioUrl, avatarId, photoUrl } = JSON.parse(event.body || '{}');
+  const apiKey = process.env.HEYGEN_API_KEY;
+  if (!apiKey) {
+    return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'HEYGEN_API_KEY is not configured' }) };
+  }
 
-    const apiKey = process.env.HEYGEN_API_KEY;
-    if (!apiKey) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          ok: false,
-          error: 'HEYGEN_API_KEY is not configured in .env'
-        })
-      };
+  try {
+    const { script, imageBase64, imageUrl } = JSON.parse(event.body || '{}');
+
+    if (!script) {
+      return { statusCode: 400, body: JSON.stringify({ ok: false, error: '台本(script)が必要です' }) };
     }
 
-    console.log('Generating HeyGen AI Avatar Video for script:', (script || '').substring(0, 30));
+    // ========================================
+    // STEP 1: 画像をHeyGenにアップロードして asset_id を取得
+    // ========================================
+    let photoUrl = imageUrl || null;
 
-    // HeyGen API v2 リクエスト送信
-    const res = await fetch('https://api.heygen.com/v2/video/generate', {
+    if (imageBase64) {
+      console.log('Step 1: Uploading image to HeyGen...');
+
+      // Base64からバイナリに変換
+      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+      const imageBuffer = Buffer.from(base64Data, 'base64');
+
+      // multipart/form-data でアップロード
+      const boundary = '----FormBoundary' + Date.now();
+      const bodyParts = [
+        `--${boundary}\r\n`,
+        `Content-Disposition: form-data; name="file"; filename="avatar.jpg"\r\n`,
+        `Content-Type: image/jpeg\r\n\r\n`,
+      ];
+      const bodyEnd = `\r\n--${boundary}--\r\n`;
+
+      const bodyBuffer = Buffer.concat([
+        Buffer.from(bodyParts.join('')),
+        imageBuffer,
+        Buffer.from(bodyEnd)
+      ]);
+
+      const uploadRes = await fetch('https://api.heygen.com/v1/asset', {
+        method: 'POST',
+        headers: {
+          'X-Api-Key': apiKey,
+          'Content-Type': `multipart/form-data; boundary=${boundary}`
+        },
+        body: bodyBuffer
+      });
+
+      if (uploadRes.ok) {
+        const uploadData = await uploadRes.json();
+        console.log('Asset upload result:', JSON.stringify(uploadData));
+        if (uploadData.data?.url) {
+          photoUrl = uploadData.data.url;
+        } else if (uploadData.data?.asset_id) {
+          photoUrl = uploadData.data.asset_id;
+        }
+      } else {
+        const errText = await uploadRes.text();
+        console.warn('HeyGen asset upload failed:', uploadRes.status, errText);
+      }
+    }
+
+    if (!photoUrl) {
+      photoUrl = 'https://akasawaonsen.com/images/endo-owner.jpg';
+    }
+
+    // ========================================
+    // STEP 2: 動画生成リクエスト（photo_url方式）
+    // ========================================
+    console.log('Step 2: Generating video with photo_url:', photoUrl);
+
+    const videoPayload = {
+      video_inputs: [
+        {
+          character: {
+            type: 'talking_photo',
+            talking_photo_url: photoUrl
+          },
+          voice: {
+            type: 'text',
+            input_text: script,
+            voice_id: 'jp_male_matsuda' // HeyGen内蔵の日本語男性音声
+          }
+        }
+      ],
+      dimension: {
+        width: 1080,
+        height: 1920
+      }
+    };
+
+    const videoRes = await fetch('https://api.heygen.com/v2/video/generate', {
       method: 'POST',
       headers: {
         'X-Api-Key': apiKey,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        caption: false,
-        dimension: {
-          width: 1080,
-          height: 1920
-        },
-        video_inputs: [
-          {
-            character: {
-              type: 'talking_photo',
-              talking_photo_id: avatarId || 'default_endo_avatar',
-              talking_photo_url: photoUrl || 'https://akasawaonsen.com/images/endo-owner.jpg'
-            },
-            voice: {
-              type: audioUrl ? 'audio' : 'text',
-              audio_url: audioUrl || undefined,
-              input_text: !audioUrl ? script : undefined,
-              voice_id: process.env.CARTESIA_VOICE_ID || 'ja-JP-Standard-B'
-            }
-          }
-        ]
-      })
+      body: JSON.stringify(videoPayload)
     });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.warn(`HeyGen API warning (HTTP ${res.status}): ${errorText}`);
-      // APIキーのエラーやプラン制限の場合でも、プレビュー用レスポンスを組み立てる
+    const videoData = await videoRes.json();
+    console.log('Video generate result:', JSON.stringify(videoData));
+
+    if (videoRes.ok && videoData.data?.video_id) {
       return {
         statusCode: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         body: JSON.stringify({
           ok: true,
+          videoId: videoData.data.video_id,
           status: 'processing',
-          videoId: 'heygen_demo_' + Date.now(),
-          message: 'HeyGen APIリクエストを受理しました（アバター動画の生成を開始中）。',
-          rawResponse: errorText.substring(0, 200)
+          message: 'HeyGen AIアバター動画の生成を開始しました。完成までに数分かかります。'
         })
       };
     }
 
-    const data = await res.json();
-
+    // API応答がエラーでも情報を返す
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({
-        ok: true,
-        videoId: data.data?.video_id || 'heygen_v_' + Date.now(),
-        data: data.data
+        ok: false,
+        error: videoData.error?.message || videoData.message || 'HeyGen動画生成に失敗しました',
+        detail: JSON.stringify(videoData).substring(0, 500)
       })
     };
 
@@ -86,6 +143,7 @@ exports.handler = async (event) => {
     console.error('generate-avatar-video Error:', error);
     return {
       statusCode: 500,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({ ok: false, error: error.message || 'Internal Server Error' })
     };
   }

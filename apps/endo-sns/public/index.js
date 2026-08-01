@@ -104,39 +104,63 @@ if (generateRagBtn) {
   });
 }
 
-// HeyGen AIアバター動画生成処理
+// HeyGen AIアバター動画生成処理（ステップ3の画像を自動送信）
 const generateAvatarVideoBtn = document.getElementById('generateAvatarVideoBtn');
 if (generateAvatarVideoBtn) {
   generateAvatarVideoBtn.addEventListener('click', async () => {
     const script = ownerComment.value.trim();
     if (!script) {
-      alert('まず「オーナーの投稿メモ / 動画台本」を入力するか、「🤖 思想RAGから自動生成」を行ってください。');
+      alert('まず「ステップ2: 動画台本本文」を入力するか、「🤖 台本を完全AI出力」を行ってください。');
       return;
     }
 
-    generateAvatarVideoBtn.textContent = '⏳ HeyGen生成中...';
+    generateAvatarVideoBtn.textContent = '⏳ 画像アップロード＆動画生成中...';
     generateAvatarVideoBtn.disabled = true;
+    const statusEl = document.getElementById('avatarStatusMessage');
+    if (statusEl) statusEl.textContent = '⏳ HeyGenに画像を送信中...';
+
     try {
+      // ステップ3の画像入力欄から画像を取得
+      let imageBase64 = null;
+      const avatarFiles = mediaFilesInput ? [...mediaFilesInput.files] : [];
+      
+      if (avatarFiles.length > 0) {
+        // アップロード画像がある場合、Base64に変換して送信
+        const file = avatarFiles[0];
+        imageBase64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+        if (statusEl) statusEl.textContent = '📸 画像取得完了。HeyGenへ送信中...';
+      } else {
+        if (statusEl) statusEl.textContent = '📸 デフォルト画像（遠藤オーナー）を使用。動画生成中...';
+      }
+
       const res = await fetch('/.netlify/functions/generate-avatar-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           script: script,
-          photoUrl: 'https://akasawaonsen.com/images/endo-owner.jpg'
+          imageBase64: imageBase64,
+          imageUrl: imageBase64 ? null : 'https://akasawaonsen.com/images/endo-owner.jpg'
         })
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        alert('🎉 HeyGen APIリクエストが正常に送信されました！遠藤オーナーのAIアバター動画の生成を開始しました。');
+        alert('🎉 HeyGen AIアバター動画の生成を開始しました！完成まで数分かかります。');
+        if (statusEl) statusEl.textContent = '🎥 動画生成開始 (ID: ' + data.videoId + ') 完成まで数分お待ちください。';
         setMessage('🎥 HeyGen AIアバター動画の生成を開始しました (ID: ' + data.videoId + ')');
       } else {
+        if (statusEl) statusEl.textContent = '⚠️ エラー: ' + (data.error || '不明なエラー');
         throw new Error(data.error || 'HeyGen動画生成に失敗しました');
       }
     } catch (err) {
       console.error(err);
       alert('HeyGen生成エラー: ' + err.message);
+      if (statusEl) statusEl.textContent = '❌ ' + err.message;
     } finally {
-      generateAvatarVideoBtn.textContent = '🎥 HeyGen AIアバター動画生成';
+      generateAvatarVideoBtn.textContent = '🎥 HeyGenでAIアバター動画を制作する';
       generateAvatarVideoBtn.disabled = false;
     }
   });
