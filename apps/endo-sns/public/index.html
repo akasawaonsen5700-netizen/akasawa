@@ -3,216 +3,206 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>遠藤正俊 個人SNS配信ツール (X / Instagram)</title>
+    <title>遠藤正俊 個人SNS自動配信ツール (20-30代女性ターゲット)</title>
     <link rel="stylesheet" href="app.css" />
   </head>
   <body>
     <header>
-      <h1>遠藤正俊 個人SNS自動配信システム</h1>
-      <p>【登録 ➔ 生成 ➔ 投稿】の3ステップで、直観的にSNS運用を完結します</p>
+      <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; width: 100%;">
+        <div>
+          <h1 style="margin: 0; font-size: 24px;">遠藤正俊 個人SNS自動配信システム</h1>
+          <p style="margin: 4px 0 0; color: #94a3b8; font-size: 13px;">🌸 20〜30代女性向け「ご褒美旅・癒やし言葉」＆ HeyGen AIアバター動画配信</p>
+        </div>
+        <button id="refreshBtn" class="primary-btn" style="padding: 8px 16px; font-size: 13px; background-color: var(--brand); border-radius: 8px;">🔄 画面更新</button>
+      </div>
     </header>
 
-    <main>
-      <div class="dashboard-layout">
-        <!-- 左側：登録エリア (ステップ①) -->
-        <section class="card registration-section">
+    <main style="max-width: 1200px; margin: 20px auto; padding: 0 16px;">
+      <div class="steps-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
+        
+        <!-- STEP 1: 台本完全AI出力欄 -->
+        <section class="card step-card">
           <div class="section-title">
             <span class="step-badge">1</span>
-            <h2>登録：台本と背景の入力</h2>
+            <h2>🤖 台本完全AI出力欄</h2>
           </div>
-          <form id="uploadForm">
-            <!-- 投稿テーマの設定 (20〜30代女性ターゲット向け) -->
-            <div class="theme-selection-card" style="background: rgba(30, 41, 59, 0.4); padding: 16px; border: 1px solid var(--line); border-radius: 16px; margin-bottom: 20px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <label class="form-label-bold" style="color: var(--accent); margin: 0;">💡 投稿テーマを設定する</label>
-                <span style="font-size: 11px; background: rgba(236,72,153,0.15); color: #f472b6; border: 1px solid rgba(236,72,153,0.3); padding: 2px 8px; border-radius: 999px; font-weight: bold;">🌸 20〜30代女性ターゲット専用</span>
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div>
-                  <label for="simpleTag" style="font-size: 13px; color: #94a3b8; display: block; margin-bottom: 6px;">テーマを選択:</label>
-                  <select id="simpleTag" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: #0f172a; color: white;">
-                    <option value="私を甘やかす、ご褒美時間">私を甘やかす、ご褒美時間 (ぬる湯/デトックス/チル)</option>
-                    <option value="「ちゃんとしなきゃ」を手放す言葉">「ちゃんとしなきゃ」を手放す言葉 (完璧主義からの解放)</option>
-                    <option value="世界を旅したオーナーが教える、本当の豊かさ">世界を旅したオーナーが教える、本当の豊かさ (自然・生き方)</option>
-                    <option value="静寂と森に包まれる、五感の癒やし">静寂と森に包まれる、五感の癒やし (大自然/猫/静けさ)</option>
-                    <option value="自分を取り戻す、奥日本リセット旅">自分を取り戻す、奥日本リセット旅 (女子旅/ソロ活)</option>
-                    <option value="custom">✍️ 新しいテーマを直接入力する</option>
-                  </select>
-                </div>
-                <div id="customThemeContainer" style="display: none;">
-                  <label for="customThemeInput" style="font-size: 13px; color: #94a3b8; display: block; margin-bottom: 6px;">直接入力するテーマ:</label>
-                  <input type="text" id="customThemeInput" placeholder="テーマを自由に入力してください（例：ご褒美温泉旅と本当の癒やし）" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: #0f172a; color: white;" />
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
-                  <button type="button" id="generateRagBtn" class="primary-btn" style="background: var(--brand); font-size: 13px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                    🤖 思想RAGから自動生成
-                  </button>
-                  <button type="button" id="generateAvatarVideoBtn" class="primary-btn" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); font-size: 13px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                    🎥 HeyGen AIアバター動画生成
-                  </button>
-                </div>
-                
-                <!-- AIパトロールトレンド提案表示エリア -->
-                <div id="aiPatrolSuggestions" style="margin-top: 14px; padding: 12px; background: rgba(59, 130, 246, 0.08); border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.25);">
-                  <span style="font-size: 13px; font-weight: bold; color: var(--brand); display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                    🔍 AIパトロール：20-30代女性の悩みとトレンドからのおすすめ提案
-                  </span>
-                  <div id="suggestionList" style="display: flex; flex-direction: column; gap: 10px;">
-                    <div style="font-size: 12px; color: #94a3b8;">20-30代女性の悩み・トレンド（ご褒美旅、チル、デジタルデトックス等）をAIがパトロール中...</div>
-                  </div>
-                </div>
-              </div>
+          <div class="card-body stack-gap">
+            <div>
+              <label class="form-label-bold" style="color: var(--accent);">🌸 20〜30代女性向けテーマを選択:</label>
+              <select id="simpleTag" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: #0f172a; color: white;">
+                <option value="私を甘やかす、ご褒美時間">1. 私を甘やかす、ご褒美時間 (ぬる湯/デトックス/チル)</option>
+                <option value="「ちゃんとしなきゃ」を手放す言葉">2. 「ちゃんとしなきゃ」を手放す言葉 (完璧主義からの解放)</option>
+                <option value="世界を旅したオーナーが教える、本当の豊かさ">3. 世界を旅したオーナーが教える、本当の豊かさ (自然・生き方)</option>
+                <option value="静寂と森に包まれる、五感の癒やし">4. 静寂と森に包まれる、五感の癒やし (大自然/猫/静けさ)</option>
+                <option value="自分を取り戻す、奥日本リセット旅">5. 自分を取り戻す、奥日本リセット旅 (女子旅/ソロ活)</option>
+                <option value="custom">✍️ 新しいテーマを直接入力する</option>
+              </select>
+            </div>
+            
+            <div id="customThemeContainer" style="display: none;">
+              <input type="text" id="customThemeInput" placeholder="テーマを自由に入力（例：仕事終わりのご褒美温泉）" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: #0f172a; color: white;" />
             </div>
 
-            <div style="margin-top: 16px;">
-              <label for="hookText" style="font-weight: bold; color: var(--accent);">🎣 動画の冒頭フック (任意)</label>
-              <textarea id="hookText" placeholder="動画の最初の画像に大きく表示する惹きつけ文章を入力してください。例：【必見】温泉に行く前に知っておくべき3つのこと" style="min-height: 80px;"></textarea>
-            </div>
+            <button type="button" id="generateRagBtn" class="primary-btn" style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); width: 100%; font-size: 15px; font-weight: bold; padding: 12px;">
+              🤖 AIで台本を完全自動生成する
+            </button>
 
-            <div style="margin-top: 16px;">
-              <label for="ownerComment" style="font-weight: bold; color: var(--brand);">オーナーの投稿メモ / 動画台本 (必須)</label>
-              <textarea id="ownerComment" required placeholder="ここに投稿したい台本やインサイトメモを入力してください。例：立ち止まることは、後退ではないと私は思っています。海外で仕事をしていた頃、前に進むことが正しいとずっと思っていました……。" style="min-height: 120px;"></textarea>
-            </div>
-
-            <div class="channel-selection-card" style="margin-top: 20px;">
-              <label class="form-label-bold">投稿先チャネル</label>
-              <div class="channel-grid">
-                <label class="channel-cb-label"><input type="checkbox" id="instagramCb" name="channelSelect" value="instagram" checked /> Instagram</label>
-                <label class="channel-cb-label"><input type="checkbox" id="xCb" name="channelSelect" value="x" checked /> X (旧Twitter)</label>
+            <!-- トレンド提案アコーディオン -->
+            <details style="background: rgba(15, 23, 42, 0.5); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line);">
+              <summary style="cursor: pointer; font-size: 13px; font-weight: bold; color: var(--accent);">🔍 AIパトロール：20-30代女性の最新トレンドアイデアを見る</summary>
+              <div id="suggestionList" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: #94a3b8;">
+                AIがトレンド分析中...
               </div>
-              
-              <!-- Instagramの投稿形式詳細設定 -->
-              <div id="instagramDetailSettings" style="margin-top: 12px; padding: 12px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; border: 1px solid var(--line);">
-                <label style="font-size: 13px; font-weight: bold; color: #94a3b8; display: block; margin-bottom: 8px;">Instagramの投稿形式:</label>
-                <div style="display: flex; gap: 20px;">
-                  <label style="font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                    <input type="radio" name="instagramType" value="reels" checked /> 🎥 リール (動画)
-                  </label>
-                  <label style="font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                    <input type="radio" name="instagramType" value="feed" /> 📷 フィード (画像)
-                  </label>
-                </div>
-              </div>
-            </div>
+            </details>
+          </div>
+        </section>
 
-            <div style="margin-top: 16px;">
-              <label for="mediaFiles" style="font-weight: bold;">🎥 動画制作用の背景 (画像または動画) / Instagramフィード画像</label>
+        <!-- STEP 2: 台本入力欄（本人制作・AI編集） -->
+        <section class="card step-card">
+          <div class="section-title">
+            <span class="step-badge">2</span>
+            <h2>✍️ 台本入力欄（本人制作・編集）</h2>
+          </div>
+          <div class="card-body stack-gap">
+            <div>
+              <label for="hookText" style="font-weight: bold; color: var(--accent);">🎣 冒頭3秒フック (任意・惹きつけ文)</label>
+              <textarea id="hookText" placeholder="例：「頑張りすぎている、あなたへ。」「『完璧じゃなくていい』って、知ってる？」" style="min-height: 60px;"></textarea>
+            </div>
+            <div>
+              <label for="ownerComment" style="font-weight: bold; color: var(--brand);">動画台本本文 (必須)</label>
+              <textarea id="ownerComment" required placeholder="ここに本人の台本を入力するか、「🤖 台本完全AI出力」を押すと自動入力されます。" style="min-height: 140px;"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- STEP 3: 画像入力欄（AIアバター用画像） -->
+        <section class="card step-card">
+          <div class="section-title">
+            <span class="step-badge">3</span>
+            <h2>🖼️ 画像入力欄（AIアバター用画像）</h2>
+          </div>
+          <div class="card-body stack-gap">
+            <div style="background: rgba(15, 23, 42, 0.5); padding: 12px; border-radius: 12px; border: 1px dashed var(--brand); text-align: center;">
+              <img src="https://akasawaonsen.com/images/endo-owner.jpg" onerror="this.src='bg-premium.png'" alt="遠藤正俊オーナー" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); margin-bottom: 8px;">
+              <div style="font-size: 12px; font-weight: bold; color: white;">遠藤正俊オーナー公式アバター写真</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">デフォルト画像設定済み（変更したい場合は以下から選択）</div>
+            </div>
+            <div>
+              <label for="mediaFiles" style="font-weight: bold; font-size: 13px;">別の画像/背景動画をアップロード (任意):</label>
               <input id="mediaFiles" type="file" accept="image/*,video/*" multiple />
-              <div class="help" style="margin-top: 4px; font-size: 11px; color: #94a3b8;">Instagram用の自動生成動画の背景、またはフィード投稿時のメイン画像として使用されます。</div>
             </div>
-
-            <div style="margin-top: 16px;">
-              <label for="postAttachFiles" style="font-weight: bold;">📷 SNS直接投稿用の添付画像 (写真など)</label>
+            <div>
+              <label for="postAttachFiles" style="font-weight: bold; font-size: 13px;">📷 直接投稿用の添付写真 (Xなど):</label>
               <input id="postAttachFiles" type="file" accept="image/*" multiple />
-              <div class="help" style="margin-top: 4px; font-size: 11px; color: #94a3b8;">Xに画像投稿として直接添付する画像ファイルです。</div>
             </div>
+          </div>
+        </section>
 
-            <div style="margin-top: 16px;">
-              <label for="voiceFile">自身の録音音声ファイル (任意)</label>
-              <input id="voiceFile" type="file" accept="audio/*" />
+        <!-- STEP 4: AIアバター動画制作欄 -->
+        <section class="card step-card">
+          <div class="section-title">
+            <span class="step-badge">4</span>
+            <h2>🎥 AIアバター動画制作欄</h2>
+          </div>
+          <div class="card-body stack-gap">
+            <p style="font-size: 12px; color: #94a3b8; margin: 0;">HeyGen API を使って遠藤オーナーの画像＋本人の声（クローンボイス）で喋るAIアバター動画を全自動制作します。</p>
+            <button type="button" id="generateAvatarVideoBtn" class="primary-btn" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); width: 100%; font-size: 15px; font-weight: bold; padding: 12px;">
+              🎥 HeyGenでAIアバター動画を制作する
+            </button>
+            <div id="avatarStatusMessage" style="font-size: 12px; color: var(--accent); text-align: center;"></div>
+          </div>
+        </section>
+
+        <!-- STEP 5: SNS接続 -->
+        <section class="card step-card">
+          <div class="section-title">
+            <span class="step-badge">5</span>
+            <h2>🔗 SNS接続</h2>
+          </div>
+          <div class="card-body stack-gap">
+            <label class="form-label-bold">投稿先SNSチャンネル:</label>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+              <label style="font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="instagramCb" name="channelSelect" value="instagram" checked /> 📸 Instagram リール (9:16動画)</label>
+              <label style="font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;"><input type="checkbox" id="xCb" name="channelSelect" value="x" checked /> 🐦 X (旧Twitter)</label>
             </div>
+            <div style="display: flex; gap: 16px; margin-top: 8px;">
+              <label style="font-size: 13px; color: #94a3b8;"><input type="radio" name="instagramType" value="reels" checked /> リール動画</label>
+              <label style="font-size: 13px; color: #94a3b8;"><input type="radio" name="instagramType" value="feed" /> フィード投稿</label>
+            </div>
+          </div>
+        </section>
 
-            <div class="grid-2" style="margin-top: 16px;">
-              <div>
-                <label for="visibility">公開方式</label>
-                <select id="visibility">
-                  <option value="review">承認後に投稿</option>
-                  <option value="auto_if_safe">安全判定なら自動承認</option>
+        <!-- STEP 6: SNS投稿 -->
+        <section class="card step-card">
+          <div class="section-title">
+            <span class="step-badge">6</span>
+            <h2>🚀 SNS投稿</h2>
+          </div>
+          <div class="card-body stack-gap">
+            <form id="uploadForm">
+              <div style="margin-bottom: 12px;">
+                <label for="visibility" style="font-size: 13px; font-weight: bold;">公開方式:</label>
+                <select id="visibility" style="width: 100%; padding: 8px; border-radius: 8px; background: #0f172a; color: white;">
+                  <option value="review">承認後に投稿 (推奨)</option>
+                  <option value="auto_if_safe">安全判定なら即時自動投稿</option>
                 </select>
               </div>
-              <div style="visibility: hidden; height: 0; overflow: hidden;">
-                <!-- grid-2の崩れを防ぐためのダミー要素 -->
-              </div>
-            </div>
+              <textarea id="ngMemo" placeholder="公開NGメモ/注意点 (任意)" style="min-height: 50px; font-size: 12px; margin-bottom: 12px;"></textarea>
 
-            <div style="margin-top: 16px;">
-              <label for="ngMemo">公開NGメモ / 注意事項 (任意)</label>
-              <textarea id="ngMemo" placeholder="例：人物の顔は使用不可。"></textarea>
-            </div>
-
-            <div class="actions" style="margin-top: 24px;">
-              <button type="submit" class="submit-btn" style="width: 100%;">台本を登録して自動生成 ➔</button>
-            </div>
-            <p id="formMessage" class="help"></p>
-          </form>
-        </section>
-
-        <!-- 右側：生成・投稿エリア (ステップ②＆③) -->
-        <section class="card queue-section">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--brand); padding-bottom: 12px; margin-bottom: 20px;">
-            <div class="section-title" style="border: none; padding: 0; margin: 0;">
-              <span class="step-badge" style="background: var(--accent);">2 & 3</span>
-              <h2>生成と投稿：AIドラフトの確認と配信</h2>
-            </div>
-            <button id="refreshBtn" class="primary-btn" style="padding: 6px 12px; font-size: 13px; background-color: var(--brand); border-color: var(--brand); border-radius: 6px;">🔄 更新</button>
-          </div>
-
-          <!-- フィルターコントロール -->
-          <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; background: rgba(30, 41, 59, 0.4); padding: 10px; border-radius: 10px; border: 1px solid var(--line);">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <label for="statusFilter" style="font-size: 12px; font-weight: bold; color: #94a3b8;">ステータス:</label>
-              <select id="statusFilter" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); font-size: 12px; background: #0f172a; width: auto; color: white;">
-                <option value="all">すべて</option>
-                <option value="draft">draft (下書き)</option>
-                <option value="review_required" selected>review_required (要確認)</option>
-                <option value="approved">approved (承認済み)</option>
-                <option value="published">published (公開済み)</option>
-                <option value="rejected">rejected (却下)</option>
-              </select>
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <label for="channelFilter" style="font-size: 12px; font-weight: bold; color: #94a3b8;">チャネル:</label>
-              <select id="channelFilter" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); font-size: 12px; background: #0f172a; width: auto; color: white;">
-                <option value="all">すべて</option>
-                <option value="instagram">Instagram</option>
-                <option value="x">X</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- 投稿キュー一覧表示エリア -->
-          <div id="queue" class="queue-container">
-            <div class="card">データを読み込み中…</div>
+              <button type="submit" class="submit-btn" style="width: 100%; font-size: 16px; padding: 14px; background: linear-gradient(90deg, #10b981 0%, #059669 100%);">
+                🚀 台本を登録してSNS投稿予約を行う
+              </button>
+              <p id="formMessage" class="help" style="text-align: center; margin-top: 8px;"></p>
+            </form>
           </div>
         </section>
+
       </div>
+
+      <!-- 投稿一覧・プレビュー管理エリア -->
+      <section class="card queue-section" style="margin-top: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--brand); padding-bottom: 12px; margin-bottom: 16px;">
+          <h2>📋 制作済み動画・SNS配信キュー一覧</h2>
+          <div style="display: flex; gap: 8px;">
+            <select id="statusFilter" style="padding: 4px 8px; border-radius: 6px; font-size: 12px; background: #0f172a; color: white;">
+              <option value="all">すべて</option>
+              <option value="review_required" selected>要確認</option>
+              <option value="approved">承認済み</option>
+              <option value="published">公開済み</option>
+            </select>
+          </div>
+        </div>
+        <div id="queue" class="queue-container">
+          <div class="card">データを読み込み中…</div>
+        </div>
+      </section>
     </main>
 
-    <!-- プレビュー用モーダル (シミュレーションおよび完成動画再生) -->
+    <!-- プレビュー用モーダル -->
     <div id="previewModal" class="modal" style="display: none;">
       <div class="modal-content">
         <span class="close-btn">&times;</span>
         <h2>動画プレビュー</h2>
-        
         <div class="reel-preview-area">
           <video id="reelVideo" src="" controls style="width: 100%; height: 100%; border-radius: 12px; display: none; object-fit: cover; background: #000;"></video>
-          
           <div class="reel-mock-screen" id="reelMockScreen">
             <img id="reelImage" class="reel-bg-image" src="about:blank" alt="" style="display: none;" />
             <div class="reel-text-overlay" id="reelTextOverlay"></div>
           </div>
-          
           <div class="reel-controls" id="reelMockControls">
             <button id="playBtn" class="primary-btn">再生</button>
             <button id="pauseBtn" class="secondary-btn" disabled>一時停止</button>
-            <button id="modalApproveBtn" class="primary-btn" style="background: #10b981; margin-left: 10px; border-color: #10b981;">この動画を承認</button>
-            <button id="modalPublishNowBtn" class="primary-btn" style="background: #0284c7; margin-left: 10px; border-color: #0284c7;">📲 今すぐ投稿</button>
+            <button id="modalApproveBtn" class="primary-btn" style="background: #10b981; margin-left: 10px;">この動画を承認</button>
+            <button id="modalPublishNowBtn" class="primary-btn" style="background: #0284c7; margin-left: 10px;">📲 今すぐ投稿</button>
             <span class="reel-timer" id="reelTimer">0.0s / 60.0s</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 音声同期シミュレーション用オーディオ要素 -->
     <audio id="narrationAudio" style="display: none;"></audio>
     <audio id="bgmAudio" style="display: none;"></audio>
 
-    <footer>
-      遠藤正俊 個人SNS配信用ツール - Powered by Netlify + Firebase.
-    </footer>
-
-    <script src="runtime-config.js"></script>
-    <script type="module" src="index.js"></script>
+    <script src="index.js"></script>
   </body>
 </html>

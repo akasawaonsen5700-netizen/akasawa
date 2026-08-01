@@ -1114,35 +1114,34 @@ async function loadTrendSuggestions() {
 
     listEl.innerHTML = suggestions.map(s => `
       <div class="suggestion-item" data-theme="${escapeHtml(s.theme)}" style="background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid var(--line); cursor: pointer; transition: all 0.2s ease;">
-        <strong style="font-size: 13px; color: var(--accent); display: block; margin-bottom: 2px;">🔥 ${escapeHtml(s.title)}</strong>
-        <p style="margin: 0; font-size: 12px; color: #cbd5e1; line-height: 1.4;">${escapeHtml(s.theme)}</p>
-        <span style="display: block; font-size: 11px; color: #94a3b8; margin-top: 4px; border-top: 1px dashed var(--line); padding-top: 4px; line-height: 1.3;">
-          💡 <strong>狙いと効果:</strong> ${escapeHtml(s.reason)}
-        </span>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <strong style="font-size: 13px; color: var(--accent);">🔥 ${escapeHtml(s.title)}</strong>
+          <span style="font-size: 11px; background: var(--brand); color: white; padding: 2px 6px; border-radius: 4px;">ワンタップ選択</span>
+        </div>
+        <p style="margin: 4px 0 0; font-size: 12px; color: #cbd5e1; line-height: 1.4;">${escapeHtml(s.theme)}</p>
+        <details style="margin-top: 6px; font-size: 11px; color: #94a3b8;" onclick="event.stopPropagation();">
+          <summary style="cursor: pointer; color: #64748b;">💡 狙いと効果を見る</summary>
+          <div style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--line); line-height: 1.3;">${escapeHtml(s.reason)}</div>
+        </details>
       </div>
     `).join('');
     
-    // クリックイベントの設定
+    // クリックイベントの設定（ワンタップでテーマセット ＆ 即時RAG生成）
     [...listEl.querySelectorAll('.suggestion-item')].forEach(item => {
       item.addEventListener('click', () => {
         const themeText = item.dataset.theme;
         const simpleTag = document.getElementById('simpleTag');
         const customThemeContainer = document.getElementById('customThemeContainer');
         const customThemeInput = document.getElementById('customThemeInput');
+        const generateRagBtn = document.getElementById('generateRagBtn');
         
         if (simpleTag && customThemeContainer && customThemeInput) {
           simpleTag.value = 'custom';
           customThemeContainer.style.display = 'block';
           customThemeInput.value = themeText;
-          customThemeInput.focus();
-          
-          // 選択されたことが分かりやすいように一瞬背景を光らせるアニメーション効果
-          customThemeInput.style.transition = 'none';
-          customThemeInput.style.background = 'rgba(59, 130, 246, 0.25)';
-          setTimeout(() => {
-            customThemeInput.style.transition = 'background 0.5s ease';
-            customThemeInput.style.background = '#0f172a';
-          }, 150);
+          if (generateRagBtn) {
+            generateRagBtn.click();
+          }
         }
       });
     });
