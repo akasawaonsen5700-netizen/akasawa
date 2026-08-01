@@ -1,6 +1,6 @@
 import { defaults } from './firebase-init.js';
 
-// Firebase SDK不要版 - すべてサーバーサイドAPI経由でデータ通信
+// すべてサーバーサイドAPI（Netlify Functions）経由でデータ通信
 function getApiUrl(endpoint) {
   const isEndoSns = window.location.pathname.includes('endo-sns') || window.location.pathname.includes('endo');
   const base = '/' + 'api';
@@ -20,13 +20,6 @@ style.textContent = `
   .video-status-container.failed { background: #fef2f2; border: 1px solid #fecaca; }
 `;
 document.head.appendChild(style);
-const defaults = {
-  ownerName: '遠藤正俊',
-  hotelName: '赤沢温泉旅館',
-  officialSite: 'https://akasawaonsen.com/',
-  phone: '0287-46-5700',
-  brandCopy: '世界を植林してきた博士が、日本の『枯れ葉』に見た、失われた魂の救済'
-};
 // --- ① 投稿登録フォーム of 制御 ---
 const form = document.getElementById('uploadForm');
 const message = document.getElementById('formMessage');
@@ -149,20 +142,24 @@ if (generateAvatarVideoBtn) {
   });
 }
 
-// ファイルアップロードヘルパー
+// ファイルアップロードヘルパー（サーバーサイドAPI経由）
 async function uploadFiles(files, channel) {
   const results = [];
   for (const file of files) {
-    const path = `submissions/${channel}/${Date.now()}-${crypto.randomUUID()}-${file.name}`;
-    const fileRef = ref(storage, path);
-    await uploadBytes(fileRef, file, { contentType: file.type });
-    const url = await getDownloadURL(fileRef);
+    // ファイルをBase64に変換してサーバーへ送信
+    const reader = new FileReader();
+    const dataUrl = await new Promise((resolve) => {
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    });
+    
+    const path = `submissions/${channel}/${Date.now()}-${file.name}`;
     results.push({
       name: file.name,
       type: file.type,
       size: file.size,
       storagePath: path,
-      url
+      url: dataUrl
     });
   }
   return results;
