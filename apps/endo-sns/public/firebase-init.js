@@ -1,14 +1,31 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-import { getStorage } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
-import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+let app = null;
+let db = null;
+let storage = null;
 
 const config = window.AKASAWA_CONFIG?.firebase;
-if (!config?.apiKey || config.apiKey.startsWith('REPLACE_')) {
-  console.warn('Firebase runtime config is not set. Edit /public/runtime-config.js before deployment.');
+
+if (config && config.apiKey && !config.apiKey.startsWith('REPLACE_')) {
+  try {
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js');
+    const { getStorage } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js');
+    const { getFirestore } = await import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js');
+    
+    app = initializeApp(config);
+    db = getFirestore(app);
+    storage = getStorage(app);
+  } catch (err) {
+    console.warn('Firebase init warning:', err);
+  }
+} else {
+  console.log('Firebase client SDK is skipped (Server-side Netlify API mode).');
 }
 
-export const app = initializeApp(config);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+export { app, db, storage };
 export const apiBase = window.AKASAWA_CONFIG?.apiBase || '/api';
-export const defaults = window.AKASAWA_CONFIG?.defaults || {};
+export const defaults = window.AKASAWA_CONFIG?.defaults || {
+  ownerName: '遠藤正俊',
+  hotelName: '赤沢温泉旅館',
+  officialSite: 'https://akasawaonsen.com/',
+  phone: '',
+  brandCopy: '世界中で自然と向き合ってきた私が、日本の「枯れ葉」に見出した、失われた心の救済'
+};

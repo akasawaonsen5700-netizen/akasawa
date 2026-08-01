@@ -1,5 +1,4 @@
-import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
-import { storage } from './firebase-init.js';
+import { defaults } from './firebase-init.js';
 
 // Firebase SDK不要版 - すべてサーバーサイドAPI経由でデータ通信
 function getApiUrl(endpoint) {
