@@ -107,11 +107,28 @@
             <h2>🎥 AIアバター動画制作欄</h2>
           </div>
           <div class="card-body stack-gap">
-            <p style="font-size: 12px; color: #94a3b8; margin: 0;">HeyGen API を使って遠藤オーナーの画像＋本人の声（クローンボイス）で喋るAIアバター動画を全自動制作します。</p>
+            <p style="font-size: 12px; color: #94a3b8; margin: 0;">ステップ3の画像＋ステップ2の台本から、HeyGen APIで遠藤オーナーが喋るAIアバター動画を全自動制作します。</p>
             <button type="button" id="generateAvatarVideoBtn" class="primary-btn" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); width: 100%; font-size: 15px; font-weight: bold; padding: 12px;">
               🎥 HeyGenでAIアバター動画を制作する
             </button>
             <div id="avatarStatusMessage" style="font-size: 12px; color: var(--accent); text-align: center;"></div>
+
+            <!-- 動画完成後のダウンロード領域 -->
+            <div id="avatarVideoResult" style="display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 14px; text-align: center;">
+              <p style="margin: 0 0 8px; font-size: 13px; font-weight: bold; color: #10b981;">✅ AIアバター動画が完成しました！</p>
+              <video id="avatarVideoPreview" controls style="width: 100%; max-height: 300px; border-radius: 8px; background: #000; margin-bottom: 8px;"></video>
+              <a id="avatarVideoDownloadLink" href="#" download="endo_avatar_video.mp4" class="primary-btn" style="display: inline-block; background: #8b5cf6; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 8px; text-decoration: none; color: white;">
+                📥 完成動画をダウンロード
+              </a>
+            </div>
+
+            <!-- ステータス確認ボタン -->
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="checkVideoIdInput" placeholder="動画ID (自動入力されます)" style="flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: #0f172a; color: white; font-size: 12px;" />
+              <button type="button" id="checkVideoStatusBtn" class="primary-btn" style="background: #475569; font-size: 12px; padding: 8px 12px; white-space: nowrap;">
+                🔍 状態確認
+              </button>
+            </div>
           </div>
         </section>
 

@@ -148,9 +148,17 @@ if (generateAvatarVideoBtn) {
       });
       const data = await res.json();
       if (res.ok && data.ok) {
+        const videoId = data.videoId;
         alert('🎉 HeyGen AIアバター動画の生成を開始しました！完成まで数分かかります。');
-        if (statusEl) statusEl.textContent = '🎥 動画生成開始 (ID: ' + data.videoId + ') 完成まで数分お待ちください。';
-        setMessage('🎥 HeyGen AIアバター動画の生成を開始しました (ID: ' + data.videoId + ')');
+        if (statusEl) statusEl.textContent = '🎥 動画生成開始 (ID: ' + videoId + ') 完成まで数分お待ちください。';
+        setMessage('🎥 HeyGen AIアバター動画の生成を開始しました (ID: ' + videoId + ')');
+
+        // 動画IDを状態確認欄に自動入力
+        const idInput = document.getElementById('checkVideoIdInput');
+        if (idInput) idInput.value = videoId;
+
+        // 自動ポーリング開始（30秒ごとに状態確認、最大10分）
+        startVideoPolling(videoId);
       } else {
         if (statusEl) statusEl.textContent = '⚠️ エラー: ' + (data.error || '不明なエラー');
         throw new Error(data.error || 'HeyGen動画生成に失敗しました');
@@ -162,6 +170,85 @@ if (generateAvatarVideoBtn) {
     } finally {
       generateAvatarVideoBtn.textContent = '🎥 HeyGenでAIアバター動画を制作する';
       generateAvatarVideoBtn.disabled = false;
+    }
+  });
+}
+
+// HeyGen動画ステータス自動ポーリング＆完成時ダウンロード表示
+function startVideoPolling(videoId) {
+  const statusEl = document.getElementById('avatarStatusMessage');
+  const resultEl = document.getElementById('avatarVideoResult');
+  const previewEl = document.getElementById('avatarVideoPreview');
+  const downloadLink = document.getElementById('avatarVideoDownloadLink');
+  let pollCount = 0;
+
+  const interval = setInterval(async () => {
+    pollCount++;
+    if (pollCount > 20) { // 最大10分（30秒×20回）
+      clearInterval(interval);
+      if (statusEl) statusEl.textContent = '⏰ タイムアウト。「🔍 状態確認」ボタンで手動確認してください。';
+      return;
+    }
+
+    try {
+      if (statusEl) statusEl.textContent = `⏳ 動画生成中... (確認 ${pollCount}回目 / 約${pollCount * 30}秒経過)`;
+      const res = await fetch(`/.netlify/functions/check-avatar-video?video_id=${videoId}`);
+      const data = await res.json();
+
+      if (data.ok && data.status === 'completed' && data.videoUrl) {
+        clearInterval(interval);
+        if (statusEl) statusEl.textContent = '✅ 動画が完成しました！';
+        if (resultEl) resultEl.style.display = 'block';
+        if (previewEl) previewEl.src = data.videoUrl;
+        if (downloadLink) {
+          downloadLink.href = data.videoUrl;
+          downloadLink.download = `endo_avatar_${videoId}.mp4`;
+        }
+      } else if (data.status === 'failed') {
+        clearInterval(interval);
+        if (statusEl) statusEl.textContent = '❌ 動画生成に失敗しました。';
+      }
+    } catch (err) {
+      console.warn('Polling error:', err);
+    }
+  }, 30000); // 30秒間隔
+}
+
+// 手動ステータス確認ボタン
+const checkVideoStatusBtn = document.getElementById('checkVideoStatusBtn');
+if (checkVideoStatusBtn) {
+  checkVideoStatusBtn.addEventListener('click', async () => {
+    const videoId = document.getElementById('checkVideoIdInput')?.value?.trim();
+    if (!videoId) {
+      alert('動画IDを入力してください。（動画生成時に自動入力されます）');
+      return;
+    }
+
+    const statusEl = document.getElementById('avatarStatusMessage');
+    if (statusEl) statusEl.textContent = '🔍 状態を確認中...';
+
+    try {
+      const res = await fetch(`/.netlify/functions/check-avatar-video?video_id=${videoId}`);
+      const data = await res.json();
+
+      if (data.ok && data.status === 'completed' && data.videoUrl) {
+        if (statusEl) statusEl.textContent = '✅ 動画が完成しました！';
+        const resultEl = document.getElementById('avatarVideoResult');
+        const previewEl = document.getElementById('avatarVideoPreview');
+        const downloadLink = document.getElementById('avatarVideoDownloadLink');
+        if (resultEl) resultEl.style.display = 'block';
+        if (previewEl) previewEl.src = data.videoUrl;
+        if (downloadLink) {
+          downloadLink.href = data.videoUrl;
+          downloadLink.download = `endo_avatar_${videoId}.mp4`;
+        }
+      } else if (data.status === 'processing' || data.status === 'pending') {
+        if (statusEl) statusEl.textContent = '⏳ まだ生成中です。しばらくお待ちください。（ステータス: ' + data.status + '）';
+      } else {
+        if (statusEl) statusEl.textContent = '状態: ' + (data.status || '不明') + (data.error ? ' - ' + data.error : '');
+      }
+    } catch (err) {
+      if (statusEl) statusEl.textContent = '❌ 確認エラー: ' + err.message;
     }
   });
 }
