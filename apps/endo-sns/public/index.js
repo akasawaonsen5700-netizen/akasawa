@@ -98,7 +98,7 @@ if (generateRagBtn) {
       if (response.ok && data) {
         if (data.hook) hookText.value = data.hook;
         if (data.script) ownerComment.value = data.script;
-        setMessage('思想RAGからフックと台本を自動生成しました。');
+        setMessage('20〜30代女性向け思想RAGからフックとアバター台本を自動生成しました。');
       } else {
         throw new Error(data.error || '生成に失敗しました');
       }
@@ -106,8 +106,46 @@ if (generateRagBtn) {
       console.error(err);
       alert('エラー: ' + err.message);
     } finally {
-      generateRagBtn.textContent = '🤖 思想RAGから自動生成する';
+      generateRagBtn.textContent = '🤖 思想RAGから自動生成';
       generateRagBtn.disabled = false;
+    }
+  });
+}
+
+// HeyGen AIアバター動画生成処理
+const generateAvatarVideoBtn = document.getElementById('generateAvatarVideoBtn');
+if (generateAvatarVideoBtn) {
+  generateAvatarVideoBtn.addEventListener('click', async () => {
+    const script = ownerComment.value.trim();
+    if (!script) {
+      alert('まず「オーナーの投稿メモ / 動画台本」を入力するか、「🤖 思想RAGから自動生成」を行ってください。');
+      return;
+    }
+
+    generateAvatarVideoBtn.textContent = '⏳ HeyGen生成中...';
+    generateAvatarVideoBtn.disabled = true;
+    try {
+      const res = await fetch('/.netlify/functions/generate-avatar-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          script: script,
+          photoUrl: 'https://akasawaonsen.com/images/endo-owner.jpg'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        alert('🎉 HeyGen APIリクエストが正常に送信されました！遠藤オーナーのAIアバター動画の生成を開始しました。');
+        setMessage('🎥 HeyGen AIアバター動画の生成を開始しました (ID: ' + data.videoId + ')');
+      } else {
+        throw new Error(data.error || 'HeyGen動画生成に失敗しました');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('HeyGen生成エラー: ' + err.message);
+    } finally {
+      generateAvatarVideoBtn.textContent = '🎥 HeyGen AIアバター動画生成';
+      generateAvatarVideoBtn.disabled = false;
     }
   });
 }

@@ -20,7 +20,7 @@ exports.handler = async (event) => {
 
     let ragContent = '';
     try {
-      const { PHILOSOPHY } = require('./_lib-endo/endo-philosophy');
+      const { PHILOSOPHY } = require('./_lib/endo-philosophy');
       ragContent = PHILOSOPHY;
     } catch (err) {
       console.error('Failed to read RAG corpus:', err);
@@ -31,26 +31,27 @@ exports.handler = async (event) => {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `
-あなたは「遠藤正俊」氏のSNSアカウント発信をサポートする専属AIです。
-以下の「遠藤氏の思想・ビジョン（RAGコーパス）」を読み込み、指定されたコンテンツクラスター（テーマ）に沿った動画台本を生成してください。
+あなたは「遠藤正俊」（元植林博士・赤沢温泉旅館オーナー）のSNSショート動画（Instagramリール/TikTok/Shorts）台本を作成するAIプロデューサーです。
 
-■ 遠藤氏の思想コーパス
+■ ターゲット顧客
+【20代〜30代の女性】
+（仕事やSNSの疲れ、「もっと頑張らなきゃ」という焦りを持つ女性たちへ、温かく寄り添い、心をゆるめるメッセージを届ける）
+
+■ 遠藤氏の思想・ビジョン（RAGコーパス）
 ${ragContent}
 
-■ 指定されたテーマ
+■ 指定された動画テーマ
 ${theme}
 
 ■ 指示
-1. 上記の思想コーパスから、指定されたテーマに最も関連する考え方やエピソードを抽出してください。
-2. 動画の冒頭に表示する「3秒で関心を惹く短いフック（惹きつけ文）」を作成してください。「知らなかった」「なぜ？」「本当に？」と思わせる知的欲求を刺激する要素を含めてください。
-3. 動画で本人が語る（またはテロップで流す）ための「動画台本（スクリプト）」を作成してください。
-4. 台本は、本人の語り口調（一人称は「私」、です・ます調）で、長すぎないように（約150〜250文字程度）してください。
-5. 「旅館の宣伝」ではなく、「日本の田舎の価値を伝える案内人」としての立ち位置を守ってください。
-6. 必ず以下のJSON形式で出力してください。Markdownの囲みは不要です。
+1. 20〜30代女性がスクロールの手を止める「冒頭3秒の惹きつけフック（30文字以内）」を作成してください。（例: 「頑張りすぎている、あなたへ。」「『完璧じゃなくていい』って、知ってる？」等）
+2. 遠藤正俊本人の口調（一人称は「私」、優しく包み込む語りかけ）で、AIアバターが喋るための「動画台本（150〜220文字程度）」を作成してください。
+3. 遠藤氏の人生経験（世界中の自然を見てきた植林博士、ぬる湯温泉でのリセット）を織り交ぜ、20〜30代女性の心がすっと軽くなるようなメッセージにしてください。
+4. 必ず以下のJSON形式で出力してください。Markdownの囲みは不要です。
 
 {
-  "hook": "動画冒頭のフック文（30文字以内）",
-  "script": "動画台本の本文（150〜250文字）"
+  "hook": "動画冒頭の惹きつけフック（30文字以内）",
+  "script": "AIアバター用動画台本（150〜220文字）"
 }
 `;
 
@@ -62,8 +63,8 @@ ${theme}
     });
 
     let responseText = result.response.text().trim();
-    if (responseText.startsWith('\`\`\`')) {
-      responseText = responseText.replace(/^\`\`\`[a-zA-Z]*\n/, '').replace(/\n\`\`\`$/, '');
+    if (responseText.startsWith('```')) {
+      responseText = responseText.replace(/^```[a-zA-Z]*\n/, '').replace(/\n```$/, '');
     }
 
     const data = JSON.parse(responseText.trim());
