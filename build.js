@@ -154,21 +154,14 @@ if (fs.existsSync(endoFuncsSrc)) {
     });
   }
   
-  // 各関数ファイルを endo- プレフィックス付きでコピーし、require パスを置換
+  // 各関数ファイルをコピーし、require パスを置換
   fs.readdirSync(endoFuncsSrc).forEach(file => {
     const filePath = path.join(endoFuncsSrc, file);
     if (fs.lstatSync(filePath).isFile()) {
-      const destPath = path.join(functionsDir, `endo-${file}`);
+      const destPath = path.join(functionsDir, file);
       let content = fs.readFileSync(filePath, 'utf8');
       content = content.replace(/\.\/_lib\//g, './_lib-endo/');
       fs.writeFileSync(destPath, content, 'utf8');
-
-      // ローカル開発時の互換性のため、他アプリと名前が衝突しない関数は
-      // プレフィックスなしのコピーも作成する
-      const nonPrefixedPath = path.join(functionsDir, file);
-      if (!fs.existsSync(nonPrefixedPath)) {
-        fs.writeFileSync(nonPrefixedPath, content, 'utf8');
-      }
     }
   });
 }
