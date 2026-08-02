@@ -149,14 +149,14 @@ if (fs.existsSync(endoFuncsSrc)) {
     });
   }
   
-  // 各関数ファイルをコピーし、require パスを置換
+  // 各関数ファイルをコピーし、require パスを置換 (endo-プレフィックス対応)
   fs.readdirSync(endoFuncsSrc).forEach(file => {
     const filePath = path.join(endoFuncsSrc, file);
     if (fs.lstatSync(filePath).isFile()) {
-      const destPath = path.join(functionsDir, file);
       let content = fs.readFileSync(filePath, 'utf8');
       content = content.replace(/\.\/_lib\//g, './_lib-endo/');
-      fs.writeFileSync(destPath, content, 'utf8');
+      fs.writeFileSync(path.join(functionsDir, `endo-${file}`), content, 'utf8');
+      fs.writeFileSync(path.join(functionsDir, file), content, 'utf8');
     }
   });
 }
