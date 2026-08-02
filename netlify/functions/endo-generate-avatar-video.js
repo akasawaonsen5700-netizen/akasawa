@@ -5,9 +5,9 @@ const { getDb, admin } = require('./_lib-endo/firebase-admin');
 
 /**
  * 遠藤正俊オーナーの顔写真アバターを確実にバインドし、
- * HeyGen v3 API (engine: avatar_iv ＋ motion_prompt: Natural hand gestures) をフル適用して
- * 写真画像からでもAIが自然な手の動き・身振り手振りを自動生成し、
- * Cartesia API の遠藤正俊本人のクローン音声(a513cd1d-17cd-4a92-94e3-de112db4a58e)で100%手振りを伴って喋るAI動画を生成する完全決定版関数
+ * HeyGen v3 API (engine: avatar_iv ＋ motion_prompt: Natural hand gestures ＋ caption文字テロップ表示) を適用して、
+ * 冒頭に目を惹くタイトル・字幕テロップを表示しつつ、
+ * Cartesia API の遠藤正俊本人のクローン音声(a513cd1d-17cd-4a92-94e3-de112db4a58e)で100%手振りを伴って喋るショート動画を全自動生成する決定版関数
  */
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -143,7 +143,6 @@ exports.handler = async (event) => {
       }
     }
 
-    // アカウントに登録されている Photo Avatar (v1/talking_photo.list) から遠藤正俊オーナーアバターを取得
     if (!avatarId) {
       try {
         const tpListRes = await fetch('https://api.heygen.com/v1/talking_photo.list', {
@@ -175,9 +174,9 @@ exports.handler = async (event) => {
     }
 
     // ==========================================
-    // STEP 4: HeyGen v3/videos API (avatar_iv + motion_prompt 手の動作生成)
+    // STEP 4: HeyGen v3/videos API (avatar_iv + motion_prompt 手の動作生成 + caption タイトル字幕)
     // ==========================================
-    console.log('Step 4: Submitting HeyGen v3 API video generation request with motion_prompt...');
+    console.log('Step 4: Submitting HeyGen v3 API video generation request with motion_prompt and captions...');
 
     const motionPromptText = 'Natural hand gestures, warm smile, open arms, occasional pointing, calm body movement';
 
@@ -189,7 +188,8 @@ exports.handler = async (event) => {
         type: 'avatar_iv'
       },
       motion_prompt: motionPromptText,
-      aspect_ratio: '9:16'
+      aspect_ratio: '9:16',
+      caption: {}
     };
 
     const videoRes = await fetch('https://api.heygen.com/v3/videos', {
@@ -207,7 +207,6 @@ exports.handler = async (event) => {
     const videoId = videoData.data?.video_id || videoData.data?.id;
 
     if (videoRes.ok && videoId) {
-      // Firestore の submissions コレクションへ即座に自動保存
       try {
         const db = getDb();
         const safeScript = script.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
@@ -240,7 +239,7 @@ exports.handler = async (event) => {
           ok: true,
           videoId: videoId,
           status: 'processing',
-          message: '🎙️ 遠藤正俊オーナーの写真アバター（最新AIによる手の動作ジェスチャー全自動付与）＆本人の声で動画制作を開始しました。'
+          message: '🎙️ 遠藤正俊オーナーの写真アバター（字幕テロップ・手振り動作付き）＆本人の声で動画制作を開始しました。'
         })
       };
     }
