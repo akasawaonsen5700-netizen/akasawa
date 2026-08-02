@@ -1,9 +1,8 @@
 const FormData = require('form-data');
 
 /**
- * HeyGen API v2 対応 動画生成関数
- * 【厳格ルール】遠藤正俊オーナーの本人の声（クローンボイス）以外での生成を一切禁止。
- * 本人の声（Custom Voice / Cloned Voice）が見つからない場合はエラーを返して停止。
+ * 遠藤正俊オーナー本人のクローン音声（Cartesia API）を自動生成し、
+ * HeyGen API と連携して【100% 遠藤オーナー本人の声】で喋るAIアバター動画を一括生成する関数
  */
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -13,9 +12,23 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  const apiKey = process.env.HEYGEN_API_KEY;
-  if (!apiKey) {
+  const heygenApiKey = process.env.HEYGEN_API_KEY;
+  if (!heygenApiKey) {
     return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'HEYGEN_API_KEY is not configured' }) };
+  }
+
+  const cartesiaApiKey = process.env.CARTESIA_API_KEY;
+  const cartesiaVoiceId = process.env.CARTESIA_VOICE_ID || 'a513cd1d-17cd-4a92-94e3-de112db4a58e';
+
+  if (!cartesiaApiKey || !cartesiaVoiceId) {
+    return {
+      statusCode: 400,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({
+        ok: false,
+        error: '⚠️ 遠藤正俊オーナーのクローンボイス設定（CARTESIA_API_KEY / CARTESIA_VOICE_ID）が配置されていません。'
+      })
+    };
   }
 
   try {
@@ -25,50 +38,131 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ ok: false, error: '台本(script)が必要です' }) };
     }
 
+    // ========================================
+    // STEP 1: Cartesia API で遠藤正俊オーナー本人の声を直接生成
+    // ========================================
+    console.log(`Step 1: Generating Endou Masatoshi Owner voice via Cartesia (Voice ID: ${cartesiaVoiceId})...`);
+    
+    const cartesiaRes = await fetch('https://api.cartesia.ai/tts/bytes', {
+      method: 'POST',
+      headers: {
+        'Cartesia-Version': '2024-06-10',
+        'X-API-Key': cartesiaApiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model_id: 'sonic-3.5',
+        transcript: script,
+        voice: {
+          mode: 'id',
+          id: cartesiaVoiceId
+        },
+        output_format: {
+          container: 'wav',
+          encoding: 'pcm_s16le',
+          sample_rate: 44100
+        },
+        language: 'ja'
+      })
+    });
+
+    if (!cartesiaRes.ok) {
+      const errText = await cartesiaRes.text();
+      throw new Error(`Cartesia オーナー音声生成失敗 (${cartesiaRes.status}): ${errText}`);
+    }
+
+    const audioArrayBuffer = await cartesiaRes.arrayBuffer();
+    const audioBuffer = Buffer.from(audioArrayBuffer);
+    console.log(`Generated owner voice audio buffer size: ${audioBuffer.length} bytes`);
+
+    // ========================================
+    // STEP 2: 生成した本人の音声WAVを HeyGen にアセットアップロード
+    // ========================================
+    console.log('Step 2: Uploading owner voice audio to HeyGen asset...');
+    const audioBoundary = '----FormBoundaryAudio' + Date.now();
+    const audioBodyParts = [
+      `--${audioBoundary}\r\n`,
+      `Content-Disposition: form-data; name="file"; filename="owner_voice.wav"\r\n`,
+      `Content-Type: audio/wav\r\n\r\n`,
+    ];
+    const audioBodyEnd = `\r\n--${audioBoundary}--\r\n`;
+
+    const audioBodyBuffer = Buffer.concat([
+      Buffer.from(audioBodyParts.join('')),
+      audioBuffer,
+      Buffer.from(audioBodyEnd)
+    ]);
+
+    const audioUploadRes = await fetch('https://api.heygen.com/v1/asset', {
+      method: 'POST',
+      headers: {
+        'X-Api-Key': heygenApiKey,
+        'Content-Type': `multipart/form-data; boundary=${audioBoundary}`
+      },
+      body: audioBodyBuffer
+    });
+
+    let ownerAudioAssetId = null;
+    let ownerAudioUrl = null;
+
+    if (audioUploadRes.ok) {
+      const audioUploadData = await audioUploadRes.json();
+      ownerAudioAssetId = audioUploadData.data?.asset_id || audioUploadData.data?.id;
+      ownerAudioUrl = audioUploadData.data?.url;
+      console.log('Successfully uploaded owner voice to HeyGen asset:', ownerAudioAssetId, ownerAudioUrl);
+    } else {
+      const errTxt = await audioUploadRes.text();
+      console.warn('HeyGen audio asset upload warning:', errTxt);
+    }
+
+    if (!ownerAudioAssetId && !ownerAudioUrl) {
+      throw new Error('遠藤オーナーの音声ファイルをHeyGenへ連携できませんでした。');
+    }
+
+    // ========================================
+    // STEP 3: アバター/Talking Photo 画像準備
+    // ========================================
     let talkingPhotoId = null;
     let avatarId = null;
 
-    // ========================================
-    // STEP 1: 画像アップロード & talking_photo_id 発行
-    // ========================================
     if (imageBase64) {
       try {
-        console.log('Step 1: Uploading image asset to HeyGen...');
+        console.log('Step 3: Uploading avatar image to HeyGen...');
         const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
         const imageBuffer = Buffer.from(base64Data, 'base64');
 
-        const boundary = '----FormBoundary' + Date.now();
-        const bodyParts = [
-          `--${boundary}\r\n`,
+        const imgBoundary = '----FormBoundaryImg' + Date.now();
+        const imgBodyParts = [
+          `--${imgBoundary}\r\n`,
           `Content-Disposition: form-data; name="file"; filename="avatar.jpg"\r\n`,
           `Content-Type: image/jpeg\r\n\r\n`,
         ];
-        const bodyEnd = `\r\n--${boundary}--\r\n`;
+        const imgBodyEnd = `\r\n--${imgBoundary}--\r\n`;
 
-        const bodyBuffer = Buffer.concat([
-          Buffer.from(bodyParts.join('')),
+        const imgBodyBuffer = Buffer.concat([
+          Buffer.from(imgBodyParts.join('')),
           imageBuffer,
-          Buffer.from(bodyEnd)
+          Buffer.from(imgBodyEnd)
         ]);
 
-        const uploadRes = await fetch('https://api.heygen.com/v1/asset', {
+        const imgUploadRes = await fetch('https://api.heygen.com/v1/asset', {
           method: 'POST',
           headers: {
-            'X-Api-Key': apiKey,
-            'Content-Type': `multipart/form-data; boundary=${boundary}`
+            'X-Api-Key': heygenApiKey,
+            'Content-Type': `multipart/form-data; boundary=${imgBoundary}`
           },
-          body: bodyBuffer
+          body: imgBodyBuffer
         });
 
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          const uploadedUrl = uploadData.data?.url || uploadData.data?.image_url;
+        if (imgUploadRes.ok) {
+          const imgUploadData = await imgUploadRes.json();
+          const uploadedUrl = imgUploadData.data?.url || imgUploadData.data?.image_url;
 
           if (uploadedUrl) {
             const tpRes = await fetch('https://api.heygen.com/v2/talking_photo', {
               method: 'POST',
               headers: {
-                'X-Api-Key': apiKey,
+                'X-Api-Key': heygenApiKey,
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({ talking_photo_url: uploadedUrl })
@@ -81,17 +175,14 @@ exports.handler = async (event) => {
           }
         }
       } catch (uploadErr) {
-        console.warn('Image upload flow failed:', uploadErr.message);
+        console.warn('Image upload flow warning:', uploadErr.message);
       }
     }
 
-    // ========================================
-    // STEP 2: talking_photo_id / avatar_id 自動取得
-    // ========================================
     if (!talkingPhotoId && !avatarId) {
       try {
         const tpListRes = await fetch('https://api.heygen.com/v2/talking_photos', {
-          headers: { 'X-Api-Key': apiKey }
+          headers: { 'X-Api-Key': heygenApiKey }
         });
         if (tpListRes.ok) {
           const tpListData = await tpListRes.json();
@@ -108,7 +199,7 @@ exports.handler = async (event) => {
     if (!talkingPhotoId && !avatarId) {
       try {
         const avatarListRes = await fetch('https://api.heygen.com/v2/avatars', {
-          headers: { 'X-Api-Key': apiKey }
+          headers: { 'X-Api-Key': heygenApiKey }
         });
         if (avatarListRes.ok) {
           const avatarListData = await avatarListRes.json();
@@ -133,83 +224,27 @@ exports.handler = async (event) => {
       };
     }
 
-    // ========================================
-    // STEP 3: 遠藤正俊オーナー本人の声（クローンボイス）の厳格特定
-    // 他人の標準ボイスによるフォールバックを完全禁止！
-    // ========================================
-    let ownerVoiceId = process.env.HEYGEN_VOICE_ID || null;
+    // ==========================================
+    // STEP 4: 本人の音声(audio)を指定して動画生成
+    // ==========================================
+    console.log('Step 4: Submitting HeyGen video generation with Endou Owner audio...');
 
-    if (!ownerVoiceId) {
-      console.log('Searching for Endou Masatoshi cloned/custom voice in HeyGen account...');
-      try {
-        const voicesRes = await fetch('https://api.heygen.com/v2/voices', {
-          headers: { 'X-Api-Key': apiKey }
-        });
-        if (voicesRes.ok) {
-          const voicesData = await voicesRes.json();
-          const voices = voicesData.data?.voices || voicesData.data || [];
-          
-          if (Array.isArray(voices) && voices.length > 0) {
-            // アカウントに登録されたカスタムボイス/クローンボイスを探索
-            const customVoice = voices.find(v => 
-              v.is_custom === true || 
-              v.type === 'custom' || 
-              v.type === 'cloned' ||
-              v.name?.toLowerCase().includes('endo') ||
-              v.name?.includes('遠藤') ||
-              v.name?.includes('正俊')
-            );
-
-            if (customVoice) {
-              ownerVoiceId = customVoice.voice_id || customVoice.id;
-              console.log('Found Endou Owner Cloned Voice ID:', ownerVoiceId, customVoice.name);
-            }
-          }
-        }
-      } catch (vErr) {
-        console.warn('Voice search error:', vErr.message);
-      }
-    }
-
-    // 本人のクローンボイスが見つからない場合は他人の声で勝手に作成させず、厳格にエラーを返す！
-    if (!ownerVoiceId) {
-      return {
-        statusCode: 400,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({
-          ok: false,
-          error: '⚠️ 遠藤正俊オーナーの本人のクローンボイス（Voice Clone）がHeyGenアカウント内に未登録です。他人の標準ボイスでの生成を防ぐため処理を停止しました。HeyGenで遠藤オーナーの声（クローンボイス）を作成するか、.env の HEYGEN_VOICE_ID にボイスIDを設定してください。'
-        })
-      };
-    }
-
-    // ========================================
-    // STEP 4: 遠藤オーナー本人の声で動画生成リクエスト
-    // ========================================
-    console.log('Submitting video generation with Endou Owner Voice ID:', ownerVoiceId);
-    
     let characterConfig = {};
     if (talkingPhotoId) {
-      characterConfig = {
-        type: 'talking_photo',
-        talking_photo_id: talkingPhotoId
-      };
+      characterConfig = { type: 'talking_photo', talking_photo_id: talkingPhotoId };
     } else {
-      characterConfig = {
-        type: 'avatar',
-        avatar_id: avatarId
-      };
+      characterConfig = { type: 'avatar', avatar_id: avatarId };
     }
+
+    const voiceConfig = ownerAudioAssetId 
+      ? { type: 'audio', audio_asset_id: ownerAudioAssetId }
+      : { type: 'audio', audio_url: ownerAudioUrl };
 
     const videoPayload = {
       video_inputs: [
         {
           character: characterConfig,
-          voice: {
-            type: 'text',
-            input_text: script,
-            voice_id: ownerVoiceId
-          }
+          voice: voiceConfig
         }
       ],
       dimension: {
@@ -221,7 +256,7 @@ exports.handler = async (event) => {
     const videoRes = await fetch('https://api.heygen.com/v2/video/generate', {
       method: 'POST',
       headers: {
-        'X-Api-Key': apiKey,
+        'X-Api-Key': heygenApiKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(videoPayload)
@@ -238,7 +273,7 @@ exports.handler = async (event) => {
           ok: true,
           videoId: videoData.data.video_id,
           status: 'processing',
-          message: '遠藤正俊オーナー本人の声でAIアバター動画の生成を開始しました。'
+          message: '🎙️ 遠藤正俊オーナー本人のクローン音声でAIアバター動画の生成を開始しました。'
         })
       };
     }
