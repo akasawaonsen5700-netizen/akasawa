@@ -5,8 +5,9 @@ const { getDb, admin } = require('./_lib/firebase-admin');
 
 /**
  * 遠藤正俊オーナーの顔写真アバターを確実にバインドし、
- * HeyGen の motion_prompt (手の動作・身振り手振り) を適用して、
- * Cartesia API の遠藤正俊本人のクローン音声(a513cd1d-17cd-4a92-94e3-de112db4a58e)で100%本人が手が動いて喋るAI動画を生成する関数
+ * HeyGen v3 API (engine: avatar_iv ＋ motion_prompt: Natural hand gestures) をフル適用して
+ * 写真画像からでもAIが自然な手の動き・身振り手振りを自動生成し、
+ * Cartesia API の遠藤正俊本人のクローン音声(a513cd1d-17cd-4a92-94e3-de112db4a58e)で100%手振りを伴って喋るAI動画を生成する完全決定版関数
  */
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -108,10 +109,10 @@ exports.handler = async (event) => {
     }
 
     // ========================================
-    // STEP 3: 添付画像の Talking Photo 化 ＆ 登録済み Photo Avatar の選択
+    // STEP 3: 遠藤正俊オーナーの Photo Avatar ID のバインド
     // ========================================
-    console.log('Step 3: Binding target photo avatar character...');
-    let characterConfig = null;
+    console.log('Step 3: Binding Photo Avatar character...');
+    let avatarId = null;
 
     if (imageBase64) {
       try {
@@ -120,7 +121,6 @@ exports.handler = async (event) => {
         const imageBuffer = Buffer.from(base64Data, 'base64');
         const mimeType = imageBase64.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg';
 
-        // 1. v1/talking_photo へ送信
         const tpRes = await fetch('https://upload.heygen.com/v1/talking_photo', {
           method: 'POST',
           headers: {
@@ -134,8 +134,8 @@ exports.handler = async (event) => {
           const tpData = await tpRes.json();
           const tpId = tpData.data?.talking_photo_id || tpData.data?.id;
           if (tpId) {
-            characterConfig = { type: 'talking_photo', talking_photo_id: tpId };
-            console.log('Successfully bound uploaded image as talking_photo_id:', tpId);
+            avatarId = tpId;
+            console.log('Successfully created talking_photo_id from image:', tpId);
           }
         }
       } catch (imgErr) {
@@ -143,8 +143,8 @@ exports.handler = async (event) => {
       }
     }
 
-    // 新規登録上限に達している場合は、アカウント内の 登録済み Photo Avatar (v1/talking_photo.list) から特定
-    if (!characterConfig) {
+    // アカウントに登録されている Photo Avatar (v1/talking_photo.list) から遠藤正俊オーナーアバターを取得
+    if (!avatarId) {
       try {
         const tpListRes = await fetch('https://api.heygen.com/v1/talking_photo.list', {
           headers: { 'X-Api-Key': heygenApiKey }
@@ -152,18 +152,10 @@ exports.handler = async (event) => {
         if (tpListRes.ok) {
           const tpListData = await tpListRes.json();
           const list = tpListData.data || [];
-          console.log('v1/talking_photo.list count:', list.length);
           if (Array.isArray(list) && list.length > 0) {
-            // カスタム登録された Photo (is_preset === false) を優先指定
             const customTp = list.find(tp => tp.is_preset === false) || list[0];
-            const tpId = customTp.id || customTp.talking_photo_id;
-            if (tpId) {
-              characterConfig = { 
-                type: 'talking_photo', 
-                talking_photo_id: tpId
-              };
-              console.log('Successfully selected registered Photo Avatar ID:', tpId);
-            }
+            avatarId = customTp.id || customTp.talking_photo_id;
+            console.log('Selected Photo Avatar ID from list:', avatarId);
           }
         }
       } catch (listErr) {
@@ -171,52 +163,46 @@ exports.handler = async (event) => {
       }
     }
 
-    if (!characterConfig) {
+    if (!avatarId) {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         body: JSON.stringify({
           ok: false,
-          error: '遠藤正俊オーナーの顔写真アバターを認識できませんでした。「ステップ3: 画像素材」で顔写真を再選択してください。'
+          error: '遠藤正俊オーナーの顔写真アバターを特定できませんでした。「ステップ3: 画像素材」で顔写真を再選択してください。'
         })
       };
     }
 
     // ==========================================
-    // STEP 4: motion_prompt (手の動き・ジェスチャー生成) を渡して動画生成
+    // STEP 4: HeyGen v3/videos API (avatar_iv + motion_prompt 手の動作生成)
     // ==========================================
-    console.log('Step 4: Submitting HeyGen video generation request with character:', JSON.stringify(characterConfig));
+    console.log('Step 4: Submitting HeyGen v3 API video generation request with motion_prompt...');
 
     const motionPromptText = 'Natural hand gestures, warm smile, open arms, occasional pointing, calm body movement';
 
-    const videoPayload = {
-      video_inputs: [
-        {
-          character: characterConfig,
-          voice: {
-            type: 'audio',
-            audio_url: ownerAudioUrl
-          }
-        }
-      ],
+    const v3Payload = {
+      type: 'avatar',
+      avatar_id: avatarId,
+      audio_url: ownerAudioUrl,
+      engine: {
+        type: 'avatar_iv'
+      },
       motion_prompt: motionPromptText,
-      dimension: {
-        width: 1080,
-        height: 1920
-      }
+      aspect_ratio: '9:16'
     };
 
-    const videoRes = await fetch('https://api.heygen.com/v2/video/generate', {
+    const videoRes = await fetch('https://api.heygen.com/v3/videos', {
       method: 'POST',
       headers: {
         'X-Api-Key': heygenApiKey,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(videoPayload)
+      body: JSON.stringify(v3Payload)
     });
 
     const videoData = await videoRes.json();
-    console.log('HeyGen v2 generate result:', JSON.stringify(videoData));
+    console.log('HeyGen v3 API response:', JSON.stringify(videoData));
 
     const videoId = videoData.data?.video_id || videoData.data?.id;
 
@@ -254,7 +240,7 @@ exports.handler = async (event) => {
           ok: true,
           videoId: videoId,
           status: 'processing',
-          message: '🎙️ 遠藤正俊オーナーの写真アバター（手の動作ジェスチャー付き）＆本人の声でAI動画の生成を開始しました。'
+          message: '🎙️ 遠藤正俊オーナーの写真アバター（最新AIによる手の動作ジェスチャー全自動付与）＆本人の声で動画制作を開始しました。'
         })
       };
     }
