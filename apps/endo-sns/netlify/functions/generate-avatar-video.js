@@ -143,7 +143,7 @@ exports.handler = async (event) => {
       }
     }
 
-    // アカウントの Talking Photo 一覧から男性・遠藤アバターを検索
+    // アカウントの Talking Photo 一覧から男性・遠藤アバターを優先選択（女性アバター排除）
     if (!characterConfig) {
       try {
         const tpListRes = await fetch('https://api.heygen.com/v2/talking_photos', {
@@ -153,17 +153,18 @@ exports.handler = async (event) => {
           const tpListData = await tpListRes.json();
           const list = tpListData.data?.talking_photos || tpListData.data || (Array.isArray(tpListData.data) ? tpListData.data : []);
           if (Array.isArray(list) && list.length > 0) {
-            const maleTp = list.find(tp => 
+            const endoOrMale = list.find(tp => 
               tp.name?.toLowerCase().includes('endo') ||
               tp.name?.toLowerCase().includes('male') ||
               tp.name?.includes('遠藤') ||
-              tp.name?.includes('正俊')
-            ) || list[0];
+              tp.name?.includes('正俊') ||
+              tp.gender?.toLowerCase() === 'male'
+            ) || list.find(tp => !tp.gender || tp.gender?.toLowerCase() !== 'female') || list[0];
 
-            const tpId = maleTp.talking_photo_id || maleTp.id;
+            const tpId = endoOrMale.talking_photo_id || endoOrMale.id;
             if (tpId) {
               characterConfig = { type: 'talking_photo', talking_photo_id: tpId };
-              console.log('Selected talking_photo_id from account:', tpId);
+              console.log('Selected male/Endo talking_photo_id from account:', tpId);
             }
           }
         }
