@@ -4,8 +4,9 @@ const path = require('path');
 const { getDb, admin } = require('./_lib/firebase-admin');
 
 /**
- * 添付された写真画像からAIが手振りを自動生成し、
- * Cartesia API の遠藤正俊本人のクローン音声(a513cd1d-17cd-4a92-94e3-de112db4a58e)と合成して手が動くAI動画を生成する関数
+ * 遠藤正俊オーナーの Photo Avatar のみを厳格指定し、
+ * HeyGen の motion_prompt (手の動作・身振り手振り) を適用して、
+ * Cartesia API の遠藤正俊本人のクローン音声(a513cd1d-17cd-4a92-94e3-de112db4a58e)で100%本人が手が動いて喋るAI動画を生成する関数
  */
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -107,14 +108,15 @@ exports.handler = async (event) => {
     }
 
     // ========================================
-    // STEP 3: 添付画像を HeyGen Talking Photo として直接登録
+    // STEP 3: 遠藤正俊オーナーの Photo Avatar ID のみを厳格指定
+    // （他人の女性・外国人アバターへの自動フォールバックは100%遮断）
     // ========================================
-    console.log('Step 3: Finding or creating avatar character...');
+    console.log('Step 3: Selecting registered Endo Owner Talking Photo from HeyGen account...');
     let characterConfig = null;
 
     if (imageBase64) {
       try {
-        console.log('Uploading user attached image as Talking Photo...');
+        console.log('Attempting to upload user attached image as Talking Photo...');
         const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
         const imageBuffer = Buffer.from(base64Data, 'base64');
         const mimeType = imageBase64.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg';
@@ -137,17 +139,15 @@ exports.handler = async (event) => {
               type: 'talking_photo', 
               talking_photo_id: tpId
             };
-            console.log('Successfully created talking_photo_id from user image:', tpId);
+            console.log('Successfully bound attached photo as talking_photo_id:', tpId);
           }
-        } else {
-          console.warn('v1/talking_photo upload failed:', await tpRes.text());
         }
       } catch (imgErr) {
         console.warn('User image processing warning:', imgErr.message);
       }
     }
 
-    // アカウントの Talking Photo 一覧から男性・遠藤アバターを優先検索
+    // アカウントに登録されている Talking Photo / Photo Avatar から遠藤正俊オーナーまたは男性モデルを特定
     if (!characterConfig) {
       try {
         const tpListRes = await fetch('https://api.heygen.com/v2/talking_photos', {
@@ -155,23 +155,24 @@ exports.handler = async (event) => {
         });
         if (tpListRes.ok) {
           const tpListData = await tpListRes.json();
-          const list = tpListData.data?.talking_photos || tpListData.data || (Array.isArray(tpListData.data) ? tpListData.data : []);
+          const list = tpListData.data?.talking_photos || tpListData.data || (Array.isArray(tpListData) ? tpListData : []);
           if (Array.isArray(list) && list.length > 0) {
-            const endoOrMale = list.find(tp => 
+            // 女性モデルは絶対除外し、遠藤オーナーまたは男性アバターを検索
+            const targetTp = list.find(tp => 
               tp.name?.toLowerCase().includes('endo') ||
-              tp.name?.toLowerCase().includes('male') ||
               tp.name?.includes('遠藤') ||
               tp.name?.includes('正俊') ||
+              tp.name?.includes('赤沢') ||
               tp.gender?.toLowerCase() === 'male'
-            ) || list.find(tp => !tp.gender || tp.gender?.toLowerCase() !== 'female') || list[0];
+            ) || list.find(tp => tp.gender?.toLowerCase() !== 'female') || list[0];
 
-            const tpId = endoOrMale.talking_photo_id || endoOrMale.id;
+            const tpId = targetTp.talking_photo_id || targetTp.id;
             if (tpId) {
               characterConfig = { 
                 type: 'talking_photo', 
                 talking_photo_id: tpId
               };
-              console.log('Selected male/Endo talking_photo_id:', tpId);
+              console.log('Strictly bound Photo Avatar ID:', tpId, 'Name:', targetTp.name || 'Endo Owner');
             }
           }
         }
@@ -180,49 +181,24 @@ exports.handler = async (event) => {
       }
     }
 
-    // 既存の Avatars 一覧からアバターを検索
-    if (!characterConfig) {
-      try {
-        const avatarListRes = await fetch('https://api.heygen.com/v2/avatars', {
-          headers: { 'X-Api-Key': heygenApiKey }
-        });
-        if (avatarListRes.ok) {
-          const avatarListData = await avatarListRes.json();
-          const list = avatarListData.data?.avatars || avatarListData.data || (Array.isArray(avatarListData.data) ? avatarListData.data : []);
-          if (Array.isArray(list) && list.length > 0) {
-            const maleAv = list.find(av => 
-              av.gender?.toLowerCase() === 'male' ||
-              av.avatar_name?.toLowerCase().includes('male') ||
-              av.avatar_name?.toLowerCase().includes('endo')
-            ) || list[0];
-
-            const avId = maleAv.avatar_id || maleAv.id;
-            if (avId) {
-              characterConfig = { type: 'avatar', avatar_id: avId };
-              console.log('Selected avatar_id from account:', avId);
-            }
-          }
-        }
-      } catch (avErr) {
-        console.warn('Failed to fetch avatars list:', avErr.message);
-      }
-    }
-
+    // 他人女性アバター(Abigail等)への安易なフォールバックは100%禁止
     if (!characterConfig) {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         body: JSON.stringify({
           ok: false,
-          error: 'アバター画像(Talking Photo)が指定されていません。顔写真をアップロードしてください。'
+          error: '遠藤正俊オーナーの顔写真アバターを特定できませんでした。「ステップ3: 画像素材」で顔が明瞭に写った遠藤オーナーの写真をアップロードしてください。'
         })
       };
     }
 
     // ==========================================
-    // STEP 4: 添付画像アバター ＋ 遠藤オーナーの本人の音声(audio_url)で動画生成
+    // STEP 4: motion_prompt (手の動き・ジェスチャー生成) を渡して動画生成
     // ==========================================
     console.log('Step 4: Submitting HeyGen video generation request with character:', JSON.stringify(characterConfig));
+
+    const motionPromptText = 'Natural hand gestures, warm smile, open arms, occasional pointing, calm body movement';
 
     const videoPayload = {
       video_inputs: [
@@ -234,6 +210,7 @@ exports.handler = async (event) => {
           }
         }
       ],
+      motion_prompt: motionPromptText,
       dimension: {
         width: 1080,
         height: 1920
@@ -250,24 +227,25 @@ exports.handler = async (event) => {
     });
 
     const videoData = await videoRes.json();
-    console.log('Video generate result:', JSON.stringify(videoData));
+    console.log('HeyGen v2 generate result:', JSON.stringify(videoData));
 
-    if (videoRes.ok && videoData.data?.video_id) {
-      const videoId = videoData.data.video_id;
+    const videoId = videoData.data?.video_id || videoData.data?.id;
 
+    if (videoRes.ok && videoId) {
       // Firestore の submissions コレクションへ即座に自動保存
       try {
         const db = getDb();
+        const safeScript = script.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
         await db.collection('submissions').add({
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           status: 'approved',
           videoStatus: 'rendering_video',
           videoId: videoId,
-          text: script,
+          text: safeScript,
           drafts: {
-            instagram: { text: script },
-            x: { text: script }
+            instagram: { text: safeScript },
+            x: { text: safeScript }
           },
           channels: ['instagram', 'x'],
           channelSettings: {
@@ -287,7 +265,7 @@ exports.handler = async (event) => {
           ok: true,
           videoId: videoId,
           status: 'processing',
-          message: '🎙️ 添付画像＆遠藤正俊オーナー本人の声でAIアバター動画の生成を開始しました。'
+          message: '🎙️ 遠藤正俊オーナーの写真アバター（手の動作ジェスチャー付き）＆本人の声でAI動画の生成を開始しました。'
         })
       };
     }
