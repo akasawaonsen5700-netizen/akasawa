@@ -2,7 +2,8 @@ const FormData = require('form-data');
 
 /**
  * HeyGen API v2 対応 動画生成関数
- * 遠藤正俊オーナーの本人の声（カスタムボイス・ボイスクローン）を最優先で使用します。
+ * 【厳格ルール】遠藤正俊オーナーの本人の声（クローンボイス）以外での生成を一切禁止。
+ * 本人の声（Custom Voice / Cloned Voice）が見つからない場合はエラーを返して停止。
  */
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -62,10 +63,8 @@ exports.handler = async (event) => {
         if (uploadRes.ok) {
           const uploadData = await uploadRes.json();
           const uploadedUrl = uploadData.data?.url || uploadData.data?.image_url;
-          console.log('Asset uploaded successfully:', uploadedUrl);
 
           if (uploadedUrl) {
-            console.log('Creating talking_photo from uploaded URL...');
             const tpRes = await fetch('https://api.heygen.com/v2/talking_photo', {
               method: 'POST',
               headers: {
@@ -78,14 +77,11 @@ exports.handler = async (event) => {
             if (tpRes.ok) {
               const tpData = await tpRes.json();
               talkingPhotoId = tpData.data?.talking_photo_id || tpData.data?.id;
-              console.log('Created talking_photo_id:', talkingPhotoId);
-            } else {
-              console.warn('POST /v2/talking_photo failed:', await tpRes.text());
             }
           }
         }
       } catch (uploadErr) {
-        console.warn('Image upload flow failed, falling back to account avatars:', uploadErr.message);
+        console.warn('Image upload flow failed:', uploadErr.message);
       }
     }
 
@@ -93,7 +89,6 @@ exports.handler = async (event) => {
     // STEP 2: talking_photo_id / avatar_id 自動取得
     // ========================================
     if (!talkingPhotoId && !avatarId) {
-      console.log('Step 2: Fetching existing talking_photos from HeyGen account...');
       try {
         const tpListRes = await fetch('https://api.heygen.com/v2/talking_photos', {
           headers: { 'X-Api-Key': apiKey }
@@ -103,7 +98,6 @@ exports.handler = async (event) => {
           const list = tpListData.data?.talking_photos || tpListData.data || [];
           if (Array.isArray(list) && list.length > 0) {
             talkingPhotoId = list[0].talking_photo_id || list[0].id;
-            console.log('Found existing talking_photo_id:', talkingPhotoId);
           }
         }
       } catch (listErr) {
@@ -112,7 +106,6 @@ exports.handler = async (event) => {
     }
 
     if (!talkingPhotoId && !avatarId) {
-      console.log('Fetching existing avatars from HeyGen account...');
       try {
         const avatarListRes = await fetch('https://api.heygen.com/v2/avatars', {
           headers: { 'X-Api-Key': apiKey }
@@ -122,7 +115,6 @@ exports.handler = async (event) => {
           const list = avatarListData.data?.avatars || avatarListData.data || [];
           if (Array.isArray(list) && list.length > 0) {
             avatarId = list[0].avatar_id || list[0].id;
-            console.log('Found existing avatar_id:', avatarId);
           }
         }
       } catch (avErr) {
@@ -142,12 +134,13 @@ exports.handler = async (event) => {
     }
 
     // ========================================
-    // STEP 3: 遠藤正俊オーナーのボイスID決定（クローンボイス最優先）
+    // STEP 3: 遠藤正俊オーナー本人の声（クローンボイス）の厳格特定
+    // 他人の標準ボイスによるフォールバックを完全禁止！
     // ========================================
-    let validVoiceId = process.env.HEYGEN_VOICE_ID || null;
+    let ownerVoiceId = process.env.HEYGEN_VOICE_ID || null;
 
-    if (!validVoiceId) {
-      console.log('Step 3: Finding voice_id (Custom/Cloned voice prioritized)...');
+    if (!ownerVoiceId) {
+      console.log('Searching for Endou Masatoshi cloned/custom voice in HeyGen account...');
       try {
         const voicesRes = await fetch('https://api.heygen.com/v2/voices', {
           headers: { 'X-Api-Key': apiKey }
@@ -157,7 +150,7 @@ exports.handler = async (event) => {
           const voices = voicesData.data?.voices || voicesData.data || [];
           
           if (Array.isArray(voices) && voices.length > 0) {
-            // 🌟 1【最優先】アカウントに登録されたカスタムボイス/クローンボイス
+            // アカウントに登録されたカスタムボイス/クローンボイスを探索
             const customVoice = voices.find(v => 
               v.is_custom === true || 
               v.type === 'custom' || 
@@ -168,47 +161,32 @@ exports.handler = async (event) => {
             );
 
             if (customVoice) {
-              validVoiceId = customVoice.voice_id || customVoice.id;
-              console.log('🌟 Found Custom/Cloned Owner Voice:', validVoiceId, customVoice.name);
-            } else {
-              // 2. 日本語かつ男性ボイス
-              const jpMale = voices.find(v => 
-                (v.language?.toLowerCase().includes('japan') || v.language_code?.toLowerCase().includes('ja')) &&
-                (v.gender?.toLowerCase() === 'male')
-              );
-
-              if (jpMale) {
-                validVoiceId = jpMale.voice_id || jpMale.id;
-                console.log('Found Japanese male voice:', validVoiceId, jpMale.name);
-              } else {
-                // 3. 日本語ボイス
-                const jpVoice = voices.find(v => 
-                  v.language?.toLowerCase().includes('japan') || v.language_code?.toLowerCase().includes('ja')
-                );
-                if (jpVoice) {
-                  validVoiceId = jpVoice.voice_id || jpVoice.id;
-                  console.log('Found Japanese voice:', validVoiceId, jpVoice.name);
-                } else {
-                  validVoiceId = voices[0].voice_id || voices[0].id;
-                  console.log('Fallback to first voice:', validVoiceId);
-                }
-              }
+              ownerVoiceId = customVoice.voice_id || customVoice.id;
+              console.log('Found Endou Owner Cloned Voice ID:', ownerVoiceId, customVoice.name);
             }
           }
         }
       } catch (vErr) {
-        console.warn('Voice search failed:', vErr.message);
+        console.warn('Voice search error:', vErr.message);
       }
     }
 
-    if (!validVoiceId) {
-      validVoiceId = '2d4b797171774ac0b623fb62b4c80389';
+    // 本人のクローンボイスが見つからない場合は他人の声で勝手に作成させず、厳格にエラーを返す！
+    if (!ownerVoiceId) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({
+          ok: false,
+          error: '⚠️ 遠藤正俊オーナーの本人のクローンボイス（Voice Clone）がHeyGenアカウント内に未登録です。他人の標準ボイスでの生成を防ぐため処理を停止しました。HeyGenで遠藤オーナーの声（クローンボイス）を作成するか、.env の HEYGEN_VOICE_ID にボイスIDを設定してください。'
+        })
+      };
     }
 
     // ========================================
-    // STEP 4: 動画生成リクエスト（v2/video/generate）
+    // STEP 4: 遠藤オーナー本人の声で動画生成リクエスト
     // ========================================
-    console.log('Step 4: Submitting video generation request with voice_id:', validVoiceId);
+    console.log('Submitting video generation with Endou Owner Voice ID:', ownerVoiceId);
     
     let characterConfig = {};
     if (talkingPhotoId) {
@@ -230,7 +208,7 @@ exports.handler = async (event) => {
           voice: {
             type: 'text',
             input_text: script,
-            voice_id: validVoiceId
+            voice_id: ownerVoiceId
           }
         }
       ],
@@ -260,7 +238,7 @@ exports.handler = async (event) => {
           ok: true,
           videoId: videoData.data.video_id,
           status: 'processing',
-          message: 'HeyGen AIアバター動画の生成を開始しました。'
+          message: '遠藤正俊オーナー本人の声でAIアバター動画の生成を開始しました。'
         })
       };
     }
