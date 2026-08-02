@@ -4,7 +4,7 @@ const path = require('path');
 const { getDb, admin } = require('./_lib/firebase-admin');
 
 /**
- * 添付された写真画像からAIが身体・肩・腕・手のアクション(ジェスチャー)を自動生成し、
+ * 添付された写真画像からAIが手振りを自動生成し、
  * Cartesia API の遠藤正俊本人のクローン音声(a513cd1d-17cd-4a92-94e3-de112db4a58e)と合成して手が動くAI動画を生成する関数
  */
 exports.handler = async (event) => {
@@ -109,7 +109,7 @@ exports.handler = async (event) => {
     // ========================================
     // STEP 3: 添付画像を HeyGen Talking Photo として直接登録
     // ========================================
-    console.log('Step 3: Finding or creating avatar character with gestures...');
+    console.log('Step 3: Finding or creating avatar character...');
     let characterConfig = null;
 
     if (imageBase64) {
@@ -135,11 +135,9 @@ exports.handler = async (event) => {
           if (tpId) {
             characterConfig = { 
               type: 'talking_photo', 
-              talking_photo_id: tpId,
-              talking_photo_style: 'expressive',
-              expression: 'natural'
+              talking_photo_id: tpId
             };
-            console.log('Successfully created gesture-enabled talking_photo_id from user image:', tpId);
+            console.log('Successfully created talking_photo_id from user image:', tpId);
           }
         } else {
           console.warn('v1/talking_photo upload failed:', await tpRes.text());
@@ -149,7 +147,7 @@ exports.handler = async (event) => {
       }
     }
 
-    // アカウントの Talking Photo 一覧から男性・遠藤アバターを優先検索（手振り表現対応）
+    // アカウントの Talking Photo 一覧から男性・遠藤アバターを優先検索
     if (!characterConfig) {
       try {
         const tpListRes = await fetch('https://api.heygen.com/v2/talking_photos', {
@@ -171,11 +169,9 @@ exports.handler = async (event) => {
             if (tpId) {
               characterConfig = { 
                 type: 'talking_photo', 
-                talking_photo_id: tpId,
-                talking_photo_style: 'expressive',
-                expression: 'natural'
+                talking_photo_id: tpId
               };
-              console.log('Selected male/Endo talking_photo_id with gesture support:', tpId);
+              console.log('Selected male/Endo talking_photo_id:', tpId);
             }
           }
         }
@@ -224,9 +220,9 @@ exports.handler = async (event) => {
     }
 
     // ==========================================
-    // STEP 4: 添付画像アバター ＋ 遠藤オーナーの本人の音声(audio_url)で動画生成（ジェスチャー手振り有効化）
+    // STEP 4: 添付画像アバター ＋ 遠藤オーナーの本人の音声(audio_url)で動画生成
     // ==========================================
-    console.log('Step 4: Submitting HeyGen video generation request with expressive character:', JSON.stringify(characterConfig));
+    console.log('Step 4: Submitting HeyGen video generation request with character:', JSON.stringify(characterConfig));
 
     const videoPayload = {
       video_inputs: [
@@ -291,7 +287,7 @@ exports.handler = async (event) => {
           ok: true,
           videoId: videoId,
           status: 'processing',
-          message: '🎙️ 添付画像（ジェスチャー手振り対応）＆遠藤正俊オーナー本人の声でAIアバター動画の生成を開始しました。'
+          message: '🎙️ 添付画像＆遠藤正俊オーナー本人の声でAIアバター動画の生成を開始しました。'
         })
       };
     }
