@@ -1,7 +1,9 @@
 require('dotenv').config();
+const { getDb, admin } = require('./_lib/firebase-admin');
 
 /**
  * HeyGenで生成した動画のステータスを確認し、完了時にダウンロードURLを返す
+ * 完了時は Firestore の submissions コレクションの該当ドキュメントも更新保存します
  */
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -37,6 +39,26 @@ exports.handler = async (event) => {
 
     const status = data.data?.status || 'unknown';
     const videoUrl = data.data?.video_url || null;
+
+    // 完成時に Firestore ドキュメントを自動更新
+    if (status === 'completed' && videoUrl) {
+      try {
+        const db = getDb();
+        const snap = await db.collection('submissions').where('videoId', '==', videoId).limit(1).get();
+        if (!snap.empty) {
+          const docRef = snap.docs[0].ref;
+          await docRef.update({
+            videoUrl: videoUrl,
+            videoStatus: 'completed',
+            'channelSettings.instagram.videoUrl': videoUrl,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          console.log('Updated Firestore submission with completed videoUrl:', videoId);
+        }
+      } catch (dbErr) {
+        console.warn('Firestore update warning on check-avatar-video:', dbErr.message);
+      }
+    }
 
     return {
       statusCode: 200,

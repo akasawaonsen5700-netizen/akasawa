@@ -807,6 +807,34 @@ async function loadQueue() {
 }
 
 function attachEvents() {
+  // 投稿・動画データの削除
+  [...queueEl.querySelectorAll('.delete-btn')].forEach(button => {
+    button.addEventListener('click', async () => {
+      const { id } = button.dataset;
+      if (!confirm('この動画・投稿データを削除してもよろしいですか？')) return;
+      
+      try {
+        button.disabled = true;
+        button.textContent = '削除中...';
+        const response = await fetch(getApiUrl('delete-submission'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || '削除に失敗しました');
+        }
+        alert('動画・投稿データを正常に削除しました。');
+        await loadQueue();
+      } catch (error) {
+        alert(error.message);
+        button.disabled = false;
+        button.textContent = '🗑️ 削除';
+      }
+    });
+  });
+
   // AI音声再生成
   [...queueEl.querySelectorAll('.voice-btn')].forEach(button => {
     button.addEventListener('click', async () => {

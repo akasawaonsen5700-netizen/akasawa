@@ -1,10 +1,12 @@
 const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
+const { getDb, admin } = require('./_lib/firebase-admin');
 
 /**
  * 添付画像を 100% Talking Photo アバターとして登録し、
  * Cartesia API の遠藤正俊本人のクローン音声(a513cd1d-17cd-4a92-94e3-de112db4a58e)で喋らせるAI動画生成関数
+ * 生成開始時に Firestore の submissions コレクションへ自動登録・保存します。
  */
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -106,7 +108,7 @@ exports.handler = async (event) => {
     }
 
     // ========================================
-    // STEP 3: 添付画像を HeyGen Talking Photo として直接登録
+    // STEP 3: 添付画像のアセット化 ＆ Talking Photo ID の特定
     // ========================================
     console.log('Step 3: Finding or creating avatar character...');
     let characterConfig = null;
@@ -143,7 +145,7 @@ exports.handler = async (event) => {
       }
     }
 
-    // アカウントの Talking Photo 一覧から男性・遠藤アバターを優先選択（女性アバター排除）
+    // アカウントの Talking Photo 一覧から男性・遠藤アバターを優先検索
     if (!characterConfig) {
       try {
         const tpListRes = await fetch('https://api.heygen.com/v2/talking_photos', {
@@ -246,14 +248,41 @@ exports.handler = async (event) => {
     console.log('Video generate result:', JSON.stringify(videoData));
 
     if (videoRes.ok && videoData.data?.video_id) {
+      const videoId = videoData.data.video_id;
+
+      // 🌟 Firestore の submissions コレクションへ即座に自動保存
+      try {
+        const db = getDb();
+        const docRef = await db.collection('submissions').add({
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          status: 'approved',
+          videoStatus: 'rendering_video',
+          videoId: videoId,
+          text: script,
+          drafts: {
+            instagram: { text: script },
+            x: { text: script }
+          },
+          channels: ['instagram', 'x'],
+          channelSettings: {
+            instagram: { publishAt: new Date().toISOString() },
+            x: { publishAt: new Date().toISOString() }
+          }
+        });
+        console.log('Saved new submission to Firestore:', docRef.id);
+      } catch (dbErr) {
+        console.warn('Failed to save submission to Firestore:', dbErr.message);
+      }
+
       return {
         statusCode: 200,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         body: JSON.stringify({
           ok: true,
-          videoId: videoData.data.video_id,
+          videoId: videoId,
           status: 'processing',
-          message: '🎙️ 添付画像＆遠藤正俊オーナー本人の声でAIアバター動画の生成を開始しました。'
+          message: '🎙️ 添付画像＆遠藤正俊オーナー本人の声でAIアバター動画の生成を開始し、制作済み一覧へ保存しました。'
         })
       };
     }
