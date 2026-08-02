@@ -49,28 +49,23 @@ copyFolderSync(path.join(__dirname, 'apps', 'akasawa-chat'), path.join(distDir, 
 console.log('Copying and preparing endo-sns...');
 const endoSnsDest = path.join(distDir, 'endo-sns');
 copyFolderSync(path.join(__dirname, 'apps', 'endo-sns', 'public'), endoSnsDest);
-// ルート直下アクセス時にも404が出ないようdist直下にもendo-snsアセットを複製
-copyFolderSync(path.join(__dirname, 'apps', 'endo-sns', 'public'), distDir);
 
-// endo.mp3 をコピー (ローカル開発/Remotionプレビューおよびデプロイビルドで利用するため)
+// endo.mp3 をコピー
 const endoMp3Src = path.join(__dirname, 'endo.mp3');
 if (fs.existsSync(endoMp3Src)) {
   fs.copyFileSync(endoMp3Src, path.join(__dirname, 'apps', 'endo-sns', 'public', 'endo.mp3'));
   fs.copyFileSync(endoMp3Src, path.join(endoSnsDest, 'endo.mp3'));
-  fs.copyFileSync(endoMp3Src, path.join(distDir, 'endo.mp3'));
   console.log('Copied endo.mp3 to public and dist folders.');
 }
 
 const endoJsFiles = ['index.js', 'review.js'];
-[endoSnsDest, distDir].forEach(targetFolder => {
-  endoJsFiles.forEach(file => {
-    const filePath = path.join(targetFolder, file);
-    if (fs.existsSync(filePath)) {
-      let content = fs.readFileSync(filePath, 'utf8');
-      content = content.replace(/\/api\//g, '/api/endo-');
-      fs.writeFileSync(filePath, content, 'utf8');
-    }
-  });
+endoJsFiles.forEach(file => {
+  const filePath = path.join(endoSnsDest, file);
+  if (fs.existsSync(filePath)) {
+    let content = fs.readFileSync(filePath, 'utf8');
+    content = content.replace(/\/api\//g, '/api/endo-');
+    fs.writeFileSync(filePath, content, 'utf8');
+  }
 });
 
 // 4. apps/akasawa-ml のコピー (静的)
