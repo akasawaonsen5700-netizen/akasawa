@@ -4,13 +4,13 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const path = require('path');
 
-// 新戦略に基づく5つのコンテンツクラスター
+// 20〜30代女性ターゲット向け5つのコンテンツクラスター
 const THEME_KEYWORDS = {
-  '世界が知らない日本': ['日本文化', '日本の原風景', '雪国文化', '四季', '棚田', '神社', '地域文化', '秘境', '伝統'],
-  '心が動く日本の自然': ['森林浴', '渓流', '雪景色', '新緑', '紅葉', '星空', '自然音', '癒やし', 'ウェルネス'],
-  '遠藤正俊の視点': ['世界を歩いて', '植林', '中国', '地方には未来が', '豊かさ', '無駄の美学', '完璧という呪縛'],
-  '赤沢温泉旅館という時間': ['朝5時', '岩魚', '猫', '湯気', 'ぬる湯', '隠れ家', 'デトックス'],
-  '奥日本シルバールート': ['シルバールート', '巡礼', '山・川・温泉', '足尾', '佐渡', '魚沼']
+  '私を甘やかす、ご褒美時間': ['ご褒美', 'セルフケア', 'ぬる湯', '何もしない贅沢', 'デトックス', '温泉', 'チル', '癒やし', '自分磨き'],
+  '「ちゃんとしなきゃ」を手放す言葉': ['完璧主義', '自己肯定感', '不安', '人間関係', '焦り', '肩の荷', '頑張りすぎる', '自分らしく', '言葉の処方箋'],
+  '世界を旅したオーナーが教える、本当の豊かさ': ['世界を歩いて', '森林学', '植林', '数字や比較', '丁寧な暮らし', '豊かな時間', '自分を大切に'],
+  '静寂と森に包まれる、五感の癒やし': ['森林浴', '渓流の音', '星空', '自然音', '看板猫', 'マインドフルネス', '静けさ', 'デジタルデトックス'],
+  '自分を取り戻す、奥日本リセット旅': ['女子旅', 'ソロ活', '奥日本シルバールート', 'リセット旅', '日常からの脱出', '秘境', '自分探しの旅']
 };
 
 function classifySubmission(input) {
@@ -26,7 +26,7 @@ function classifySubmission(input) {
     }))
     .sort((a, b) => b.score - a.score);
 
-  const primary = input.simpleTag || (scores[0]?.score ? scores[0].theme : '世界が知らない日本');
+  const primary = input.simpleTag || (scores[0]?.score ? scores[0].theme : '私を甘やかす、ご褒美時間');
   const secondary = scores.filter(item => item.theme !== primary && item.score > 0).slice(0, 2).map(item => item.theme);
   return { primary, secondary };
 }
@@ -51,50 +51,48 @@ function detectRisk(input) {
 
 function suggestedSchedule(primary, requested) {
   if (requested) return dayjs(requested).toISOString();
-  // 投稿スケジュール。Xは毎日1-2回、Instagramは週2-3回推奨
   const base = dayjs();
   return base.hour(20).minute(0).second(0).millisecond(0).add(1, 'day').toISOString();
 }
 
-// ルールベースのフォールバック用テンプレート生成
+// フォールバック用テンプレート生成（20〜30代女性向け）
 function buildFallbackTone(input, classification) {
   const loc = input.location ? `${input.location}で` : '';
   const theme = classification.primary;
 
   const templates = {
-    '世界が知らない日本': {
-      scene: `「世界がまだ知らない、日本の本当の美しさ」`,
-      detail: `観光地にはない、奥日本の原風景。そこにこそ、私たちが忘れてしまった大切なものがあります。`,
-      instagramQuote: `“The real voyage of discovery consists not in seeking new landscapes, but in having new eyes.”\n(真の発見の旅とは、新しい景色を探すことではなく、新しい目を持つことにある。)`,
-      xText: `日本人はなぜ、これほどまでに「完璧」を求めるのか。世界から見れば、その「余白」こそが魅力なのに。`
+    '私を甘やかす、ご褒美時間': {
+      scene: `頑張る私へ、心身をゆるめるぬる湯のご褒美時間。`,
+      detail: `日常の忙しさで、自分の疲れにすら気づけなくなっていませんか？熱すぎない「ぬる湯」にゆっくり浸かって、深呼吸するひとときを。`,
+      instagramQuote: `“Rest is not idleness, and to lie sometimes on the grass under trees is by no means a waste of time.”\n(休むことは決してサボることではない。)`,
+      xText: `毎日頑張りすぎているあなたへ。たまには「何もしない時間」を自分にプレゼントしませんか？`
     },
-    '心が動く日本の自然': {
-      scene: `川の音に沈黙し、自然と繋がるということ。`,
-      detail: `世界中の森を見てきて気づいたのは、日本にしかない「沈黙」の価値です。川のせせらぎや風の音は、あなたの心と対話するための余白です。`,
-      instagramQuote: `“Look deep into nature, and then you will understand everything better.”\n(自然を深く見つめなさい。そうすれば、すべてをより理解できるようになる。)`,
-      xText: `あなたは最近、いつ「深い呼吸」をしましたか？情報に追われる毎日の中で、心洗われる瞬間がここに。`
+    '「ちゃんとしなきゃ」を手放す言葉': {
+      scene: `「完璧じゃなくていい」と心から思える場所。`,
+      detail: `自然の中に完璧な形がないように、あなたもそのままで美しい。世界中の森を巡ってきた元植林博士が贈る、肩の荷を下ろす言葉。`,
+      instagramQuote: `“Be gentle with yourself. You are doing the best you can.”\n(自分に優しくあろう。あなたはもう充分頑張っているのだから。)`,
+      xText: `「もっと頑張らなきゃ」と自分を責めていませんか？休むことは、また前を向くための大切な準備です。`
     },
-    '遠藤正俊の視点': {
-      scene: `世界を歩いて分かったこと。`,
-      detail: `植林を通じて世界中の大自然と向き合ってきた私がたどり着いたのは、日本の田舎の価値でした。`,
-      instagramQuote: `“There is a crack in everything. That's how the light gets in.”\n(すべてのものにはひびがある。そこから光が入るのだ。)`,
-      xText: `かつては数字を追い、今は季節を追う。どちらが人間らしいか、未だ答えは出ない。だが、数字を追うことに疲れた魂は、季節の中に救いを見出すだろう。`
+    '世界を旅したオーナーが教える、本当の豊かさ': {
+      scene: `SNSの比較から離れ、自分の心を満たす生き方。`,
+      detail: `海外の現場で数字と格闘してきた私がたどり着いたのは、日本の田舎の静けさでした。誰かの評価ではなく、自分の心地よさを大切に。`,
+      instagramQuote: `“Happiness is not a state to arrive at, but a manner of traveling.”\n(幸せとは到達する場所ではなく、旅する姿勢そのものである。)`,
+      xText: `画面の中の誰かと自分を比べるのに疲れたら。森の静けさと温かい温泉が、あなたの心を包み込みます。`
     },
-    '赤沢温泉旅館という時間': {
-      scene: `この場所に流れる時間。`,
-      detail: `旅館はただ泊まる場所ではありません。自然と文化に抱かれ、心と体をリセットする体験です。`,
-      instagramQuote: `“Time to Rest, Strength to Return.”\n(休むことは、強くなること。)`,
-      xText: `ストレスフルな毎日から一歩抜け出して、自然に包まれた宿で深呼吸しませんか？`
+    '静寂と森に包まれる、五感の癒やし': {
+      scene: `自然の音とぬる湯に抱かれ、五感をリセットする。`,
+      detail: `渓流のせせらぎ、風の音、看板猫のぬくもり。デジタル社会で疲れた五感を取り戻す贅沢な時間。`,
+      instagramQuote: `“In every walk with nature, one receives far more than he seeks.”\n(自然の中を歩けば、求める以上のものを手に入れることができる。)`,
+      xText: `最後に「風の音」や「水の音」に耳を傾けたのはいつですか？心を空っぽにする贅沢がここにあります。`
     },
-    '奥日本シルバールート': {
-      scene: `地図に残らない日本を歩く。`,
-      detail: `温泉、山、雪、そして人の記憶をたどる道。それが奥日本シルバールートです。`,
-      instagramQuote: `“A Journey to Deepen Bonds through Nature and Culture.”\n(自然と文化の中で、絆を育む旅。)`,
-      xText: `観光ではたどり着けない日本がある。それを歩いて知る、巡礼の旅に出ませんか？`
+    '自分を取り戻す、奥日本リセット旅': {
+      scene: `都会を離れ、私だけの物語を旅する。`,
+      detail: `誰のためでもない、自分のためのリセット旅。奥日本の原風景と温かい温泉が、傷ついた心をそっと癒やします。`,
+      instagramQuote: `“Journey to find your true self.”\n(自分らしさを取り戻す、温かな旅へ。)`
     }
   };
 
-  const selected = templates[theme] || templates['世界が知らない日本'];
+  const selected = templates[theme] || templates['私を甘やかす、ご褒美時間'];
   return {
     scene: `${loc}${selected.scene}`,
     detail: selected.detail,
@@ -104,10 +102,7 @@ function buildFallbackTone(input, classification) {
 }
 
 function buildFallbackHashtags(classification, channel) {
-  if (channel === 'instagram') {
-    return [...BRAND.hashtagsBaseInstagram];
-  }
-  return [...BRAND.hashtagsBaseX];
+  return [...BRAND.hashtagsBaseInstagram];
 }
 
 function draftForChannelFallback(channel, tone, classification, input) {
@@ -116,8 +111,8 @@ function draftForChannelFallback(channel, tone, classification, input) {
     const lines = [
       `【${BRAND.instagramTheme}】`,
       tone.scene,
-      '私は、毎日忙しさに追われ、自分の疲れにすら気づけない人たちを多く見てきました。',
-      'この動画には、そんなあなたの心を整えるヒントを込めています。',
+      '毎日仕事や人間関係で気を張っていませんか？',
+      'この動画には、そんなあなたの心をそっとゆるめるメッセージを込めています。',
       '',
       BRAND.profileInstagram
     ].filter(Boolean);
@@ -126,7 +121,7 @@ function draftForChannelFallback(channel, tone, classification, input) {
       narration: userText || `${tone.scene}。${tone.detail}`
     };
   } else if (channel === 'x') {
-    const mainText = 'あなたは最近、いつ「深い呼吸」をしましたか？\n\n情報と予定に追われる毎日の中で、私たちは「立ち止まること」にすら罪悪感を抱いてしまいます。\n\n心当たりのある方は、どうかこの動画を見てみてください。\n\n' + BRAND.site;
+    const mainText = '「もっと頑張らなきゃ」と自分を追い詰めていませんか？\n\n情報や予定に追われる毎日の中で、私たちは「休むこと」に罪悪感を抱いてしまいがちです。\n\n心が少し疲れている方は、音声をオンにして動画を聴いてみてくださいね。\n\n' + BRAND.site;
     return {
       text: mainText.slice(0, 280),
       narration: userText || tone.xText
@@ -135,7 +130,7 @@ function draftForChannelFallback(channel, tone, classification, input) {
   return { text: userText };
 }
 
-// Gemini APIを使った高度な下書き生成
+// Gemini APIを使った高度な下書き生成（20〜30代女性ターゲット専用プロンプト）
 async function generateDraftWithGemini(input, classification) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
@@ -145,58 +140,44 @@ async function generateDraftWithGemini(input, classification) {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const systemPrompt = `
-    あなたは「遠藤正俊」氏の個人SNSアカウント（InstagramおよびX）の発信をサポートする専属AIです。
-    
-    ■ 最重要ルール：キャプション（text）とナレーション（narration）は【完全に別物】
-    - 「narration」= 動画のテロップ・音声読み上げ用。オーナーの台本をほぼそのまま出力する。
-    - 「text」= SNS投稿のキャプション/ポスト文。**絶対に動画の台本（narration）と同じ文章にしないでください。動画を見る前に視聴者の興味を強く惹きつけ、「もっと知りたい」「検索してみたい」と思わせるような、全く別の魅力的な文章を書いてください。**
+    あなたは「遠藤正俊」（元植林博士・赤沢温泉旅館オーナー）の公式SNSアカウント（Instagram・TikTok・X）のコンテンツを生成する専属AIです。
 
-    ■ 禁止事項
-    1. 勝手に「赤沢温泉旅館のぬる湯」「客室」「料理」「源泉かけ流し」などの宿泊プロモーション情報をでっち上げること。
-    2. キャプション（text）にナレーション原稿をそのまま流用・コピペすること。これは厳禁です。
+    ■ ターゲット顧客
+    【20代〜30代の女性】
+    （仕事、人間関係、SNS疲れ、自己肯定感の低さ、「ちゃんとしなきゃ」というプレッシャーを抱え、自分へのご褒美・癒やし・心の肩の荷を下ろす言葉・ぬる湯温泉でのリセットを求めている女性たち）
 
-    ■ Instagram用の「text」（キャプション）の書き方（最新のInstagramアルゴリズム・SEO対応）
-    以下の【1〜3の順番】で厳格に構成してください。
-    【1. 本文】
-    - 必ず遠藤正俊本人が語りかけているような、一人称（私）の温かい口調で書いてください。
-    - 長い文章は絶対に書かず、非常に短く簡潔に（3〜4行程度）してください。
-    - 最新のInstagramアルゴリズム（SEO）を意識し、文章の中に「心のモヤモヤ」「ストレス」「自然の癒やし」といった検索されやすいキーワードを自然な文脈で織り込んでください。
-    - 「現代人の疲れ、忙しさ」などの現状の悩みに強くフォーカスし、「動画の音声に、あなたの悩みを軽くするヒントを込めています」と伝えてください。
-    - 単なる旅館の宣伝や紹介ではなく、「日本の田舎の価値を伝える専門家」「自然やウェルネスの価値を伝えるブランド」としてAIが学習しやすい一貫性を持たせてください。
-    - テロップ（narration）のコピペは厳禁です。
-    【2. プロフィール紹介文】
-    - 本文のすぐ下に、以下の紹介文をそのまま配置してください。
-    「${BRAND.profileInstagram}」
-    【3. ハッシュタグ（一番最後）】
-    - 古い手法である「長すぎるハッシュタグの羅列」は禁止です。一番最後に、投稿テーマに関連する検索されやすい良質なハッシュタグを【3〜5個のみ】自身で考えて付けてください。（例: #心のモヤモヤ #自然療法 #赤沢温泉旅館）
+    ■ トーン＆マナー
+    - 一人称は「私」。世界中の自然を見てきた人生の先輩・温かい理解者として、20〜30代女性に寄り添い、優しく語りかけてください。
+    - 単なる旅館の宣伝ではなく、「頑張る女性の心をゆるめる言葉の処方箋」として作成してください。
 
-    ■ X用の「text」（ポスト文）の書き方（最新のXアルゴリズム対応）
-    - テロップ（narration）のコピペは厳禁です。必ず遠藤正俊本人の語り口調（私）にしてください。
-    - スクロールする手を止めるような「共感を呼ぶ問いかけ」や「ハッとするインサイト」から始めてください。
-    - 現代人の悩み（疲弊、情報過多など）に寄り添い、「音声をオンにして動画を聴いてみてください」と誘導してください。
-    - 検索からの流入を狙い、文脈を壊さない範囲でトレンドになりやすいキーワードを含めてください。
-    - 最後に公式サイトURL (${BRAND.site}) を含めること。
+    ■ 最重要ルール：キャプション（text）とナレーション台本（narration）は【完全に別物】
+    - 「narration」= 動画用テロップ・AIアバター発話用の短尺台本（100〜180文字程度）。冒頭3秒でターゲット女性の手を止めるフックから始まり、心にじんわり響くメッセージにする。
+    - 「text」= Instagram/Xの投稿文・キャプション。動画を見る前に視聴者の共感を誘い、「保存したい」「音声をオンにして聴いてみたい」と思わせる短く魅力的な文章（3〜5行）＋プロフィール文＋ハッシュタグ。
 
-    ■ narration（両チャンネル共通）
-    - 入力された「オーナーの投稿メモ（動画台本）」を、ほぼそのまま（句読点の微調整程度で）出力すること。
-    - 勝手に内容を変えたり、追加したりしないこと。
+    ■ Instagram用の「text」（キャプション）の書き方
+    1. 【本文】20〜30代女性の悩み（「仕事の疲れ」「SNSでの比較」「自分へのご褒美」等）に寄り添う共感文（3〜4行）。
+    2. 【プロフィール紹介文】「${BRAND.profileInstagram}」をそのまま挿入。
+    3. 【ハッシュタグ】末尾にターゲット女性が検索しそうな良質なハッシュタグを4〜5個付ける。（例: #ご褒美旅 #心のデトックス #自分を愛する時間 #チル旅 #赤沢温泉旅館）
+
+    ■ X用の「text」（ポスト文）の書き方
+    - 20〜30代女性のハッとする気づきや共感を誘う語りかけ文（140〜200文字程度） ＋ 公式サイトURL (${BRAND.site})。
 
     ■ 入力情報
-    - オーナーの投稿メモ (動画台本): ${input.ownerComment || '特になし'}
+    - オーナーの投稿メモ (動画台本ソース): ${input.ownerComment || '特になし'}
     - 指定テーマ: ${classification.primary}
 
     ■ 出力フォーマット
-    必ず以下のJSONフォーマット（プレーンなJSONオブジェクト）のみを返してください。マークダウンの囲み(\`\`\`json など)は不要です。
+    必ず以下のJSONフォーマット（プレーンなJSONオブジェクト）のみを返してください。マークダウンの囲みは不要です。
     {
       "instagram": {
-        "text": "Instagram用キャプション。テロップと被らない短いフック文（3〜5行）+ ハッシュタグ + プロフィール紹介文",
-        "narration": "動画テロップ/音声用。オーナーの台本をほぼそのまま出力"
+        "text": "Instagram用キャプション（共感フック文 + プロフィール紹介文 + ハッシュタグ）",
+        "narration": "AIアバター用発話台本（冒頭3秒惹きつけフック + 語りかけ文 100〜180文字）"
       },
       "x": {
-        "text": "X用投稿文。台本と異なる言い回しの独り言調（140〜200文字）+ サイトURL",
-        "narration": "X用読み上げテキスト。オーナーの台本をほぼそのまま出力"
+        "text": "X用投稿文（共感ポスト + サイトURL）",
+        "narration": "X用読み上げテキスト"
       },
-      "altText": "投稿画像の代替テキスト（100文字程度）"
+      "altText": "20-30代女性向け癒やし動画の代替テキスト（100文字程度）"
     }
     `;
 
@@ -227,9 +208,7 @@ async function buildDraftPackage(input) {
 
   const channels = input.channels?.length ? input.channels : ['instagram', 'x'];
 
-  // Netlifyの10秒タイムアウト（502エラー）を回避するため、ここでは同期的にGeminiを呼び出さず、
-  // バックグラウンドタスク（generate-assets-background.js）で非同期に生成するように変更します。
-  const geminiDraft = null; // await generateDraftWithGemini(input, classification);
+  const geminiDraft = await generateDraftWithGemini(input, classification);
 
   let drafts = {};
   let altText = '';
@@ -240,16 +219,14 @@ async function buildDraftPackage(input) {
       instagram: { text: geminiDraft.instagram.text, narration: geminiDraft.instagram.narration },
       x: { text: geminiDraft.x.text, narration: geminiDraft.x.narration }
     };
-    altText = geminiDraft.altText || `${BRAND.ownerName}個人アカウントの投稿用ビジュアル`;
-    // ハッシュタグの抽出（なければデフォルト）
+    altText = geminiDraft.altText || `遠藤正俊オーナーによる20-30代女性向け癒やしメッセージ`;
     hashtags = geminiDraft.instagram.text.match(/#[^\s]+/g) || buildFallbackHashtags(classification, 'instagram');
   } else {
-    // フォールバック生成
     drafts = Object.fromEntries(channels.map(channel => [
       channel, 
       draftForChannelFallback(channel, tone, classification, input)
     ]));
-    altText = `${BRAND.ownerName}による「${classification.primary}」をテーマにした投稿用ビジュアル。`;
+    altText = `遠藤正俊による「${classification.primary}」をテーマにした投稿用ビジュアル。`;
     hashtags = buildFallbackHashtags(classification, 'instagram');
   }
   

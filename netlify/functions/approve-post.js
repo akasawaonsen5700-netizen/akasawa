@@ -1,8 +1,8 @@
 const { z } = require('zod');
-const { getDb, admin } = require('./_lib/firebase-admin');
-const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib/helpers');
-const { buildDraftPackage } = require('./_lib/ai');
-const { publishToChannel } = require('./_lib/publishers');
+const { getDb, admin } = require('./_lib-endo/firebase-admin');
+const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib-endo/helpers');
+const { buildDraftPackage } = require('./_lib-endo/ai');
+const { publishToChannel } = require('./_lib-endo/publishers');
 
 const schema = z.object({
   id: z.string().min(1),

@@ -1,7 +1,7 @@
 const dayjs = require('dayjs');
-const { getDb, admin } = require('./_lib/firebase-admin');
-const { ok, json } = require('./_lib/helpers');
-const { publishToChannel } = require('./_lib/publishers');
+const { getDb, admin } = require('./_lib-endo/firebase-admin');
+const { ok, json } = require('./_lib-endo/helpers');
+const { publishToChannel } = require('./_lib-endo/publishers');
 const { getRenderProgress } = require('@remotion/lambda-client');
 
 exports.handler = async () => {

@@ -1,7 +1,7 @@
-const { getDb, admin } = require('./_lib/firebase-admin');
-const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib/helpers');
-const { buildDraftPackage } = require('./_lib/ai');
-const { triggerAutoRenderFlow } = require('./_lib/auto-render-flow');
+const { getDb, admin } = require('./_lib-endo/firebase-admin');
+const { ok, badRequest, methodNotAllowed, parseBody, json } = require('./_lib-endo/helpers');
+const { buildDraftPackage } = require('./_lib-endo/ai');
+const { triggerAutoRenderFlow } = require('./_lib-endo/auto-render-flow');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return ok({ ok: true });

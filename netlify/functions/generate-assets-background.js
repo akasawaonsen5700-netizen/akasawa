@@ -1,6 +1,6 @@
-const { getDb } = require('./_lib/firebase-admin');
-const { triggerAutoRenderFlow } = require('./_lib/auto-render-flow');
-const { generateDraftWithGemini, classifySubmission } = require('./_lib/ai');
+const { getDb } = require('./_lib-endo/firebase-admin');
+const { triggerAutoRenderFlow } = require('./_lib-endo/auto-render-flow');
+const { generateDraftWithGemini, classifySubmission } = require('./_lib-endo/ai');
 
 exports.handler = async (event) => {
   try {

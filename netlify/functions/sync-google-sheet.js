@@ -1,8 +1,8 @@
 const { google } = require('googleapis');
-const { getDb, admin } = require('./_lib/firebase-admin');
-const { ok, json } = require('./_lib/helpers');
-const { buildDraftPackage } = require('./_lib/ai');
-const { triggerAutoRenderFlow } = require('./_lib/auto-render-flow');
+const { getDb, admin } = require('./_lib-endo/firebase-admin');
+const { ok, json } = require('./_lib-endo/helpers');
+const { buildDraftPackage } = require('./_lib-endo/ai');
+const { triggerAutoRenderFlow } = require('./_lib-endo/auto-render-flow');
 
 function auth() {
   const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '{}');
