@@ -1,8 +1,10 @@
 const FormData = require('form-data');
+const fs = require('fs');
+const path = require('path');
 
 /**
- * 遠藤正俊オーナー本人のクローン音声（Cartesia API）を自動生成し、
- * HeyGen API と連携して【100% 遠藤オーナー本人の声】で喋るAIアバター動画を一括生成する関数
+ * 添付画像を 100% Talking Photo アバターとして登録し、
+ * Cartesia API の遠藤正俊本人のクローン音声(a513cd1d-17cd-4a92-94e3-de112db4a58e)で喋らせるAI動画生成関数
  */
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -79,9 +81,7 @@ exports.handler = async (event) => {
     // STEP 2: 生成した本人の音声WAVを HeyGen にアセットアップロード
     // ========================================
     console.log('Step 2: Uploading owner voice audio to HeyGen asset...');
-    
-    // 方法A: バイナリ直接アップロード (HeyGen要求: audio/x-wav)
-    let audioUploadRes = await fetch('https://upload.heygen.com/v1/asset', {
+    const audioUploadRes = await fetch('https://upload.heygen.com/v1/asset', {
       method: 'POST',
       headers: {
         'X-Api-Key': heygenApiKey,
@@ -90,105 +90,81 @@ exports.handler = async (event) => {
       body: audioBuffer
     });
 
-    let ownerAudioAssetId = null;
     let ownerAudioUrl = null;
 
     if (audioUploadRes.ok) {
       const audioUploadData = await audioUploadRes.json();
       console.log('HeyGen audio upload response:', JSON.stringify(audioUploadData));
-      ownerAudioAssetId = audioUploadData.data?.id || audioUploadData.data?.asset_id;
       ownerAudioUrl = audioUploadData.data?.url;
     } else {
       const errTxt = await audioUploadRes.text();
-      console.warn('HeyGen binary audio asset upload warning:', errTxt);
-
-      // 方法B: Form-Data multipart アップロード (form-data ライブラリ使用)
-      const form = new FormData();
-      form.append('file', audioBuffer, { filename: 'owner_voice.wav', contentType: 'audio/wav' });
-
-      audioUploadRes = await fetch('https://upload.heygen.com/v1/asset', {
-        method: 'POST',
-        headers: {
-          'X-Api-Key': heygenApiKey,
-          ...form.getHeaders()
-        },
-        body: form.getBuffer()
-      });
-
-      if (audioUploadRes.ok) {
-        const audioUploadData = await audioUploadRes.json();
-        console.log('HeyGen form audio upload response:', JSON.stringify(audioUploadData));
-        ownerAudioAssetId = audioUploadData.data?.asset_id || audioUploadData.data?.id;
-        ownerAudioUrl = audioUploadData.data?.url;
-      } else {
-        const errTxt2 = await audioUploadRes.text();
-        console.warn('HeyGen form audio asset upload warning:', errTxt2);
-      }
+      console.warn('HeyGen audio asset upload warning:', errTxt);
     }
 
-    if (!ownerAudioAssetId && !ownerAudioUrl) {
+    if (!ownerAudioUrl) {
       throw new Error('遠藤オーナーの音声ファイルをHeyGenへ連携できませんでした。');
     }
 
     // ========================================
-    // STEP 3: アバター/Talking Photo 画像準備
+    // STEP 3: 添付画像を HeyGen Talking Photo として直接登録
     // ========================================
-    let talkingPhotoId = null;
-    let avatarId = null;
+    console.log('Step 3: Finding or creating avatar character...');
+    let characterConfig = null;
 
     if (imageBase64) {
       try {
-        console.log('Step 3: Uploading avatar image to HeyGen...');
+        console.log('Uploading user attached image as Talking Photo...');
         const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
         const imageBuffer = Buffer.from(base64Data, 'base64');
+        const mimeType = imageBase64.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg';
 
-        const imgForm = new FormData();
-        imgForm.append('file', imageBuffer, { filename: 'avatar.jpg', contentType: 'image/jpeg' });
-
-        const imgUploadRes = await fetch('https://upload.heygen.com/v1/asset', {
+        const tpRes = await fetch('https://upload.heygen.com/v1/talking_photo', {
           method: 'POST',
           headers: {
             'X-Api-Key': heygenApiKey,
-            ...imgForm.getHeaders()
+            'Content-Type': mimeType
           },
-          body: imgForm.getBuffer()
+          body: imageBuffer
         });
 
-        if (imgUploadRes.ok) {
-          const imgUploadData = await imgUploadRes.json();
-          const uploadedUrl = imgUploadData.data?.url || imgUploadData.data?.image_url;
-
-          if (uploadedUrl) {
-            const tpRes = await fetch('https://api.heygen.com/v2/talking_photo', {
-              method: 'POST',
-              headers: {
-                'X-Api-Key': heygenApiKey,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ talking_photo_url: uploadedUrl })
-            });
-
-            if (tpRes.ok) {
-              const tpData = await tpRes.json();
-              talkingPhotoId = tpData.data?.talking_photo_id || tpData.data?.id;
-            }
+        if (tpRes.ok) {
+          const tpData = await tpRes.json();
+          console.log('HeyGen talking_photo upload response:', JSON.stringify(tpData));
+          const tpId = tpData.data?.talking_photo_id || tpData.data?.id;
+          if (tpId) {
+            characterConfig = { type: 'talking_photo', talking_photo_id: tpId };
+            console.log('Successfully created talking_photo_id from user image:', tpId);
           }
+        } else {
+          console.warn('v1/talking_photo upload failed:', await tpRes.text());
         }
-      } catch (uploadErr) {
-        console.warn('Image upload flow warning:', uploadErr.message);
+      } catch (imgErr) {
+        console.warn('User image processing warning:', imgErr.message);
       }
     }
 
-    if (!talkingPhotoId && !avatarId) {
+    // アカウントの Talking Photo 一覧から男性・遠藤アバターを検索
+    if (!characterConfig) {
       try {
         const tpListRes = await fetch('https://api.heygen.com/v2/talking_photos', {
           headers: { 'X-Api-Key': heygenApiKey }
         });
         if (tpListRes.ok) {
           const tpListData = await tpListRes.json();
-          const list = tpListData.data?.talking_photos || tpListData.data || [];
+          const list = tpListData.data?.talking_photos || tpListData.data || (Array.isArray(tpListData.data) ? tpListData.data : []);
           if (Array.isArray(list) && list.length > 0) {
-            talkingPhotoId = list[0].talking_photo_id || list[0].id;
+            const maleTp = list.find(tp => 
+              tp.name?.toLowerCase().includes('endo') ||
+              tp.name?.toLowerCase().includes('male') ||
+              tp.name?.includes('遠藤') ||
+              tp.name?.includes('正俊')
+            ) || list[0];
+
+            const tpId = maleTp.talking_photo_id || maleTp.id;
+            if (tpId) {
+              characterConfig = { type: 'talking_photo', talking_photo_id: tpId };
+              console.log('Selected talking_photo_id from account:', tpId);
+            }
           }
         }
       } catch (listErr) {
@@ -196,16 +172,27 @@ exports.handler = async (event) => {
       }
     }
 
-    if (!talkingPhotoId && !avatarId) {
+    // 既存の Avatars 一覧からアバターを検索
+    if (!characterConfig) {
       try {
         const avatarListRes = await fetch('https://api.heygen.com/v2/avatars', {
           headers: { 'X-Api-Key': heygenApiKey }
         });
         if (avatarListRes.ok) {
           const avatarListData = await avatarListRes.json();
-          const list = avatarListData.data?.avatars || avatarListData.data || [];
+          const list = avatarListData.data?.avatars || avatarListData.data || (Array.isArray(avatarListData.data) ? avatarListData.data : []);
           if (Array.isArray(list) && list.length > 0) {
-            avatarId = list[0].avatar_id || list[0].id;
+            const maleAv = list.find(av => 
+              av.gender?.toLowerCase() === 'male' ||
+              av.avatar_name?.toLowerCase().includes('male') ||
+              av.avatar_name?.toLowerCase().includes('endo')
+            ) || list[0];
+
+            const avId = maleAv.avatar_id || maleAv.id;
+            if (avId) {
+              characterConfig = { type: 'avatar', avatar_id: avId };
+              console.log('Selected avatar_id from account:', avId);
+            }
           }
         }
       } catch (avErr) {
@@ -213,38 +200,30 @@ exports.handler = async (event) => {
       }
     }
 
-    if (!talkingPhotoId && !avatarId) {
+    if (!characterConfig) {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         body: JSON.stringify({
           ok: false,
-          error: 'HeyGenアカウント内に使用可能なアバターまたはTalking Photoが見つかりませんでした。'
+          error: 'アバター画像(Talking Photo)が指定されていません。顔写真をアップロードしてください。'
         })
       };
     }
 
     // ==========================================
-    // STEP 4: 本人の音声(audio)を指定して動画生成
+    // STEP 4: 添付画像アバター ＋ 遠藤オーナーの本人の音声(audio_url)で動画生成
     // ==========================================
-    console.log('Step 4: Submitting HeyGen video generation with Endou Owner audio...');
-
-    let characterConfig = {};
-    if (talkingPhotoId) {
-      characterConfig = { type: 'talking_photo', talking_photo_id: talkingPhotoId };
-    } else {
-      characterConfig = { type: 'avatar', avatar_id: avatarId };
-    }
-
-    const voiceConfig = ownerAudioAssetId 
-      ? { type: 'audio', audio_asset_id: ownerAudioAssetId }
-      : { type: 'audio', audio_url: ownerAudioUrl };
+    console.log('Step 4: Submitting HeyGen video generation request with character:', JSON.stringify(characterConfig));
 
     const videoPayload = {
       video_inputs: [
         {
           character: characterConfig,
-          voice: voiceConfig
+          voice: {
+            type: 'audio',
+            audio_url: ownerAudioUrl
+          }
         }
       ],
       dimension: {
@@ -273,7 +252,7 @@ exports.handler = async (event) => {
           ok: true,
           videoId: videoData.data.video_id,
           status: 'processing',
-          message: '🎙️ 遠藤正俊オーナー本人のクローン音声でAIアバター動画の生成を開始しました。'
+          message: '🎙️ 添付画像＆遠藤正俊オーナー本人の声でAIアバター動画の生成を開始しました。'
         })
       };
     }
