@@ -1218,9 +1218,9 @@ modalPublishNowBtn.addEventListener('click', async () => {
   }
 });
 
-refreshBtn.addEventListener('click', loadQueue);
-statusFilter.addEventListener('change', loadQueue);
-channelFilter.addEventListener('change', loadQueue);
+if (refreshBtn) refreshBtn.addEventListener('click', loadQueue);
+if (statusFilter) statusFilter.addEventListener('change', loadQueue);
+if (typeof channelFilter !== 'undefined' && channelFilter) channelFilter.addEventListener('change', loadQueue);
 
 // AIトレンド提案のロード
 async function loadTrendSuggestions() {

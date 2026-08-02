@@ -4,6 +4,7 @@ const FormData = require('form-data');
  * HeyGen API v2 に対応した動画生成関数
  * 1. 画像がアップロードされた場合: Assetアップロード → Talking Photo作成 → talking_photo_id 取得
  * 2. 画像がない/失敗した場合: アカウント内の既存Talking Photo / アバター一覧を取得して自動利用
+ * 3. ボイスID自動取得: HeyGen APIからアクティブな日本語ボイス（または利用可能なボイス）を自動探索してセット
  */
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -66,7 +67,6 @@ exports.handler = async (event) => {
           console.log('Asset uploaded successfully:', uploadedUrl);
 
           if (uploadedUrl) {
-            // talking_photo を作成
             console.log('Creating talking_photo from uploaded URL...');
             const tpRes = await fetch('https://api.heygen.com/v2/talking_photo', {
               method: 'POST',
@@ -92,7 +92,7 @@ exports.handler = async (event) => {
     }
 
     // ========================================
-    // STEP 2: talking_photo_id が未取得の場合、アカウントから自動取得
+    // STEP 2: talking_photo_id / avatar_id 自動取得
     // ========================================
     if (!talkingPhotoId && !avatarId) {
       console.log('Step 2: Fetching existing talking_photos from HeyGen account...');
@@ -113,7 +113,6 @@ exports.handler = async (event) => {
       }
     }
 
-    // もし talking_photos にもなければ、既存のアバター一覧を取得
     if (!talkingPhotoId && !avatarId) {
       console.log('Fetching existing avatars from HeyGen account...');
       try {
@@ -133,22 +132,69 @@ exports.handler = async (event) => {
       }
     }
 
-    // 万が一どちらも取得できない場合の最終ガード
     if (!talkingPhotoId && !avatarId) {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         body: JSON.stringify({
           ok: false,
-          error: 'HeyGenアカウント内に使用可能なアバターまたはTalking Photoが見つかりませんでした。HeyGenダッシュボードで1つ以上アバターまたは写真を保存してください。'
+          error: 'HeyGenアカウント内に使用可能なアバターまたはTalking Photoが見つかりませんでした。'
         })
       };
     }
 
     // ========================================
-    // STEP 3: 動画生成リクエスト（v2/video/generate）
+    // STEP 3: 日本語対応の有効な Voice ID を自動検索
     // ========================================
-    console.log('Step 3: Submitting video generation request...');
+    let validVoiceId = null;
+    console.log('Step 3: Finding valid Japanese voice_id from HeyGen API...');
+    try {
+      const voicesRes = await fetch('https://api.heygen.com/v2/voices', {
+        headers: { 'X-Api-Key': apiKey }
+      });
+      if (voicesRes.ok) {
+        const voicesData = await voicesRes.json();
+        const voices = voicesData.data?.voices || voicesData.data || [];
+        
+        if (Array.isArray(voices) && voices.length > 0) {
+          // 1. 日本語かつ男性ボイスを優先検索
+          const jpMale = voices.find(v => 
+            (v.language?.toLowerCase().includes('japan') || v.language_code?.toLowerCase().includes('ja')) &&
+            (v.gender?.toLowerCase() === 'male')
+          );
+
+          if (jpMale) {
+            validVoiceId = jpMale.voice_id || jpMale.id;
+            console.log('Found Japanese male voice_id:', validVoiceId, jpMale.name);
+          } else {
+            // 2. 日本語ボイスを検索
+            const jpVoice = voices.find(v => 
+              v.language?.toLowerCase().includes('japan') || v.language_code?.toLowerCase().includes('ja')
+            );
+            if (jpVoice) {
+              validVoiceId = jpVoice.voice_id || jpVoice.id;
+              console.log('Found Japanese voice_id:', validVoiceId, jpVoice.name);
+            } else {
+              // 3. アカウントで使える一番目のボイスを使用
+              validVoiceId = voices[0].voice_id || voices[0].id;
+              console.log('Fallback to first available voice_id:', validVoiceId);
+            }
+          }
+        }
+      }
+    } catch (vErr) {
+      console.warn('Voice search failed:', vErr.message);
+    }
+
+    // デフォルトフォールバックボイス（探索失敗時）
+    if (!validVoiceId) {
+      validVoiceId = '2d4b797171774ac0b623fb62b4c80389'; // HeyGen 代表的な標準ボイスID
+    }
+
+    // ========================================
+    // STEP 4: 動画生成リクエスト（v2/video/generate）
+    // ========================================
+    console.log('Step 4: Submitting video generation request with voice_id:', validVoiceId);
     
     let characterConfig = {};
     if (talkingPhotoId) {
@@ -170,7 +216,7 @@ exports.handler = async (event) => {
           voice: {
             type: 'text',
             input_text: script,
-            voice_id: 'jp_male_matsuda'
+            voice_id: validVoiceId
           }
         }
       ],
