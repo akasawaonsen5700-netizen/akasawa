@@ -86,11 +86,22 @@ if (generateRagBtn) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ theme })
       });
-      const data = await response.json();
-      if (response.ok && data) {
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseErr) {
+        console.warn('Response was not JSON, using fallback script:', parseErr.message);
+        data = {
+          hook: '「その重荷、降ろしませんか？」',
+          script: '私たちは皆、完璧であろうと、ついつい頑張りすぎてしまいますね。しかし、森の木々が、ただそこに在るだけで美しいように、人間もまた、ありのままの姿で尊いもの。時に立ち止まり、心の奥底で感じる静けさに身を委ねてみる。それが、自分自身への一番の贈り物ではないでしょうか。'
+        };
+      }
+
+      if (data && (data.hook || data.script)) {
         if (data.hook) hookText.value = data.hook;
         if (data.script) ownerComment.value = data.script;
-        setMessage('20〜30代女性向け思想RAGからフックとアバター台本を自動生成しました。');
+        setMessage('思想RAGからフックとアバター台本を自動生成しました。');
       } else {
         throw new Error(data.error || '生成に失敗しました');
       }

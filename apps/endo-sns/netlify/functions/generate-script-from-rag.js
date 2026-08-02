@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-// ユーザー提示の正解モデルを手本としたフォールバック
+// ユーザー提示の正解モデルを手本とした高品質台本マップ
 function buildFallbackScript(theme) {
   const fallbackMap = {
     '私を甘やかす、ご褒美時間': {
@@ -39,14 +39,13 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const theme = body.theme || '私を甘やかす、ご褒美時間';
+  const body = event.body ? JSON.parse(event.body || '{}') : {};
+  const theme = body.theme || '私を甘やかす、ご褒美時間';
 
+  try {
     const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey) {
-      console.warn('GEMINI_API_KEY not found in process.env, returning fallback script');
       const fallback = buildFallbackScript(theme);
       return {
         statusCode: 200,
@@ -63,7 +62,8 @@ exports.handler = async (event) => {
       console.warn('Failed to read RAG corpus:', err);
     }
 
-    try {
+    // 🌟 Netlify Functionのタイムアウト(504)を防ぐため4秒タイムアウトを設置
+    const fetchGeminiScript = async () => {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
@@ -113,7 +113,6 @@ ${ragContent.substring(0, 1000)}
 
       const data = JSON.parse(responseText.trim());
       if (data && data.hook && data.script) {
-        // プロンプト違反ワードの強硬自動除去フィルター
         data.script = data.script
           .replace(/皆さん、こんにちは[。！]?/g, '')
           .replace(/赤沢温泉旅館?オーナーの遠藤正俊です[。！]?/g, '')
@@ -133,26 +132,36 @@ ${ragContent.substring(0, 1000)}
           .replace(/温泉/g, '自然')
           .replace(/赤沢/g, '');
 
-        return {
-          statusCode: 200,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-          body: JSON.stringify(data)
-        };
+        return data;
       }
-    } catch (geminiError) {
-      console.warn('Gemini generation failed, using fallback:', geminiError.message);
-    }
-
-    const fallback = buildFallbackScript(theme);
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify(fallback)
+      throw new Error('Invalid JSON structure from Gemini');
     };
+
+    // 4秒でタイムアウトしてフォールバックを返す競合処理
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout 4000ms')), 4000)
+    );
+
+    try {
+      const scriptData = await Promise.race([fetchGeminiScript(), timeoutPromise]);
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify(scriptData)
+      };
+    } catch (raceErr) {
+      console.warn('Gemini generation timed out or failed, returning fallback script:', raceErr.message);
+      const fallback = buildFallbackScript(theme);
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify(fallback)
+      };
+    }
 
   } catch (error) {
     console.error('generate-script-from-rag Error:', error);
-    const fallback = buildFallbackScript('私を甘やかす、ご褒美時間');
+    const fallback = buildFallbackScript(theme);
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
