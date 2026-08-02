@@ -648,9 +648,12 @@ async function loadQueue() {
       console.log('==========================================');
     }
 
+    const selectedStatus = statusFilter ? statusFilter.value : 'all';
+    const selectedChannel = (typeof channelFilter !== 'undefined' && channelFilter) ? channelFilter.value : 'all';
+
     const filtered = rows.filter(row => {
-      const matchStatus = statusFilter.value === 'all' || row.status === statusFilter.value;
-      const matchChannel = channelFilter.value === 'all' || (row.channels || []).includes(channelFilter.value);
+      const matchStatus = selectedStatus === 'all' || row.status === selectedStatus;
+      const matchChannel = selectedChannel === 'all' || (row.channels || []).includes(selectedChannel);
       return matchStatus && matchChannel;
     });
 
