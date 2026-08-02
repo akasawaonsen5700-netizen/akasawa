@@ -1,10 +1,8 @@
 const FormData = require('form-data');
 
 /**
- * HeyGen API v2 に対応した動画生成関数
- * 1. 画像がアップロードされた場合: Assetアップロード → Talking Photo作成 → talking_photo_id 取得
- * 2. 画像がない/失敗した場合: アカウント内の既存Talking Photo / アバター一覧を取得して自動利用
- * 3. ボイスID自動取得: HeyGen APIからアクティブな日本語ボイス（または利用可能なボイス）を自動探索してセット
+ * HeyGen API v2 対応 動画生成関数
+ * 遠藤正俊オーナーの本人の声（カスタムボイス・ボイスクローン）を最優先で使用します。
  */
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -144,51 +142,67 @@ exports.handler = async (event) => {
     }
 
     // ========================================
-    // STEP 3: 日本語対応の有効な Voice ID を自動検索
+    // STEP 3: 遠藤正俊オーナーのボイスID決定（クローンボイス最優先）
     // ========================================
-    let validVoiceId = null;
-    console.log('Step 3: Finding valid Japanese voice_id from HeyGen API...');
-    try {
-      const voicesRes = await fetch('https://api.heygen.com/v2/voices', {
-        headers: { 'X-Api-Key': apiKey }
-      });
-      if (voicesRes.ok) {
-        const voicesData = await voicesRes.json();
-        const voices = voicesData.data?.voices || voicesData.data || [];
-        
-        if (Array.isArray(voices) && voices.length > 0) {
-          // 1. 日本語かつ男性ボイスを優先検索
-          const jpMale = voices.find(v => 
-            (v.language?.toLowerCase().includes('japan') || v.language_code?.toLowerCase().includes('ja')) &&
-            (v.gender?.toLowerCase() === 'male')
-          );
+    let validVoiceId = process.env.HEYGEN_VOICE_ID || null;
 
-          if (jpMale) {
-            validVoiceId = jpMale.voice_id || jpMale.id;
-            console.log('Found Japanese male voice_id:', validVoiceId, jpMale.name);
-          } else {
-            // 2. 日本語ボイスを検索
-            const jpVoice = voices.find(v => 
-              v.language?.toLowerCase().includes('japan') || v.language_code?.toLowerCase().includes('ja')
+    if (!validVoiceId) {
+      console.log('Step 3: Finding voice_id (Custom/Cloned voice prioritized)...');
+      try {
+        const voicesRes = await fetch('https://api.heygen.com/v2/voices', {
+          headers: { 'X-Api-Key': apiKey }
+        });
+        if (voicesRes.ok) {
+          const voicesData = await voicesRes.json();
+          const voices = voicesData.data?.voices || voicesData.data || [];
+          
+          if (Array.isArray(voices) && voices.length > 0) {
+            // 🌟 1【最優先】アカウントに登録されたカスタムボイス/クローンボイス
+            const customVoice = voices.find(v => 
+              v.is_custom === true || 
+              v.type === 'custom' || 
+              v.type === 'cloned' ||
+              v.name?.toLowerCase().includes('endo') ||
+              v.name?.includes('遠藤') ||
+              v.name?.includes('正俊')
             );
-            if (jpVoice) {
-              validVoiceId = jpVoice.voice_id || jpVoice.id;
-              console.log('Found Japanese voice_id:', validVoiceId, jpVoice.name);
+
+            if (customVoice) {
+              validVoiceId = customVoice.voice_id || customVoice.id;
+              console.log('🌟 Found Custom/Cloned Owner Voice:', validVoiceId, customVoice.name);
             } else {
-              // 3. アカウントで使える一番目のボイスを使用
-              validVoiceId = voices[0].voice_id || voices[0].id;
-              console.log('Fallback to first available voice_id:', validVoiceId);
+              // 2. 日本語かつ男性ボイス
+              const jpMale = voices.find(v => 
+                (v.language?.toLowerCase().includes('japan') || v.language_code?.toLowerCase().includes('ja')) &&
+                (v.gender?.toLowerCase() === 'male')
+              );
+
+              if (jpMale) {
+                validVoiceId = jpMale.voice_id || jpMale.id;
+                console.log('Found Japanese male voice:', validVoiceId, jpMale.name);
+              } else {
+                // 3. 日本語ボイス
+                const jpVoice = voices.find(v => 
+                  v.language?.toLowerCase().includes('japan') || v.language_code?.toLowerCase().includes('ja')
+                );
+                if (jpVoice) {
+                  validVoiceId = jpVoice.voice_id || jpVoice.id;
+                  console.log('Found Japanese voice:', validVoiceId, jpVoice.name);
+                } else {
+                  validVoiceId = voices[0].voice_id || voices[0].id;
+                  console.log('Fallback to first voice:', validVoiceId);
+                }
+              }
             }
           }
         }
+      } catch (vErr) {
+        console.warn('Voice search failed:', vErr.message);
       }
-    } catch (vErr) {
-      console.warn('Voice search failed:', vErr.message);
     }
 
-    // デフォルトフォールバックボイス（探索失敗時）
     if (!validVoiceId) {
-      validVoiceId = '2d4b797171774ac0b623fb62b4c80389'; // HeyGen 代表的な標準ボイスID
+      validVoiceId = '2d4b797171774ac0b623fb62b4c80389';
     }
 
     // ========================================
