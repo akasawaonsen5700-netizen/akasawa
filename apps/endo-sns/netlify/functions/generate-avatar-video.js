@@ -79,27 +79,15 @@ exports.handler = async (event) => {
     // STEP 2: 生成した本人の音声WAVを HeyGen にアセットアップロード
     // ========================================
     console.log('Step 2: Uploading owner voice audio to HeyGen asset...');
-    const audioBoundary = '----FormBoundaryAudio' + Date.now();
-    const audioBodyParts = [
-      `--${audioBoundary}\r\n`,
-      `Content-Disposition: form-data; name="file"; filename="owner_voice.wav"\r\n`,
-      `Content-Type: audio/wav\r\n\r\n`,
-    ];
-    const audioBodyEnd = `\r\n--${audioBoundary}--\r\n`;
-
-    const audioBodyBuffer = Buffer.concat([
-      Buffer.from(audioBodyParts.join('')),
-      audioBuffer,
-      Buffer.from(audioBodyEnd)
-    ]);
-
-    const audioUploadRes = await fetch('https://api.heygen.com/v1/asset', {
+    
+    // 方法A: バイナリ直接アップロード (HeyGen要求: audio/x-wav)
+    let audioUploadRes = await fetch('https://upload.heygen.com/v1/asset', {
       method: 'POST',
       headers: {
         'X-Api-Key': heygenApiKey,
-        'Content-Type': `multipart/form-data; boundary=${audioBoundary}`
+        'Content-Type': 'audio/x-wav'
       },
-      body: audioBodyBuffer
+      body: audioBuffer
     });
 
     let ownerAudioAssetId = null;
@@ -107,12 +95,35 @@ exports.handler = async (event) => {
 
     if (audioUploadRes.ok) {
       const audioUploadData = await audioUploadRes.json();
-      ownerAudioAssetId = audioUploadData.data?.asset_id || audioUploadData.data?.id;
+      console.log('HeyGen audio upload response:', JSON.stringify(audioUploadData));
+      ownerAudioAssetId = audioUploadData.data?.id || audioUploadData.data?.asset_id;
       ownerAudioUrl = audioUploadData.data?.url;
-      console.log('Successfully uploaded owner voice to HeyGen asset:', ownerAudioAssetId, ownerAudioUrl);
     } else {
       const errTxt = await audioUploadRes.text();
-      console.warn('HeyGen audio asset upload warning:', errTxt);
+      console.warn('HeyGen binary audio asset upload warning:', errTxt);
+
+      // 方法B: Form-Data multipart アップロード (form-data ライブラリ使用)
+      const form = new FormData();
+      form.append('file', audioBuffer, { filename: 'owner_voice.wav', contentType: 'audio/wav' });
+
+      audioUploadRes = await fetch('https://upload.heygen.com/v1/asset', {
+        method: 'POST',
+        headers: {
+          'X-Api-Key': heygenApiKey,
+          ...form.getHeaders()
+        },
+        body: form.getBuffer()
+      });
+
+      if (audioUploadRes.ok) {
+        const audioUploadData = await audioUploadRes.json();
+        console.log('HeyGen form audio upload response:', JSON.stringify(audioUploadData));
+        ownerAudioAssetId = audioUploadData.data?.asset_id || audioUploadData.data?.id;
+        ownerAudioUrl = audioUploadData.data?.url;
+      } else {
+        const errTxt2 = await audioUploadRes.text();
+        console.warn('HeyGen form audio asset upload warning:', errTxt2);
+      }
     }
 
     if (!ownerAudioAssetId && !ownerAudioUrl) {
@@ -131,27 +142,16 @@ exports.handler = async (event) => {
         const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
         const imageBuffer = Buffer.from(base64Data, 'base64');
 
-        const imgBoundary = '----FormBoundaryImg' + Date.now();
-        const imgBodyParts = [
-          `--${imgBoundary}\r\n`,
-          `Content-Disposition: form-data; name="file"; filename="avatar.jpg"\r\n`,
-          `Content-Type: image/jpeg\r\n\r\n`,
-        ];
-        const imgBodyEnd = `\r\n--${imgBoundary}--\r\n`;
+        const imgForm = new FormData();
+        imgForm.append('file', imageBuffer, { filename: 'avatar.jpg', contentType: 'image/jpeg' });
 
-        const imgBodyBuffer = Buffer.concat([
-          Buffer.from(imgBodyParts.join('')),
-          imageBuffer,
-          Buffer.from(imgBodyEnd)
-        ]);
-
-        const imgUploadRes = await fetch('https://api.heygen.com/v1/asset', {
+        const imgUploadRes = await fetch('https://upload.heygen.com/v1/asset', {
           method: 'POST',
           headers: {
             'X-Api-Key': heygenApiKey,
-            'Content-Type': `multipart/form-data; boundary=${imgBoundary}`
+            ...imgForm.getHeaders()
           },
-          body: imgBodyBuffer
+          body: imgForm.getBuffer()
         });
 
         if (imgUploadRes.ok) {
