@@ -3,37 +3,35 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-// 20〜30代女性ターゲット専用の確実なフォールバック台本生成関数
+// 20〜30代女性が心から共感する・自然でエモい高品質フォールバック台本
 function buildFallbackScript(theme) {
   const fallbackMap = {
     '私を甘やかす、ご褒美時間': {
-      hook: '「頑張りすぎている、あなたへ。」',
-      script: '毎日仕事や人間関係で気を張っていませんか？熱すぎない赤沢温泉の「ぬる湯」にゆっくり浸かって深呼吸。何もしない時間を自分にプレゼントしましょう。私を甘やかす、ご褒美時間。'
+      hook: '「また、頑張りすぎてない？」',
+      script: '毎日誰かのために気を張って、自分のことは後回し。そんな夜は、ちょっと立ち止まっていいんです。人肌より少し温かいぬる湯に体をあずけて、ただ深く息を吸う。何も考えない数時間が、明日をちょっと優しくしてくれます。'
     },
     '「ちゃんとしなきゃ」を手放す言葉': {
-      hook: '「『完璧じゃなくていい』って、知ってる？」',
-      script: '世界中の森を見てきた私が伝えたいのは、完璧な自然なんて一つもないということ。曲がった木も苔も美しい。あなたもそのままでいいんです。「ちゃんとしなきゃ」を手放してみませんか。'
+      hook: '「完璧じゃなくていい、本当に。」',
+      script: '世界中の森を見てきて気づいたのは、真っ直ぐな木なんて一本もないってこと。曲がった枝も苔むした幹も、みんな美しい。あなたも、そのままで十分頑張ってる。「ちゃんとしなきゃ」の鎧、ここで脱いでいきませんか。'
     },
     '世界を旅したオーナーが教える、本当の豊かさ': {
-      hook: '「画面の中の比較に疲れたら。」',
-      script: '南米や海外の現場で数字と格闘してきた私がたどり着いたのは、奥日本の静けさでした。誰かの評価ではなく、自分の心の心地よさを大切にする生き方を。'
+      hook: '「スマホの画面、閉じたら。」',
+      script: 'SNSのキラキラした世界と比べて、疲れてしまう夜もありますよね。でも、本当の贅沢って、誰もいない森の静寂の中で、ぬる湯の波紋をぼーっと眺める時間だったりします。あなただけの「心地よさ」を取り戻して。'
     },
     '静寂と森に包まれる、五感の癒やし': {
-      hook: '「風の音、水の音に耳を傾けて。」',
-      script: '渓流のせせらぎ、風の音、看板猫のぬくもり。デジタル社会で疲れた五感をリセットする時間が、赤沢温泉旅館にはあります。心を空っぽにする贅沢を。'
+      hook: '「風の音、聞こえますか？」',
+      script: '渓流のせせらぎ、木々の揺れる音、膝の上にのってくる猫のぬくもり。デジタルな毎日に疲れた頭を空っぽにして、五感全部で静けさを味わう。そんなご褒美が、ここにはあります。'
     },
     '自分を取り戻す、奥日本リセット旅': {
-      hook: '「私だけの物語を旅する。」',
-      script: '誰のためでもない、自分のためのリセット旅。奥日本の静かな原風景と温かいぬる湯が、日常で傷ついた心をそっと癒やします。自分を取り戻す時間へ。'
+      hook: '「私を、私に戻す場所。」',
+      script: '誰の機嫌もとらなくていい。時間も気にせず、好きなだけぬる湯に浸かって、自分と会話する。日常の喧騒から少し離れるだけで、忘れていた「自分の好き」がすーっと戻ってきますよ。'
     }
   };
 
-  const selected = fallbackMap[theme] || {
-    hook: `「${theme.substring(0, 20)}」を求めるあなたへ。`,
-    script: `毎日お疲れ様です。赤沢温泉のぬる湯と大自然の中で、肩の荷をそっと下ろしてみませんか。${theme}をテーマに、自分を大切にする時間をお過ごしください。`
+  return fallbackMap[theme] || {
+    hook: '「一息つく時間、足りてますか？」',
+    script: '毎日がんばるあなたへ。たまには立ち止まって、静かな自然とぬる湯に心を預けてみませんか。自分を一番大切にする、優しい時間を過ごせますように。'
   };
-
-  return selected;
 }
 
 exports.handler = async (event) => {
@@ -47,7 +45,6 @@ exports.handler = async (event) => {
 
     const apiKey = process.env.GEMINI_API_KEY;
     
-    // APIキーが存在しない場合やエラー時でも絶対落とさずフォールバック台本を生成
     if (!apiKey) {
       console.warn('GEMINI_API_KEY not found in process.env, returning fallback script');
       const fallback = buildFallbackScript(theme);
@@ -71,22 +68,37 @@ exports.handler = async (event) => {
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
       const prompt = `
-あなたは「遠藤正俊」（元植林博士・赤沢温泉旅館オーナー）のSNSショート動画台本を作成するAIプロデューサーです。
+あなたはSNS（Instagramリール/TikTok）で大ヒットする動画を作るトップクリエイター・コピーライターです。
+語り手は、世界中で植林をしてきた静かで温かい人生の先輩「遠藤正俊（赤沢温泉旅館オーナー）」。
 
-■ ターゲット顧客: 20代〜30代の女性（仕事疲れ・ご褒美旅・チル・自己肯定感）
-■ 遠藤氏の思想: ${ragContent.substring(0, 1000)}
-■ 動画テーマ: ${theme}
+【ターゲット視聴者】
+SNS疲れ・仕事疲れ・タイパ疲れ・完璧主義で「ちゃんとしなきゃ」と自分を追い込んでいる20代〜30代の女性。
 
-■ 指示
-1. 冒頭3秒で手を止めるフック文（hook: 25文字以内）
-2. 遠藤オーナーがAIアバターで喋る温かい台本（script: 150〜220文字程度）
-必ず以下のJSONのみを出力してください:
+【動画テーマ】
+${theme}
+
+【絶対に守るべき厳格ルール（反した場合は即やり直し）】
+❌ 1. 絶対に「皆さん、こんにちは」「赤沢温泉旅館オーナーの遠藤正俊です」のような営業的・硬い自己紹介を冒頭に入れないでください。（SNS動画では一瞬で離脱されます）
+❌ 2. 絶対に「20代〜30代の女性の皆さん」「働く女性の皆様」といったターゲットの属性を表す言葉を台本本文に書かないでください。（不自然でメタ的な表現になり冷めます）
+❌ 3. 定型文や宣伝チラシのような言葉遣いはNGです。「〜にお越しください」「〜でございます」のような堅苦しい接客用語は使わず、夜の静けさの中でそっと語りかけるような、エモーショナルで温かい口調（〜ですよ、〜ですよね、〜してみませんか）にしてください。
+
+【構成指針】
+・冒頭3秒（hook）: スクロールする指がピタッと止まる、共感・ハッとする言葉（20文字以内）
+・台本本文（script）: 心の緊張がすーっとほぐれ、深呼吸したくなるような語り（140文字〜190文字程度）
+
+【思想インプット】
+${ragContent.substring(0, 1000)}
+
+必ず以下のJSON形式のみを出力してください（JSON以外のテキストやMarkdown装飾は禁止）:
 {"hook": "フック文", "script": "アバター用台本"}
 `;
 
       const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' }
+        generationConfig: { 
+          responseMimeType: 'application/json',
+          temperature: 0.7
+        }
       });
 
       let responseText = result.response.text().trim();
@@ -96,6 +108,13 @@ exports.handler = async (event) => {
 
       const data = JSON.parse(responseText.trim());
       if (data && data.hook && data.script) {
+        // 万が一プロンプト違反のテキストが混ざった場合の自動クリーニング
+        data.script = data.script
+          .replace(/皆さん、こんにちは[。！]?/g, '')
+          .replace(/赤沢温泉旅館?オーナーの遠藤正俊です[。！]?/g, '')
+          .replace(/20代[〜~ー]?30代の女性の?皆?様?さん?/g, '')
+          .trim();
+
         return {
           statusCode: 200,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
@@ -106,7 +125,6 @@ exports.handler = async (event) => {
       console.warn('Gemini generation failed, using fallback:', geminiError.message);
     }
 
-    // Gemini APIエラー時の安全なフォールバック
     const fallback = buildFallbackScript(theme);
     return {
       statusCode: 200,
