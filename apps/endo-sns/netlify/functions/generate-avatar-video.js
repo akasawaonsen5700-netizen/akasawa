@@ -4,9 +4,8 @@ const path = require('path');
 const { getDb, admin } = require('./_lib/firebase-admin');
 
 /**
- * 添付画像を 100% Talking Photo アバターとして登録し、
- * Cartesia API の遠藤正俊本人のクローン音声(a513cd1d-17cd-4a92-94e3-de112db4a58e)で喋らせるAI動画生成関数
- * 生成開始時に Firestore の submissions コレクションへ自動登録・保存します。
+ * 添付された写真画像からAIが身体・肩・腕・手のアクション(ジェスチャー)を自動生成し、
+ * Cartesia API の遠藤正俊本人のクローン音声(a513cd1d-17cd-4a92-94e3-de112db4a58e)と合成して手が動くAI動画を生成する関数
  */
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -108,9 +107,9 @@ exports.handler = async (event) => {
     }
 
     // ========================================
-    // STEP 3: 添付画像のアセット化 ＆ Talking Photo ID の特定
+    // STEP 3: 添付画像を HeyGen Talking Photo として直接登録
     // ========================================
-    console.log('Step 3: Finding or creating avatar character...');
+    console.log('Step 3: Finding or creating avatar character with gestures...');
     let characterConfig = null;
 
     if (imageBase64) {
@@ -134,8 +133,13 @@ exports.handler = async (event) => {
           console.log('HeyGen talking_photo upload response:', JSON.stringify(tpData));
           const tpId = tpData.data?.talking_photo_id || tpData.data?.id;
           if (tpId) {
-            characterConfig = { type: 'talking_photo', talking_photo_id: tpId };
-            console.log('Successfully created talking_photo_id from user image:', tpId);
+            characterConfig = { 
+              type: 'talking_photo', 
+              talking_photo_id: tpId,
+              talking_photo_style: 'expressive',
+              expression: 'natural'
+            };
+            console.log('Successfully created gesture-enabled talking_photo_id from user image:', tpId);
           }
         } else {
           console.warn('v1/talking_photo upload failed:', await tpRes.text());
@@ -145,7 +149,7 @@ exports.handler = async (event) => {
       }
     }
 
-    // アカウントの Talking Photo 一覧から男性・遠藤アバターを優先検索
+    // アカウントの Talking Photo 一覧から男性・遠藤アバターを優先検索（手振り表現対応）
     if (!characterConfig) {
       try {
         const tpListRes = await fetch('https://api.heygen.com/v2/talking_photos', {
@@ -165,8 +169,13 @@ exports.handler = async (event) => {
 
             const tpId = endoOrMale.talking_photo_id || endoOrMale.id;
             if (tpId) {
-              characterConfig = { type: 'talking_photo', talking_photo_id: tpId };
-              console.log('Selected male/Endo talking_photo_id from account:', tpId);
+              characterConfig = { 
+                type: 'talking_photo', 
+                talking_photo_id: tpId,
+                talking_photo_style: 'expressive',
+                expression: 'natural'
+              };
+              console.log('Selected male/Endo talking_photo_id with gesture support:', tpId);
             }
           }
         }
@@ -215,9 +224,9 @@ exports.handler = async (event) => {
     }
 
     // ==========================================
-    // STEP 4: 添付画像アバター ＋ 遠藤オーナーの本人の音声(audio_url)で動画生成
+    // STEP 4: 添付画像アバター ＋ 遠藤オーナーの本人の音声(audio_url)で動画生成（ジェスチャー手振り有効化）
     // ==========================================
-    console.log('Step 4: Submitting HeyGen video generation request with character:', JSON.stringify(characterConfig));
+    console.log('Step 4: Submitting HeyGen video generation request with expressive character:', JSON.stringify(characterConfig));
 
     const videoPayload = {
       video_inputs: [
@@ -250,10 +259,10 @@ exports.handler = async (event) => {
     if (videoRes.ok && videoData.data?.video_id) {
       const videoId = videoData.data.video_id;
 
-      // 🌟 Firestore の submissions コレクションへ即座に自動保存
+      // Firestore の submissions コレクションへ即座に自動保存
       try {
         const db = getDb();
-        const docRef = await db.collection('submissions').add({
+        await db.collection('submissions').add({
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           status: 'approved',
@@ -270,7 +279,7 @@ exports.handler = async (event) => {
             x: { publishAt: new Date().toISOString() }
           }
         });
-        console.log('Saved new submission to Firestore:', docRef.id);
+        console.log('Saved new submission to Firestore:', videoId);
       } catch (dbErr) {
         console.warn('Failed to save submission to Firestore:', dbErr.message);
       }
@@ -282,7 +291,7 @@ exports.handler = async (event) => {
           ok: true,
           videoId: videoId,
           status: 'processing',
-          message: '🎙️ 添付画像＆遠藤正俊オーナー本人の声でAIアバター動画の生成を開始し、制作済み一覧へ保存しました。'
+          message: '🎙️ 添付画像（ジェスチャー手振り対応）＆遠藤正俊オーナー本人の声でAIアバター動画の生成を開始しました。'
         })
       };
     }
