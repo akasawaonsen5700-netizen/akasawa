@@ -8,8 +8,20 @@ const state = {
   scenario: 'custom',
   customers: load(STORAGE_KEYS.customers, []),
   logs: load(STORAGE_KEYS.logs, []),
-  unreached: load(STORAGE_KEYS.unreached, null)
+  unreached: load(STORAGE_KEYS.unreached, null),
+  selectedCustomerIds: []
 };
+
+function removeFromSelected(id) {
+  if (!Array.isArray(state.selectedCustomerIds)) {
+    state.selectedCustomerIds = [];
+    return;
+  }
+  const idx = state.selectedCustomerIds.indexOf(id);
+  if (idx !== -1) {
+    state.selectedCustomerIds.splice(idx, 1);
+  }
+}
 
 const PLANS = {
   normal: { id: 'normal', name: '【1泊2食付】通常プラン', price: 18000, url: 'https://x.gd/tnpmh', code: 'PL00041431' },
@@ -433,10 +445,7 @@ async function dispatchMessages() {
       targets.push(customer);
     } else {
       // 重複した顧客は自動的に選択（チェックボックス）から除外する
-      const idx = state.selectedCustomerIds.indexOf(customer.id);
-      if (idx !== -1) {
-        state.selectedCustomerIds.splice(idx, 1);
-      }
+      removeFromSelected(customer.id);
     }
   });
   // === 重複排除終了 ===
@@ -642,10 +651,7 @@ async function dispatchMessages() {
 
         // 配信処理が実行された顧客は即座に選択解除する（再試行保護）
         chunk.forEach(c => {
-          const idx = state.selectedCustomerIds.indexOf(c.id);
-          if (idx !== -1) {
-            state.selectedCustomerIds.splice(idx, 1);
-          }
+          removeFromSelected(c.id);
         });
 
         persist();
@@ -717,10 +723,7 @@ async function dispatchMessages() {
       });
       
       // 個別配信の場合も、対象から除外（チェック解除）
-      const idx = state.selectedCustomerIds.indexOf(customer.id);
-      if (idx !== -1) {
-        state.selectedCustomerIds.splice(idx, 1);
-      }
+      removeFromSelected(customer.id);
 
       persist();
       renderCustomers();
