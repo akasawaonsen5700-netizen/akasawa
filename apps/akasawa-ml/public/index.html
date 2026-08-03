@@ -42,32 +42,76 @@
       <p class="muted">本デモは、顧客台帳・テンプレート・配信履歴をブラウザ保存。Netlify Functions に環境変数を入れると実送信、未設定ならモック送信になります。</p>
     </section>
 
-    <!-- メール成果（コンバージョン）ダッシュボード -->
+    <!-- メール・LINE成果（コンバージョン）ダッシュボード -->
     <section class="card span-2" style="background: linear-gradient(135deg, rgba(20, 40, 75, 0.95), rgba(15, 25, 50, 0.98)); border: 1px solid rgba(106, 212, 255, 0.3);">
       <div class="card-head">
         <h2>🎉 メール・LINE経由 予約成果レポート（プラン別自動認識）</h2>
-        <span class="badge success">リアルタイム集計</span>
+        <span class="badge success">UTM自動追跡連携</span>
       </div>
-      <div class="cols-4" style="margin-top: 12px; text-align: center;">
+
+      <div class="cols-4" style="margin-top: 12px; text-align: center; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
         <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-          <div class="text-xs muted" style="margin-bottom: 4px;">メール経由予約数</div>
+          <div class="text-xs muted" style="margin-bottom: 4px;">全チャネル 総予約数</div>
           <div id="statTotalBookings" style="font-size: 24px; font-weight: bold; color: var(--accent-2);">0 件</div>
+          <div id="statChannelSubText" style="font-size: 11px; color: #8dd7ff; margin-top: 4px;">✉️ メール: 0件 | 💬 LINE: 0件</div>
         </div>
         <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
           <div class="text-xs muted" style="margin-bottom: 4px;">予約転換率 (CVR)</div>
           <div id="statCvr" style="font-size: 24px; font-weight: bold; color: var(--accent);">0.0%</div>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">配信数あたりの予約到達率</div>
         </div>
         <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-          <div class="text-xs muted" style="margin-bottom: 4px;">メール経由 獲得売上</div>
+          <div class="text-xs muted" style="margin-bottom: 4px;">メール・LINE 獲得売上</div>
           <div id="statTotalRevenue" style="font-size: 24px; font-weight: bold; color: #ffd700;">¥0</div>
+          <div style="font-size: 11px; color: #ffe680; margin-top: 4px;">プラン自動集計合計</div>
         </div>
         <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
           <div class="text-xs muted" style="margin-bottom: 4px;">一番人気のプラン</div>
-          <div id="statTopPlan" style="font-size: 14px; font-weight: bold; color: #fff; margin-top: 6px;">-</div>
+          <div id="statTopPlan" style="font-size: 13px; font-weight: bold; color: #fff; margin-top: 6px;">-</div>
         </div>
       </div>
+
+      <!-- プラン別内訳エリア -->
       <div id="planBreakdownContainer" style="margin-top: 14px; font-size: 13px; color: var(--muted); border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
         <!-- 動的にプラン内訳を表示 -->
+      </div>
+
+      <!-- 追跡パラメータ付きプランURL発行＆クイックツール -->
+      <div style="margin-top: 14px; background: rgba(0, 0, 0, 0.25); border-radius: 10px; padding: 10px 14px; border: 1px solid rgba(106, 212, 255, 0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" id="toggleUrlToolHeader">
+          <span style="font-weight: bold; font-size: 12px; color: var(--accent-2);">🔗 追跡パラメータ付きプランURL自動生成・コピー工具</span>
+          <span style="font-size: 11px; color: var(--muted);" id="urlToolToggleText">▼ 開く</span>
+        </div>
+        <div id="urlToolContent" style="display: none; margin-top: 10px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label class="text-xs muted" style="display:block; margin-bottom:2px;">対象プラン</label>
+              <select id="toolPlanSelect" style="width: 100%; padding: 4px 8px; font-size: 12px;">
+                <option value="normal">【1泊2食付】通常プラン (¥18,000)</option>
+                <option value="lastminute">【1泊2食付】直前割プラン (¥15,000)</option>
+                <option value="bbq">特製ジンギスカンコース (¥16,500)</option>
+                <option value="hp">公式HP基本プラン (¥14,000)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs muted" style="display:block; margin-bottom:2px;">配信チャネル</label>
+              <select id="toolChannelSelect" style="width: 100%; padding: 4px 8px; font-size: 12px;">
+                <option value="email">✉️ メール (utm_source=email)</option>
+                <option value="line">💬 LINE (utm_source=line)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs muted" style="display:block; margin-bottom:2px;">キャンペーン名</label>
+              <input type="text" id="toolCampaignInput" value="summer_recommend" style="width: 100%; padding: 4px 8px; font-size: 12px;" placeholder="例: summer_recommend">
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="toolGeneratedUrl" readonly style="flex: 1; font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.4); color: var(--accent-2); border: 1px solid var(--line);" value="https://x.gd/tnpmh?utm_source=email&utm_medium=crm&utm_campaign=summer_recommend&utm_content=normal">
+            <button type="button" id="toolCopyUrlBtn" class="ghost" style="padding: 4px 12px; font-size: 11px; margin: 0; width: auto;">📋 コピー</button>
+            <button type="button" id="toolTestClickBtn" class="ghost" style="padding: 4px 12px; font-size: 11px; margin: 0; width: auto; border-color: var(--accent-2); color: var(--accent-2);">🎯 予約発生テスト</button>
+          </div>
+          <div class="text-xs muted" style="margin-top: 4px;">※本文の配信時・プレビュー時には、本文中のすべてのプランURLへ上記の追跡パラメータが全自動埋め込みされます。</div>
+        </div>
       </div>
     </section>
 

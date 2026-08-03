@@ -341,6 +341,8 @@ if (el.formatMainInboxBtn) {
   });
 }
 
+initUrlToolEvents();
+
 el.dispatchBtn.addEventListener('click', dispatchMessages);
 el.seedBtn.addEventListener('click', seedCustomers);
 el.clearBtn.addEventListener('click', clearAll);
@@ -749,25 +751,56 @@ function getTargets() {
   }
 }
 
-function buildMessage(customer) {
-  const tpl = templates[state.scenario];
+// 赤沢温泉プランURLへの追跡パラメータ自動埋め込みエンジン
+function attachTrackingParams(text, customer, channelOverride) {
+  if (!text) return '';
+  const channel = channelOverride || (el.channelSelect ? el.channelSelect.value : 'email');
+  const scenario = state.scenario || 'custom';
+  const cid = customer && customer.id ? customer.id : 'demo';
+
+  // 本文中のURLを正規表現で走査し、プランURLに追跡用UTMパラメータを自動付与
+  return text.replace(/(https?:\/\/[^\s\n\r　]+)/g, (url) => {
+    let cleanUrl = url.trim();
+    // すでにutmパラメータが付与されている場合は除外
+    if (cleanUrl.includes('utm_source=')) return cleanUrl;
+
+    // 赤沢温泉旅館の対象プラン・公式URLかをチェック
+    let matchedPlanKey = '';
+    for (const [key, plan] of Object.entries(PLANS)) {
+      if (cleanUrl.includes(plan.url) || plan.url.includes(cleanUrl)) {
+        matchedPlanKey = key;
+        break;
+      }
+    }
+
+    if (cleanUrl.includes('x.gd') || cleanUrl.includes('akasawaonsen.com') || matchedPlanKey) {
+      const sep = cleanUrl.includes('?') ? '&' : '?';
+      const planContentParam = matchedPlanKey ? `&utm_content=${matchedPlanKey}` : '';
+      const trackingParams = `utm_source=${encodeURIComponent(channel)}&utm_medium=crm&utm_campaign=${encodeURIComponent(scenario)}${planContentParam}&cid=${encodeURIComponent(cid)}`;
+      return `${cleanUrl}${sep}${trackingParams}`;
+    }
+    return cleanUrl;
+  });
+}
+
+function buildMessage(customer, channelOverride) {
+  const tpl = templates[state.scenario] || templates.custom || { message: () => '', emailSubject: '' };
   const name = fullName(customer);
   const customerWithFullName = {
     ...customer,
     name,
     greeting: name === '赤沢温泉旅館ご利用者様' ? '赤沢温泉旅館ご利用者様' : `${name} 様`
   };
-  let tplMsg = tpl.message(customerWithFullName);
+  let tplMsg = tpl.message ? tpl.message(customerWithFullName) : '';
   let customMsg = el.customMessage.value;
 
-  // ユーザーが選択・入力した文章を一切カット・削除せず完全に結合
-
-  // ユーザーが入力・ペーストした文章をそのまま使用（一切の勝手な本文・記号の改変を行わない）
   let fullContent = [tplMsg, customMsg].filter(Boolean).join('\n\n');
 
+  // プランURLを自動追跡リンク（UTMパラメータ・チャネル・顧客識別キー付き）へ変換
+  let trackedContent = attachTrackingParams(fullContent, customer, channelOverride);
 
-  const body = fullContent + '\n' + SIGNATURE;
-  const subject = el.customSubject.value.trim() || tpl.emailSubject;
+  const body = trackedContent + '\n' + SIGNATURE;
+  const subject = el.customSubject.value.trim() || tpl.emailSubject || '【赤沢温泉旅館】ご案内';
   return { subject, body };
 }
 
@@ -796,8 +829,9 @@ function renderCustomers() {
       ? `<button class="ghost" disabled style="padding: 2px 8px; font-size: 11px; margin: 0; min-height: 0; white-space: nowrap; opacity: 0.5; cursor: not-allowed; border: 1px solid var(--line);">送信</button>`
       : `<button class="primary dispatch-single-btn" data-id="${customer.id}" style="padding: 2px 8px; font-size: 11px; margin: 0; min-height: 0; white-space: nowrap; background: linear-gradient(90deg, #33a0ff 0%, #6ad2ff 100%); color: #04111d;">送信</button>`;
 
+    const channelIcon = customer.bookedChannel === 'line' ? '💬 LINE' : '✉️ メール';
     const bookingBadge = isBooked 
-      ? `<div style="margin-top: 4px;"><span class="badge success" style="font-size: 11px; font-weight: bold; background: rgba(141,240,200,0.2); border-color: rgba(141,240,200,0.5);">🎉 ${escapeHtml(customer.bookedPlanName)} 予約済 (¥${Number(customer.bookedAmount).toLocaleString()})</span></div>`
+      ? `<div style="margin-top: 4px;"><span class="badge success" style="font-size: 11px; font-weight: bold; background: rgba(141,240,200,0.2); border-color: rgba(141,240,200,0.5);">🎉 ${channelIcon}経由: ${escapeHtml(customer.bookedPlanName)} 予約済 (¥${Number(customer.bookedAmount).toLocaleString()})</span></div>`
       : '';
 
     const testBookingBtn = isUnsubscribed
@@ -1303,6 +1337,11 @@ function renderConversionDashboard() {
   const totalCustomers = state.customers.length;
   const bookedCustomers = state.customers.filter(c => c.bookedPlanName);
   const totalBookings = bookedCustomers.length;
+  
+  // チャネル別集計 (メール vs LINE)
+  const emailBookings = bookedCustomers.filter(c => (c.bookedChannel || 'email') === 'email').length;
+  const lineBookings = bookedCustomers.filter(c => c.bookedChannel === 'line').length;
+  
   const totalRevenue = bookedCustomers.reduce((sum, c) => sum + (Number(c.bookedAmount) || 0), 0);
   const totalSent = state.logs.length || totalCustomers || 1;
   const cvr = ((totalBookings / totalSent) * 100).toFixed(1);
@@ -1311,16 +1350,27 @@ function renderConversionDashboard() {
   const elCvr = document.getElementById('statCvr');
   const elRevenue = document.getElementById('statTotalRevenue');
   const elTopPlan = document.getElementById('statTopPlan');
+  const elChannelSub = document.getElementById('statChannelSubText');
 
   if (elBookings) elBookings.textContent = `${totalBookings} 件`;
+  if (elChannelSub) elChannelSub.textContent = `✉️ メール: ${emailBookings}件 | 💬 LINE: ${lineBookings}件`;
   if (elCvr) elCvr.textContent = `${cvr}%`;
   if (elRevenue) elRevenue.textContent = `¥${totalRevenue.toLocaleString()}`;
 
   const planCounts = {};
   const planRevenues = {};
+  const planChannelBreakdown = {};
+
   bookedCustomers.forEach(c => {
-    planCounts[c.bookedPlanName] = (planCounts[c.bookedPlanName] || 0) + 1;
-    planRevenues[c.bookedPlanName] = (planRevenues[c.bookedPlanName] || 0) + (Number(c.bookedAmount) || 0);
+    const pName = c.bookedPlanName;
+    const channel = c.bookedChannel || 'email';
+    planCounts[pName] = (planCounts[pName] || 0) + 1;
+    planRevenues[pName] = (planRevenues[pName] || 0) + (Number(c.bookedAmount) || 0);
+    
+    if (!planChannelBreakdown[pName]) {
+      planChannelBreakdown[pName] = { email: 0, line: 0 };
+    }
+    planChannelBreakdown[pName][channel] = (planChannelBreakdown[pName][channel] || 0) + 1;
   });
 
   let topPlan = '-';
@@ -1336,23 +1386,34 @@ function renderConversionDashboard() {
   const breakdownContainer = document.getElementById('planBreakdownContainer');
   if (breakdownContainer) {
     if (totalBookings === 0) {
-      breakdownContainer.innerHTML = '<span style="color:var(--muted);">※顧客リスト右側の <strong>[予約テスト]</strong> ボタンを押すと、プラン別メール予約の発生シミュレーションテストを実行できます。</span>';
+      breakdownContainer.innerHTML = '<span style="color:var(--muted);">※顧客リスト右側の <strong>[予約テスト]</strong> ボタンまたは上記の追跡URLツールから、プラン別予約成果の自動認識・リアルタイム集計を試せます。</span>';
     } else {
       const planItems = Object.entries(PLANS).map(([key, p]) => {
         const cnt = planCounts[p.name] || 0;
         const rev = planRevenues[p.name] || 0;
+        const channelData = planChannelBreakdown[p.name] || { email: 0, line: 0 };
         const bg = cnt > 0 ? 'rgba(141, 240, 200, 0.15)' : 'rgba(255,255,255,0.03)';
         const border = cnt > 0 ? 'rgba(141, 240, 200, 0.4)' : 'rgba(255,255,255,0.08)';
         const color = cnt > 0 ? 'var(--accent-2)' : 'var(--muted)';
+        
         return `
-          <div style="background:${bg}; border:1px solid ${border}; padding:6px 12px; border-radius:8px; font-size:12px;">
-            <strong style="color:${color};">${escapeHtml(p.name)}</strong>: <span style="font-size:14px; font-weight:bold; color:#fff;">${cnt}件</span> <span style="color:#ffd700; font-size:11px;">(¥${rev.toLocaleString()})</span>
+          <div style="background:${bg}; border:1px solid ${border}; padding:6px 12px; border-radius:8px; font-size:12px; min-width: 220px; flex: 1;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="color:${color};">${escapeHtml(p.name)}</strong>
+              <span style="font-size:14px; font-weight:bold; color:#fff;">${cnt}件</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:2px; font-size:11px;">
+              <span style="color:#ffd700; font-weight:bold;">¥${rev.toLocaleString()}</span>
+              <span style="color:#8dd7ff;">(✉️${channelData.email}件 / 💬${channelData.line}件)</span>
+            </div>
           </div>
         `;
       }).join('');
-      breakdownContainer.innerHTML = `<div style="font-weight:bold; color:var(--accent); width:100%; margin-bottom:4px;">【プラン別予約成果 内訳データ】</div> ${planItems}`;
+      breakdownContainer.innerHTML = `<div style="font-weight:bold; color:var(--accent); width:100%; margin-bottom:4px;">【プラン別予約成果・自動認識内訳データ】</div> ${planItems}`;
     }
   }
+
+  updateUrlToolPreview();
 }
 
 function simulateBooking(id) {
@@ -1363,9 +1424,13 @@ function simulateBooking(id) {
     return;
   }
   
+  const channelChoice = prompt('予約成果が発生した流入チャネルを選択してください：\n1: ✉️ メール経由 (email)\n2: 💬 LINE経由 (line)', '1');
+  if (!channelChoice) return;
+  const channel = channelChoice.trim() === '2' ? 'line' : 'email';
+
   const planPromptText = [
-    `${fullName(customer)} 様のメール経由予約テストです。`,
-    '予約されたプランの番号を入力してください：',
+    `${fullName(customer)} 様（${channel === 'line' ? 'LINE' : 'メール'}経由）の予約テストです。`,
+    '自動認識・追跡されたプラン番号を選択してください：',
     '1: 一番人気 通常プラン (¥18,000)',
     '2: 一番人気 直前割プラン (¥15,000)',
     '3: 特製ジンギスカンコース (¥16,500)',
@@ -1380,12 +1445,87 @@ function simulateBooking(id) {
   const plan = PLANS[planKey];
 
   customer.bookedPlanName = plan.name;
+  customer.bookedPlanKey = planKey;
+  customer.bookedChannel = channel;
   customer.bookedAmount = plan.price;
   customer.bookedAt = new Date().toISOString();
 
   persist();
   render();
-  alert(`${fullName(customer)} 様の「${plan.name}（¥${plan.price.toLocaleString()}）」からのメール予約発生を自動認識・記録しました！`);
+  alert(`${fullName(customer)} 様の【${channel === 'line' ? 'LINE' : 'メール'}経由】「${plan.name}（¥${plan.price.toLocaleString()}）」からの予約成果を自動認識・記録しました！`);
+}
+
+// 追跡パラメータ付きプランURL生成ツールのプレビュー更新
+function updateUrlToolPreview() {
+  const pSelect = document.getElementById('toolPlanSelect');
+  const cSelect = document.getElementById('toolChannelSelect');
+  const cmpInput = document.getElementById('toolCampaignInput');
+  const urlOutput = document.getElementById('toolGeneratedUrl');
+
+  if (!pSelect || !cSelect || !cmpInput || !urlOutput) return;
+
+  const planKey = pSelect.value || 'normal';
+  const plan = PLANS[planKey] || PLANS.normal;
+  const channel = cSelect.value || 'email';
+  const campaign = cmpInput.value.trim() || 'summer_recommend';
+
+  const sep = plan.url.includes('?') ? '&' : '?';
+  const fullTrackingUrl = `${plan.url}${sep}utm_source=${encodeURIComponent(channel)}&utm_medium=crm&utm_campaign=${encodeURIComponent(campaign)}&utm_content=${encodeURIComponent(planKey)}&cid=demo_user`;
+  
+  urlOutput.value = fullTrackingUrl;
+}
+
+// 追跡ツールのイベントバインド
+function initUrlToolEvents() {
+  const header = document.getElementById('toggleUrlToolHeader');
+  const content = document.getElementById('urlToolContent');
+  const toggleText = document.getElementById('urlToolToggleText');
+  const pSelect = document.getElementById('toolPlanSelect');
+  const cSelect = document.getElementById('toolChannelSelect');
+  const cmpInput = document.getElementById('toolCampaignInput');
+  const copyBtn = document.getElementById('toolCopyUrlBtn');
+  const testBtn = document.getElementById('toolTestClickBtn');
+
+  if (header && content) {
+    header.addEventListener('click', () => {
+      const isHidden = content.style.display === 'none';
+      content.style.display = isHidden ? 'block' : 'none';
+      if (toggleText) toggleText.textContent = isHidden ? '▲ 閉じる' : '▼ 開く';
+    });
+  }
+
+  [pSelect, cSelect, cmpInput].forEach(el => {
+    if (el) {
+      el.addEventListener('change', updateUrlToolPreview);
+      el.addEventListener('input', updateUrlToolPreview);
+    }
+  });
+
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const urlOutput = document.getElementById('toolGeneratedUrl');
+      if (urlOutput) {
+        navigator.clipboard.writeText(urlOutput.value).then(() => {
+          alert('追跡パラメータ付きプランURLをクリップボードにコピーしました！\n\n' + urlOutput.value);
+        }).catch(() => {
+          urlOutput.select();
+          document.execCommand('copy');
+          alert('コピーしました！');
+        });
+      }
+    });
+  }
+
+  if (testBtn) {
+    testBtn.addEventListener('click', () => {
+      if (state.customers.length === 0) {
+        alert('顧客データがありません。先にサンプル顧客投入または顧客入力を行ってください。');
+        return;
+      }
+      const firstCustomer = state.customers[0];
+      simulateBooking(firstCustomer.id);
+    });
+  }
 }
 
 // =============================================================
