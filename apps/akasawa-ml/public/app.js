@@ -162,6 +162,7 @@ const el = {
   clearPreviewBtn: document.getElementById('clearPreviewBtn'),
   downloadSampleBtn: document.getElementById('downloadSampleBtn'),
   deleteSelectedCsvBtn: document.getElementById('deleteSelectedCsvBtn'),
+  manageCsvBtn: document.getElementById('manageCsvBtn'),
   viewOptOutBtn: document.getElementById('viewOptOutBtn'),
   logItemTemplate: document.getElementById('logItemTemplate')
 };
@@ -266,14 +267,15 @@ el.csvFile.addEventListener('change', async e => {
 el.searchInput.addEventListener('input', render);
 el.tagFilter.addEventListener('change', render);
 el.csvFilter.addEventListener('change', () => {
-  if (el.deleteSelectedCsvBtn) {
-    el.deleteSelectedCsvBtn.style.display = el.csvFilter.value ? 'inline-block' : 'none';
-  }
   render();
 });
 
 if (el.deleteSelectedCsvBtn) {
-  el.deleteSelectedCsvBtn.addEventListener('click', deleteSelectedCsv);
+  el.deleteSelectedCsvBtn.addEventListener('click', () => deleteSelectedCsv());
+}
+
+if (el.manageCsvBtn) {
+  el.manageCsvBtn.addEventListener('click', manageCsv);
 }
 
 if (el.viewOptOutBtn) {
@@ -288,16 +290,47 @@ if (el.viewOptOutBtn) {
   });
 }
 
-function deleteSelectedCsv() {
-  const fileName = el.csvFilter.value;
-  if (!fileName) return;
+function deleteSelectedCsv(targetFileName) {
+  const fileName = targetFileName || el.csvFilter.value;
+  if (!fileName) {
+    alert('削除したいCSVファイルをドロップダウンから選択するか、「取込済みCSV一覧・削除」より選択してください。');
+    return;
+  }
   const count = state.customers.filter(c => c.importFileName === fileName).length;
-  if (!confirm(`CSV「${fileName}」から取り込んだ ${count} 件の顧客データを削除しますか？`)) return;
+  if (!confirm(`CSV「${fileName}」から取り込んだ ${count} 件の顧客データをすべて削除しますか？`)) return;
+  
   state.customers = state.customers.filter(c => c.importFileName !== fileName);
+  if (el.csvFilter.value === fileName) {
+    el.csvFilter.value = '';
+  }
   persist();
   render();
-  if (el.deleteSelectedCsvBtn) el.deleteSelectedCsvBtn.style.display = 'none';
-  alert(`CSV「${fileName}」のデータ (${count}件) を削除しました。`);
+  alert(`CSV「${fileName}」のデータ (${count}件) を正常に削除いたしました。`);
+}
+
+function manageCsv() {
+  const fileNames = [...new Set(state.customers.map(c => c.importFileName))].filter(Boolean).sort();
+  if (fileNames.length === 0) {
+    alert('現在登録されている取込済みCSVファイルはありません。');
+    return;
+  }
+
+  const filePromptList = fileNames.map((name, idx) => {
+    const cnt = state.customers.filter(c => c.importFileName === name).length;
+    return `${idx + 1}: ${name} (${cnt}件)`;
+  }).join('\n');
+
+  const choice = prompt(`【取込済みCSVファイル一覧】\n削除したいCSVの番号を入力してください：\n\n${filePromptList}\n\n※番号を入力してOKを押すと、該当CSVのデータが削除されます。`, '1');
+  if (!choice) return;
+
+  const selectedIdx = parseInt(choice.trim(), 10) - 1;
+  if (isNaN(selectedIdx) || selectedIdx < 0 || selectedIdx >= fileNames.length) {
+    alert('正しい番号が選択されませんでした。');
+    return;
+  }
+
+  const targetFile = fileNames[selectedIdx];
+  deleteSelectedCsv(targetFile);
 }
 el.selectAll.addEventListener('change', () => {
   document.querySelectorAll('.row-select').forEach(cb => cb.checked = el.selectAll.checked);
@@ -1206,8 +1239,28 @@ function toggleSubscription(id) {
 function renderCsvFilter() {
   const current = el.csvFilter.value;
   const fileNames = [...new Set(state.customers.map(c => c.importFileName))].filter(Boolean).sort();
-  el.csvFilter.innerHTML = `<option value="">すべてのCSV</option>${fileNames.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')}`;
-  el.csvFilter.value = fileNames.includes(current) ? current : '';
+  
+  el.csvFilter.innerHTML = `<option value="">すべてのCSV (${state.customers.length}件)</option>${fileNames.map(name => {
+    const cnt = state.customers.filter(c => c.importFileName === name).length;
+    return `<option value="${escapeHtml(name)}">${escapeHtml(name)} (${cnt}件)</option>`;
+  }).join('')}`;
+
+  const selectedValue = fileNames.includes(current) ? current : '';
+  el.csvFilter.value = selectedValue;
+
+  if (el.deleteSelectedCsvBtn) {
+    if (selectedValue) {
+      const cnt = state.customers.filter(c => c.importFileName === selectedValue).length;
+      el.deleteSelectedCsvBtn.style.display = 'inline-block';
+      el.deleteSelectedCsvBtn.textContent = `🗑️ 「${selectedValue}」(${cnt}件)を削除`;
+    } else {
+      el.deleteSelectedCsvBtn.style.display = 'none';
+    }
+  }
+
+  if (el.manageCsvBtn) {
+    el.manageCsvBtn.style.display = fileNames.length > 0 ? 'inline-block' : 'none';
+  }
 }
 
 async function dispatchSingleMessage(id) {
