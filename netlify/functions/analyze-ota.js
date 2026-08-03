@@ -39,12 +39,20 @@ exports.handler = async (event) => {
 
     // 赤沢温泉旅館の強み（RAG）を共有フォルダから読み込む
     const ryokanRagPath = path.join(__dirname, '_shared', 'ryokan_rag.md');
+    const reasonToBuyPath = path.join(__dirname, '_shared', 'reason_to_buy_rag.md');
+    
     let ryokanRag = '';
+    let reasonToBuyRag = '';
     try {
       ryokanRag = fs.readFileSync(ryokanRagPath, 'utf8');
     } catch (err) {
       console.warn('Failed to load ryokan_rag.md, using fallback.', err.message);
       ryokanRag = '赤沢温泉旅館（ぬる湯、猫、大自然、静養）の要素を取り入れてください。';
+    }
+    try {
+      reasonToBuyRag = fs.readFileSync(reasonToBuyPath, 'utf8');
+    } catch (err) {
+      console.warn('Failed to load reason_to_buy_rag.md');
     }
 
     // タイプ別のプロンプト構築（Before/Afterとコピペ入稿・パラメータ指示を厳密に定義）
@@ -60,8 +68,13 @@ exports.handler = async (event) => {
       ■ 赤沢温泉の強み知識（RAG）:
       ${ryokanRag}
 
-      ■ 記述ガイドライン:
-      - 抽象的なアドバイスは禁止します。
+      ■ 『買う理由』中心RAG思想:
+      ${reasonToBuyRag}
+
+      ■ 記述ガイドライン（『買う理由』軸）:
+      - 単なる値引き・安売り訴求や過剰な煽り文句（No.1、格安）は禁止します。
+      - 「静かに整える滞在」「自然の音にほどける時間」など、**お客様がその宿を選ぶ納得の理由（体験価値 + Because根拠）**へ変換したコピペ用テキスト（After）を作成してください。
+      - 猫については「触れ合い放題」ではなく「自由に過ごす様子を静かに見守る自然体の気配」として記載してください。
       - 「現在の掲載文（Before）」に対する「改善後のコピペ用テキスト（After）」を明確に作成してください。
       - 「コピペ入稿する管理画面の具体的なメニュー名・入力欄の名前」を「manual」に記述してください。
       - クーポンやプロモーションの具体的な設定パラメータ（割引率、対象、適用日、発行枚数など）を「promotionParams」に記述してください。

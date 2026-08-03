@@ -37,12 +37,20 @@ exports.handler = async (event) => {
 
     // 赤沢温泉旅館の強み（RAG）
     const ryokanRagPath = path.join(__dirname, '_shared', 'ryokan_rag.md');
+    const reasonToBuyPath = path.join(__dirname, '_shared', 'reason_to_buy_rag.md');
+    
     let ryokanRag = '';
+    let reasonToBuyRag = '';
     try {
       ryokanRag = fs.readFileSync(ryokanRagPath, 'utf8');
     } catch (err) {
       console.warn('Failed to load ryokan_rag.md, using fallback.', err.message);
       ryokanRag = '赤沢温泉旅館（ぬる湯、猫、大自然、静養）の要素を取り入れてください。';
+    }
+    try {
+      reasonToBuyRag = fs.readFileSync(reasonToBuyPath, 'utf8');
+    } catch (err) {
+      console.warn('Failed to load reason_to_buy_rag.md');
     }
 
     const systemPrompt = `
@@ -65,13 +73,20 @@ exports.handler = async (event) => {
     ${ryokanRag}
 
     ---
+    ■ 『買う理由』中心RAG設計原則:
+    ${reasonToBuyRag}
+
+    ---
     ■ 重要な設計ルール（AI・人間ハイブリッド型）：
-    1. **【AI検索対策（LLMO/SEO）】**:
-       - プラン名および本文中に、検索されやすく具体的な属性キーワード（例: 「源泉かけ流しぬる湯」「ペットと泊まれる宿」「露天風呂付き客室」「看板猫」など）を豊富に、自然な文章として組み込んでください。
-    2. **【情緒的ストーリー（人間へのアピール）】**:
-       - プラン説明文（本文）は、ターゲット顧客が具体的な滞在イメージ（ストーリー）を追体験できるエッセイ調またはルポルタージュ調の上品な日本語で記述してください。
-    3. **【市場調査・ポジショニング分析】**:
-       - このプランがなぜ他の那須塩原温泉の競合に対して優位性を持つのかという「市場背景と差別化のポイント」、および安売りせず付加価値で売るための「推奨価格」とその設定理由を含めてください。
+    1. **【『買う理由』構文の徹底】**:
+       - 施設スペック（部屋・設備）の羅列ではなく、**「誰向けか → 何が得られるか(ベネフィット) → なぜそう言えるか(Because)」**という構造でプランタイトル・説明文を構成してください。
+       - タイトルやキャッチコピーは、「静かに休みたい方へ」「ぬる湯と自然音にほどける」など滞在目的・理由が伝わる名称を優先してください。
+    2. **【AI検索対策（LLMO/SEO）】**:
+       - プラン名および本文中に、検索されやすく具体的な属性キーワード（例: 「源泉かけ流しぬる湯」「静養」「看板猫」「渓流の音」「不完全さの美学」など）を豊富に組み込んでください。
+    3. **【猫の扱い方】**:
+       - 猫は触れ合い放題のコンテンツではなく「自由に過ごす気配を静かに見守る存在」として表現してください。
+    4. **【市場調査・価格意味づけ】**:
+       - 安売りではなく、なぜこの価格に価値があるのか（静養に集中できる環境、できたて食事、長湯温泉）を理由として説明してください。
 
     ---
     ■ 出力フォーマット

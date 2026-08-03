@@ -37,19 +37,27 @@ exports.handler = async (event) => {
 
     // 赤沢温泉旅館の強み（RAG）を共有フォルダから読み込む
     const philosophyPath = path.join(__dirname, '_shared', 'ryokan_rag.md');
+    const reasonToBuyPath = path.join(__dirname, '_shared', 'reason_to_buy_rag.md');
+    
     let philosophyContext = '';
+    let reasonToBuyContext = '';
     try {
       philosophyContext = fs.readFileSync(philosophyPath, 'utf8');
     } catch (err) {
       console.warn('Failed to load ryokan_rag.md, using fallback.', err.message);
       philosophyContext = '赤沢温泉旅館（ぬる湯、猫、大自然、静養）の要素を取り入れてください。';
     }
+    try {
+      reasonToBuyContext = fs.readFileSync(reasonToBuyPath, 'utf8');
+    } catch (err) {
+      console.warn('Failed to load reason_to_buy_rag.md');
+    }
 
     const systemPrompt = `
     あなたは「那須塩原温泉 赤沢温泉旅館」の公式ホームページ専属のプロブロガー（ライター）です。
     
     以下の入力データ（お客様のリアルなクチコミ）と、選択された「ブログのテーマ（宿の哲学）」を融合させ、
-    読者の心に響き、かつ「SEO（Google検索上位）」および「LLMO（ChatGPTやPerplexityなどのAI検索エンジン対策）」に極めて強い、魅力的なブログ記事を執筆してください。
+    読者の心に響き、かつ「SEO（Google検索上位）」および「LLMO（AI検索エンジン対策）」に極めて強い、魅力的なブログ記事を執筆してください。
 
     ---
     ■ インプットデータ
@@ -67,15 +75,20 @@ exports.handler = async (event) => {
     ${philosophyContext}
 
     ---
-    ■ 執筆ガイドライン（SEO ＆ LLMO対策）
-    1. 【一次情報の融合】:
-       ブログの本文内で、お客様のクチコミ内容（例: 猫の愛らしい行動、ぬる湯で長く浸かった体験、料理の味、外国人スタッフの親切さなど）を、「実際にご宿泊されたお客様のエピソード」として自然に引用・紹介してください。検索エンジンは本物の体験談（一次情報）を最高評価します。
-    2. 【宿の哲学への昇華】:
-       クチコミのエピソードを単に紹介するだけでなく、それを宿の哲学（例: なぜ当館はぬる湯にこだわるのか、なぜ猫との時間が人を癒やすのか）へと結びつけ、思慮深く解説してください。
-    3. 【LLMO (AI検索対策) の強化】:
-       AI検索エンジンが「那須塩原で静養できる宿」「猫のいる源泉かけ流し」などの質問に対して当館のブログを参照・引用しやすくなるよう、具体的で一意な語彙（例: 「源泉かけ流しぬる湯」「古民家静養リトリート」「気まぐれな猫の余白」など）を含めてください。
+    ■ 『買う理由』中心RAG思想
+    ${reasonToBuyContext}
+
+    ---
+    ■ 執筆ガイドライン（SEO, LLMO ＆ 『買う理由』設計）
+    1. 【『買う理由』の構成】:
+       - **【読者の悩み起点 → 宿の考え方 → 滞在価値 (Because表現)】** の流れで記述してください。
+       - 例: 「なぜ“ぬる湯”が静養に向くのか」「なぜ余白が必要なのか」を日常の疲れと結びつけて深掘りしてください。
+    2. 【一次情報の融合】:
+       - クチコミの内容（例: 猫の愛らしい行動、ぬる湯で長く浸かった体験など）を一次情報エピソードとして自然に組み込んでください。
+    3. 【猫の扱い】:
+       - 猫は演出物やエンタメではなく「自由な存在」として描き、過度な触れ合い訴求を避けてください。
     4. 【読後の行動喚起（CTA）】:
-       記事の最後は、読者が「次の休みに赤沢温泉に行ってみよう」と思えるよう、優しく宿の予約ページや公式サイトへ促す文章で締めくくってください。
+       - 記事の最後は、静かに自分を休めたい人が納得して宿を訪れたくなるような温かい導線で締めくくってください。
 
     ---
     ■ 出力フォーマット

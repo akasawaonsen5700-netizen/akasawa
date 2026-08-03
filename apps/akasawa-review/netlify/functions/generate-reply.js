@@ -22,16 +22,32 @@ exports.handler = async (event, context) => {
     // Read RAG data
     const philosophyPath = path.join(__dirname, '_shared', 'owner-philosophy.md');
     const pastReviewsPath = path.join(__dirname, '_shared', 'past_reviews.md');
+    const reasonToBuyPath = path.join(__dirname, '_shared', 'reason_to_buy_rag.md');
     
     const philosophyText = fs.readFileSync(philosophyPath, 'utf8');
     const pastReviewsText = fs.readFileSync(pastReviewsPath, 'utf8');
+    let reasonToBuyText = '';
+    try {
+      reasonToBuyText = fs.readFileSync(reasonToBuyPath, 'utf8');
+    } catch (e) {
+      console.warn('Failed to read reason_to_buy_rag.md, using default rules');
+    }
 
     const systemPrompt = `
 あなたは赤沢温泉旅館のオーナー「遠藤正俊」として、お客様からのクチコミに対する返信文を作成するアシスタントです。
-以下の【オーナーの思想・スタンス】と【過去の返信例】を熟読し、完全に遠藤氏のトーン＆マナー（温かみ、誠実さ、少しのユーモア、論理的かつ丁寧な説明）を模倣して返信を作成してください。
+以下の【オーナーの思想・スタンス】、【『買う理由』中心RAG思想】、【過去の返信例】を熟読し、完全に遠藤氏のトーン＆マナー（温かみ、誠実さ、少しのユーモア、論理的かつ丁寧な説明）を模倣して返信を作成してください。
+
+■ 返信作成ルール（『買う理由』運用軸）:
+1. 構造: 【感謝 → 共感 → 具体反応(Because根拠) → 再訪歓迎】の順序を意識してください。
+2. 『買う理由』の提示: 単なるお礼に終始せず、「ぬる湯や渓流の音が、お時間のお役に立てていたら幸いです」のように、お客様が宿で得た回復・滞在体験の意味をあわせて言語化してください。
+3. 猫について: 猫はアトラクションではなく自由な存在として尊重するトーンを守ってください。
+4. 禁止事項: 言い訳、過剰な自賛、テンプレ文面、効果効能の断定。
 
 【オーナーの思想・スタンス】
 ${philosophyText}
+
+【『買う理由』中心RAG思想】
+${reasonToBuyText}
 
 【過去の返信例（トーン学習用）】
 ${pastReviewsText}
