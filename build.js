@@ -93,7 +93,11 @@ try {
       copyFolderSync(adminDistPath, path.join(distDir, 'akasawa-dp'));
     } else {
       console.log('Building akasawa-dp via vite...');
-      execSync('npx --no-install vite build', { cwd: adminPath, stdio: 'ignore', shell: true });
+      try {
+        execSync('npx vite build', { cwd: adminPath, stdio: 'ignore', shell: true });
+      } catch (e) {
+        console.warn('Warning when running vite build for akasawa-dp:', e.message);
+      }
       if (fs.existsSync(adminDistPath)) {
         copyFolderSync(adminDistPath, path.join(distDir, 'akasawa-dp'));
       }

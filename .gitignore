@@ -5,6 +5,7 @@ key.txt
 .env
 .DS_Store
 dist/
+!apps/akasawa-dp/apps/admin/dist/
 build/
 powershell.cmd
 powershell.bat
