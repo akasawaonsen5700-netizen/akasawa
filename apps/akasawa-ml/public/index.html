@@ -252,8 +252,8 @@
           <input type="text" id="customSubject" placeholder="件名を入力 (空欄の場合はデフォルトの件名が使用されます)">
         </div>
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <label style="margin: 0;">テンプレート追記 (自由入力)</label>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
+            <label style="margin: 0;">テンプレート追記 (自由入力) <span style="font-size: 11px; font-weight: normal; color: var(--accent-2); margin-left: 6px;">🔗 ここに入力・ペーストしたURLは全自動で追跡用リンク(UTM/CID付き)へ変換されます</span></label>
             <button type="button" id="formatCustomMsgBtn" class="ghost" style="width: auto; padding: 2px 8px; font-size: 11px; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; min-height: 0;">✨ 余分な空行の整頓</button>
           </div>
           <textarea id="customMessage" rows="8" placeholder="追加・作成したい文面を自由に入力または貼り付けしてください"></textarea>

@@ -758,11 +758,20 @@ function attachTrackingParams(text, customer, channelOverride) {
   const scenario = state.scenario || 'custom';
   const cid = customer && customer.id ? customer.id : 'demo';
 
-  // 本文中のURLを正規表現で走査し、プランURLに追跡用UTMパラメータを自動付与
+  // 本文中のURLを正規表現で走査し、プランURLに追跡用UTMパラメータを全自動付与
   return text.replace(/(https?:\/\/[^\s\n\r　]+)/g, (url) => {
     let cleanUrl = url.trim();
-    // すでにutmパラメータが付与されている場合は除外
-    if (cleanUrl.includes('utm_source=')) return cleanUrl;
+
+    // 末尾の日本語記号（。、」）！？など）を分離保護
+    let suffix = '';
+    const matchSuffix = cleanUrl.match(/[。、」）】！\?]+$/);
+    if (matchSuffix) {
+      suffix = matchSuffix[0];
+      cleanUrl = cleanUrl.substring(0, cleanUrl.length - suffix.length);
+    }
+
+    // すでにutmパラメータが付与されている場合はそのまま返す
+    if (cleanUrl.includes('utm_source=')) return cleanUrl + suffix;
 
     // 赤沢温泉旅館の対象プラン・公式URLかをチェック
     let matchedPlanKey = '';
@@ -773,13 +782,12 @@ function attachTrackingParams(text, customer, channelOverride) {
       }
     }
 
-    if (cleanUrl.includes('x.gd') || cleanUrl.includes('akasawaonsen.com') || matchedPlanKey) {
-      const sep = cleanUrl.includes('?') ? '&' : '?';
-      const planContentParam = matchedPlanKey ? `&utm_content=${matchedPlanKey}` : '';
-      const trackingParams = `utm_source=${encodeURIComponent(channel)}&utm_medium=crm&utm_campaign=${encodeURIComponent(scenario)}${planContentParam}&cid=${encodeURIComponent(cid)}`;
-      return `${cleanUrl}${sep}${trackingParams}`;
-    }
-    return cleanUrl;
+    // すべてのhttp/https URL、または赤沢関連URLに追跡パラメータを自動合成
+    const sep = cleanUrl.includes('?') ? '&' : '?';
+    const planContentParam = matchedPlanKey ? `&utm_content=${matchedPlanKey}` : '';
+    const trackingParams = `utm_source=${encodeURIComponent(channel)}&utm_medium=crm&utm_campaign=${encodeURIComponent(scenario)}${planContentParam}&cid=${encodeURIComponent(cid)}`;
+    
+    return `${cleanUrl}${sep}${trackingParams}${suffix}`;
   });
 }
 
