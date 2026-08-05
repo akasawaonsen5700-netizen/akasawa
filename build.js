@@ -169,8 +169,10 @@ if (fs.existsSync(endoFuncsSrc)) {
 console.log('Copying akasawa-review...');
 copyFolderSync(path.join(__dirname, 'apps', 'akasawa-review', 'public'), path.join(distDir, 'akasawa-review'));
 
-// 7.6. apps/nasumid-p のコピー (静的)
-console.log('Copying nasumid-p...');
+// 7.6. apps/nasumid-p (那須ユートピア美野沢) のコピー
+console.log('Copying nasu-utopia...');
+copyFolderSync(path.join(__dirname, 'apps', 'nasumid-p'), path.join(distDir, 'nasu-utopia'));
+copyFolderSync(path.join(__dirname, 'apps', 'nasumid-p'), path.join(distDir, 'nasu-utopia-ai'));
 copyFolderSync(path.join(__dirname, 'apps', 'nasumid-p'), path.join(distDir, 'nasumid-p'));
 
 // akasawa-review functions

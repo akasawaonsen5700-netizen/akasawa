@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ホテル・旅館 AIグループ統括マスターダッシュボード</title>
+  <title>ホテル・旅館 AIグループ 10施設統括マスターダッシュボード</title>
   <!-- Google Fonts: Cinzel & Noto Serif JP -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,7 +38,7 @@
 
     header {
       text-align: center;
-      padding: 4.5rem 1rem 2.5rem;
+      padding: 4rem 1rem 2rem;
     }
 
     .brand-title {
@@ -51,48 +51,48 @@
     }
 
     .main-title {
-      font-size: 2.5rem;
+      font-size: 2.4rem;
       font-weight: 700;
       letter-spacing: 0.1em;
-      margin-bottom: 1.2rem;
+      margin-bottom: 1rem;
       text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
     }
 
     .subtitle {
       font-size: 1.05rem;
       color: var(--text-sub);
-      max-width: 850px;
+      max-width: 900px;
       margin: 0 auto;
       line-height: 1.8;
       font-weight: 300;
     }
 
     .container {
-      max-width: 1240px;
+      max-width: 1380px;
       margin: 0 auto;
       padding: 0 2rem;
       width: 100%;
       flex-grow: 1;
       display: flex;
       flex-direction: column;
-      gap: 3.5rem;
+      gap: 3rem;
     }
 
     .facility-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 2.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 2rem;
       margin-top: 1rem;
     }
 
     .facility-card {
       background: var(--card-bg);
       border: 1.5px solid var(--border-color);
-      border-radius: 20px;
-      padding: 2.5rem;
+      border-radius: 18px;
+      padding: 2rem;
       text-decoration: none;
       color: var(--text-main);
-      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -103,9 +103,47 @@
     }
 
     .facility-card:hover {
-      transform: translateY(-8px);
+      transform: translateY(-6px);
       border-color: var(--accent-color);
-      box-shadow: 0 25px 50px rgba(212, 175, 55, 0.25);
+      box-shadow: 0 22px 45px rgba(212, 175, 55, 0.25);
+    }
+
+    .facility-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .facility-num {
+      font-family: 'Cinzel', serif;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: var(--accent-color);
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      padding: 2px 10px;
+      border-radius: 12px;
+    }
+
+    .status-active {
+      font-size: 0.75rem;
+      color: #52c41a;
+      background: rgba(82, 196, 26, 0.15);
+      border: 1px solid #52c41a;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-weight: bold;
+    }
+
+    .status-standby {
+      font-size: 0.75rem;
+      color: #faad14;
+      background: rgba(250, 173, 20, 0.15);
+      border: 1px solid #faad14;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-weight: bold;
     }
 
     .facility-badge {
@@ -114,32 +152,33 @@
       border-radius: 20px;
       font-size: 0.75rem;
       font-weight: bold;
-      margin-bottom: 1.2rem;
+      margin-bottom: 0.8rem;
       letter-spacing: 0.05em;
     }
 
     .facility-title {
-      font-size: 1.7rem;
+      font-size: 1.5rem;
       font-weight: 700;
-      margin-bottom: 0.8rem;
+      margin-bottom: 0.6rem;
     }
 
     .facility-url {
       font-family: monospace;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: var(--accent-color);
-      margin-bottom: 1rem;
+      margin-bottom: 0.9rem;
       background: rgba(0,0,0,0.4);
       padding: 4px 10px;
       border-radius: 6px;
       display: inline-block;
+      word-break: break-all;
     }
 
     .facility-desc {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: var(--text-sub);
-      line-height: 1.7;
-      margin-bottom: 1.5rem;
+      line-height: 1.6;
+      margin-bottom: 1.2rem;
     }
 
     .btn-launch {
@@ -147,9 +186,9 @@
       color: #05120c;
       font-weight: bold;
       text-align: center;
-      padding: 14px 20px;
-      border-radius: 12px;
-      font-size: 1rem;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.95rem;
       letter-spacing: 0.05em;
       transition: all 0.3s ease;
       display: block;
@@ -164,7 +203,7 @@
 
     footer {
       text-align: center;
-      padding: 4rem 1rem;
+      padding: 3rem 1rem;
       color: var(--text-sub);
       border-top: 1px solid rgba(255, 255, 255, 0.05);
       font-size: 0.85rem;
@@ -173,76 +212,207 @@
 </head>
 <body>
 
-  <div class="container" style="padding-top: 2rem; padding-bottom: 5rem;">
+  <div class="container" style="padding-top: 1.5rem; padding-bottom: 4rem;">
     <header>
       <div class="brand-title">Executive Master Dashboard</div>
       <h1 class="main-title">俺の全施設 統括管理ダッシュボード</h1>
       <p class="subtitle">
-        あなたが統括管理するすべてのホテル・旅館の独立AIシステム一覧です。<br>
-        各カードをクリックすると、対象の専用AIポータル（URL）へ直球で移動します。
+        あなたが統括管理する全10施設の独立AIシステムポータル一覧です。<br>
+        各カードをクリックすると、対象施設の専用AIポータルへ直接アクセスできます。
       </p>
     </header>
 
-    <!-- 管理施設一覧 -->
+    <!-- 全10施設 統合成果管理サマリー -->
+    <section style="background: rgba(13, 31, 23, 0.65); border: 1.5px solid var(--border-color); border-radius: 16px; padding: 1.8rem;">
+      <h3 style="color: var(--accent-color); font-size: 1.25rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+        📊 10施設 全体統合管理サマリー
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem; text-align: center;">
+        <div style="background: rgba(0,0,0,0.4); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(212,175,55,0.2);">
+          <div style="font-size: 0.85rem; color: var(--text-sub);">統括管理施設数</div>
+          <div style="font-size: 2rem; font-weight: bold; color: var(--accent-color);">10 施設</div>
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(82,196,26,0.2);">
+          <div style="font-size: 0.85rem; color: var(--text-sub);">月間AI自動応答総数</div>
+          <div style="font-size: 2rem; font-weight: bold; color: #52c41a;">8,950 件</div>
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(106,210,255,0.2);">
+          <div style="font-size: 0.85rem; color: var(--text-sub);">AI追跡・自動経由売上</div>
+          <div style="font-size: 2rem; font-weight: bold; color: #6ad2ff;">¥18,450,000</div>
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(255,157,66,0.2);">
+          <div style="font-size: 0.85rem; color: var(--text-sub);">平均AI接客完了率</div>
+          <div style="font-size: 2rem; font-weight: bold; color: #ff9d42;">98.4 %</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 管理施設一覧 (10施設) -->
     <section>
-      <h2 style="font-size: 1.4rem; color: var(--accent-color); margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-        🏢 管理対象施設一覧
+      <h2 style="font-size: 1.35rem; color: var(--accent-color); margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+        🏢 統括管理対象 10施設一覧
       </h2>
 
       <div class="facility-grid">
+
         <!-- 1. 赤沢温泉旅館 -->
-        <a href="https://akasawa.netlify.app/" class="facility-card">
+        <div class="facility-card">
           <div>
+            <div class="facility-header">
+              <span class="facility-num">#01</span>
+              <span class="status-active">🟢 AIフル自動稼働中</span>
+            </div>
             <span class="facility-badge" style="background: rgba(106, 210, 255, 0.15); color: #6ad2ff; border: 1px solid #6ad2ff;">♨️ 温泉旅館（ウェルネス・静養）</span>
             <h3 class="facility-title">赤沢温泉旅館</h3>
-            <div class="facility-url">https://akasawa.netlify.app/</div>
-            <p class="facility-desc">猫とぬる湯と渓流にほどける静養型ウェルネスの小宿。クリックすると赤沢温泉旅館の専用サイト（https://akasawa.netlify.app/）へ移動します。</p>
+            <div class="facility-url">https://hotel-ai.netlify.app/akasawa-dp/</div>
+            <p class="facility-desc">猫とぬる湯と渓流にほどける静養型ウェルネスの小宿。AI予約ダッシュボード、口コミ分析、LINE/メールAI完備。</p>
           </div>
-          <div class="btn-launch">https://akasawa.netlify.app/ を開く ➔</div>
-        </a>
+          <a href="https://hotel-ai.netlify.app/akasawa-dp/" class="btn-launch">赤沢温泉 AIポータルを開く ➔</a>
+        </div>
 
         <!-- 2. 那須ユートピア美野沢 -->
-        <a href="https://nasu-utopia-ai.netlify.app/" class="facility-card">
+        <div class="facility-card">
           <div>
-            <span class="facility-badge" style="background: rgba(255, 157, 66, 0.15); color: #ff9d42; border: 1px solid #ff9d42;">🏕️ リゾート・ヴィラ＆キャンプ</span>
+            <div class="facility-header">
+              <span class="facility-num">#02</span>
+              <span class="status-active">🟢 AIフル自動稼働中</span>
+            </div>
+            <span class="facility-badge" style="background: rgba(255, 157, 66, 0.15); color: #ff9d42; border: 1px solid #ff9d42;">🏕️ リゾート・ヴィラ＆サウナ</span>
             <h3 class="facility-title">那須ユートピア美野沢</h3>
-            <div class="facility-url" style="color: #ff9d42;">https://nasu-utopia-ai.netlify.app/</div>
-            <p class="facility-desc">アート×サウナ×大自然で五感を解き放つ廃校リノベーションリゾート。クリックすると那須ユートピア専用サイトへ移動します。</p>
+            <div class="facility-url">https://hotel-ai.netlify.app/nasu-utopia/</div>
+            <p class="facility-desc">アート×サウナ×大自然で五感を解き放つ廃校リノベーションリゾート。AIチェックイン案内・ヴィラ予約AI完備。</p>
           </div>
-          <div class="btn-launch" style="background: linear-gradient(135deg, #ff9d42 0%, #c46914 100%); color: #fff; box-shadow: 0 4px 15px rgba(255, 157, 66, 0.3);">https://nasu-utopia-ai.netlify.app/ を開く ➔</div>
-        </a>
-
-        <!-- 3. 新規施設追加カード -->
-        <div class="facility-card" style="border-style: dashed; border-color: rgba(255,255,255,0.2); opacity: 0.7; align-items: center; justify-content: center; text-align: center; cursor: pointer;" onclick="alert('新規施設の追加登録は、新しい専用サイトURLを割り当てることで即時追加拡張できます。')">
-          <div style="font-size: 3rem; margin-bottom: 1rem; color: var(--accent-color);">➕</div>
-          <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">新規施設を追加</h3>
-          <p style="font-size: 0.85rem; color: var(--text-sub);">新しいホテルや旅館のAIシステムをグループに追加登録できます。</p>
+          <a href="https://hotel-ai.netlify.app/nasu-utopia/" class="btn-launch" style="background: linear-gradient(135deg, #ff9d42 0%, #c46914 100%); color: #fff; box-shadow: 0 4px 15px rgba(255, 157, 66, 0.3);">那須ユートピア AIポータルを開く ➔</a>
         </div>
+
+        <!-- 3. 箱根強羅 AIヴィラ -->
+        <div class="facility-card">
+          <div>
+            <div class="facility-header">
+              <span class="facility-num">#03</span>
+              <span class="status-standby">🟡 AI順次設定中</span>
+            </div>
+            <span class="facility-badge" style="background: rgba(186, 133, 255, 0.15); color: #ba85ff; border: 1px solid #ba85ff;">♨️ 温泉リゾートヴィラ</span>
+            <h3 class="facility-title">箱根強羅 AIヴィラ</h3>
+            <div class="facility-url">https://hotel-ai.netlify.app/hakone-villa/</div>
+            <p class="facility-desc">箱根強羅の源泉かけ流し高級貸し切りヴィラ。AIコンシェルジュによる専用ディナー手配＆事前Web問診システム。</p>
+          </div>
+          <a href="https://hotel-ai.netlify.app/hakone-villa/" class="btn-launch" style="background: linear-gradient(135deg, #ba85ff 0%, #7635c4 100%); color: #fff;">箱根強羅 AIポータルを開く ➔</a>
+        </div>
+
+        <!-- 4. 熱海オーシャンビューリゾート -->
+        <div class="facility-card">
+          <div>
+            <div class="facility-header">
+              <span class="facility-num">#04</span>
+              <span class="status-active">🟢 AIフル自動稼働中</span>
+            </div>
+            <span class="facility-badge" style="background: rgba(82, 196, 26, 0.15); color: #52c41a; border: 1px solid #52c41a;">🌊 絶景オーシャンホテル</span>
+            <h3 class="facility-title">熱海オーシャンビューリゾート</h3>
+            <div class="facility-url">https://hotel-ai.netlify.app/atami-resort/</div>
+            <p class="facility-desc">相模湾を一望する絶景リゾートホテル。花火大会予約連動AIおよび自動レベニューマネジメント搭載。</p>
+          </div>
+          <a href="https://hotel-ai.netlify.app/atami-resort/" class="btn-launch" style="background: linear-gradient(135deg, #52c41a 0%, #237804 100%); color: #fff;">熱海リゾート AIポータルを開く ➔</a>
+        </div>
+
+        <!-- 5. 軽井沢フォレストロッジ -->
+        <div class="facility-card">
+          <div>
+            <div class="facility-header">
+              <span class="facility-num">#05</span>
+              <span class="status-standby">🟡 AI順次設定中</span>
+            </div>
+            <span class="facility-badge" style="background: rgba(250, 219, 20, 0.15); color: #fadbe0; border: 1px solid #fadbe0;">🌲 森林グランピング＆ロッジ</span>
+            <h3 class="facility-title">軽井沢フォレストロッジ</h3>
+            <div class="facility-url">https://hotel-ai.netlify.app/karuizawa-lodge/</div>
+            <p class="facility-desc">軽井沢の豊かな森に囲まれた上質なロッジ。BBQ＆アクティビティ自動予約AIおよびペット同伴案内AI。</p>
+          </div>
+          <a href="https://hotel-ai.netlify.app/karuizawa-lodge/" class="btn-launch">軽井沢ロッジ AIポータルを開く ➔</a>
+        </div>
+
+        <!-- 6. 京都祇園 伝統庵AI -->
+        <div class="facility-card">
+          <div>
+            <div class="facility-header">
+              <span class="facility-num">#06</span>
+              <span class="status-active">🟢 多言語AI稼働中</span>
+            </div>
+            <span class="facility-badge" style="background: rgba(245, 34, 45, 0.15); color: #ff7875; border: 1px solid #ff7875;">👘 割烹・京町家旅館</span>
+            <h3 class="facility-title">京都祇園 伝統庵AI</h3>
+            <div class="facility-url">https://hotel-ai.netlify.app/kyoto-gion/</div>
+            <p class="facility-desc">祇園の歴史と伝統が息づく町家旅館。日・英・中・韓 4カ国語対応のインバウンド自動AIコンシェルジュ完備。</p>
+          </div>
+          <a href="https://hotel-ai.netlify.app/kyoto-gion/" class="btn-launch" style="background: linear-gradient(135deg, #ff7875 0%, #a8071a 100%); color: #fff;">京都祇園 AIポータルを開く ➔</a>
+        </div>
+
+        <!-- 7. 富良野スノーリゾート -->
+        <div class="facility-card">
+          <div>
+            <div class="facility-header">
+              <span class="facility-num">#07</span>
+              <span class="status-standby">🟡 AI順次設定中</span>
+            </div>
+            <span class="facility-badge" style="background: rgba(106, 210, 255, 0.15); color: #6ad2ff; border: 1px solid #6ad2ff;">⛷️ マウンテン＆スキーリゾート</span>
+            <h3 class="facility-title">富良野スノーリゾート</h3>
+            <div class="facility-url">https://hotel-ai.netlify.app/furano-snow/</div>
+            <p class="facility-desc">パウダースノーを楽しむ極上スノーリゾート。レンタルスキー・レッスン自動調整AIシステム連動。</p>
+          </div>
+          <a href="https://hotel-ai.netlify.app/furano-snow/" class="btn-launch">富良野 AIポータルを開く ➔</a>
+        </div>
+
+        <!-- 8. 伊勢志摩ベイサイドヴィラ -->
+        <div class="facility-card">
+          <div>
+            <div class="facility-header">
+              <span class="facility-num">#08</span>
+              <span class="status-active">🟢 AIフル自動稼働中</span>
+            </div>
+            <span class="facility-badge" style="background: rgba(24, 144, 255, 0.15); color: #40a9ff; border: 1px solid #40a9ff;">🏝️ ベイサイドプライベートヴィラ</span>
+            <h3 class="facility-title">伊勢志摩ベイサイドヴィラ</h3>
+            <div class="facility-url">https://hotel-ai.netlify.app/iseshima-villa/</div>
+            <p class="facility-desc">英虞湾の絶景と伊勢志摩の美食を味わうプライベートヴィラ。クルーザーチャーター予約AIおよびスマートキー連携。</p>
+          </div>
+          <a href="https://hotel-ai.netlify.app/iseshima-villa/" class="btn-launch" style="background: linear-gradient(135deg, #40a9ff 0%, #096dd9 100%); color: #fff;">伊勢志摩 AIポータルを開く ➔</a>
+        </div>
+
+        <!-- 9. 由布院 温泉離れAI -->
+        <div class="facility-card">
+          <div>
+            <div class="facility-header">
+              <span class="facility-num">#09</span>
+              <span class="status-active">🟢 AIフル自動稼働中</span>
+            </div>
+            <span class="facility-badge" style="background: rgba(212, 175, 55, 0.15); color: #d4af37; border: 1px solid #d4af37;">♨️ 隠れ家温泉離れ</span>
+            <h3 class="facility-title">由布院 温泉離れAI</h3>
+            <div class="facility-url">https://hotel-ai.netlify.app/yufuin-hanare/</div>
+            <p class="facility-desc">由布岳を望む全室露天風呂付き離れ宿。静寂な時間を演出する完全非接触AIチェックイン＆専用食事処案内AI。</p>
+          </div>
+          <a href="https://hotel-ai.netlify.app/yufuin-hanare/" class="btn-launch">由布院 AIポータルを開く ➔</a>
+        </div>
+
+        <!-- 10. 宮古島 プレミアムスイート -->
+        <div class="facility-card">
+          <div>
+            <div class="facility-header">
+              <span class="facility-num">#10</span>
+              <span class="status-active">🟢 AIフル自動稼働中</span>
+            </div>
+            <span class="facility-badge" style="background: rgba(255, 133, 192, 0.15); color: #ff85c0; border: 1px solid #ff85c0;">🌺 離島高級ビーチスイート</span>
+            <h3 class="facility-title">宮古島 プレミアムスイート</h3>
+            <div class="facility-url">https://hotel-ai.netlify.app/miyakojima-suite/</div>
+            <p class="facility-desc">宮古ブルーの海が広がる最高級プライベートリゾート。専任AIコンシェルジュが24時間LINEで観光＆アクティビティをアテンド。</p>
+          </div>
+          <a href="https://hotel-ai.netlify.app/miyakojima-suite/" class="btn-launch" style="background: linear-gradient(135deg, #ff85c0 0%, #c41d7f 100%); color: #fff;">宮古島 AIポータルを開く ➔</a>
+        </div>
+
       </div>
     </section>
 
-    <!-- グループ横断AI成果サマリー -->
-    <section style="background: rgba(13, 31, 23, 0.5); border: 1px solid var(--border-color); border-radius: 16px; padding: 2rem; margin-top: 2rem;">
-      <h3 style="color: var(--accent-color); font-size: 1.2rem; margin-bottom: 1rem;">📊 全施設 統合成果管理サマリー</h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; text-align: center;">
-        <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-          <div style="font-size: 0.85rem; color: var(--text-sub);">管理施設数</div>
-          <div style="font-size: 1.8rem; font-weight: bold; color: var(--accent-color);">2 施設</div>
-        </div>
-        <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-          <div style="font-size: 0.85rem; color: var(--text-sub);">月間AI自動回答数</div>
-          <div style="font-size: 1.8rem; font-weight: bold; color: #52c41a;">1,420 件</div>
-        </div>
-        <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-          <div style="font-size: 0.85rem; color: var(--text-sub);">メール・LINE追跡売上</div>
-          <div style="font-size: 1.8rem; font-weight: bold; color: #6ad2ff;">¥3,850,000</div>
-        </div>
-      </div>
-    </section>
   </div>
 
   <footer>
-    <p>Executive Master Dashboard &copy; 2026</p>
+    <p>Executive Master Dashboard &copy; 2026 | 全10施設 統合AIオペレーションシステム</p>
   </footer>
 </body>
 </html>
+
