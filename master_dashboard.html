@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ホテル・旅館 AIグループ統括マスターダッシュボード</title>
+  <!-- Google Fonts: Cinzel & Noto Serif JP -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #030a07;
+      --card-bg: rgba(13, 31, 23, 0.8);
+      --border-color: rgba(212, 175, 55, 0.35);
+      --accent-color: #d4af37; /* Gold */
+      --text-main: #f5f2eb;
+      --text-sub: #a4b3ab;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Noto Serif JP', serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-x: hidden;
+      background-image: radial-gradient(circle at 50% -20%, #122b1d 0%, var(--bg-color) 75%);
+    }
+
+    header {
+      text-align: center;
+      padding: 4rem 1rem 2rem;
+    }
+
+    .brand-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.35em;
+      color: var(--accent-color);
+      margin-bottom: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    .main-title {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      margin-bottom: 1.2rem;
+      text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      color: var(--text-sub);
+      max-width: 850px;
+      margin: 0 auto;
+      line-height: 1.8;
+      font-weight: 300;
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      width: 100%;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+    }
+
+    .facility-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2.5rem;
+      margin-top: 1rem;
+    }
+
+    .facility-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--border-color);
+      border-radius: 20px;
+      padding: 2.5rem;
+      text-decoration: none;
+      color: var(--text-main);
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    .facility-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--accent-color);
+      box-shadow: 0 25px 50px rgba(212, 175, 55, 0.25);
+    }
+
+    .facility-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      margin-bottom: 1.2rem;
+      letter-spacing: 0.05em;
+    }
+
+    .facility-title {
+      font-size: 1.7rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+    }
+
+    .facility-url {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--accent-color);
+      margin-bottom: 1rem;
+      background: rgba(0,0,0,0.4);
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+
+    .facility-desc {
+      font-size: 0.95rem;
+      color: var(--text-sub);
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-launch {
+      background: linear-gradient(135deg, #d4af37 0%, #aa8513 100%);
+      color: #05120c;
+      font-weight: bold;
+      text-align: center;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      transition: all 0.3s ease;
+      display: block;
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    }
+
+    .btn-launch:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+    }
+
+    footer {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-sub);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" style="padding-top: 3rem; padding-bottom: 4rem;">
+    <header>
+      <div class="brand-title">Executive Master Dashboard</div>
+      <h1 class="main-title">あなた専用 統括マスターダッシュボード</h1>
+      <p class="subtitle">
+        あなたが管轄するすべてのホテル・旅館の独立AIシステム一覧です。<br>
+        各施設の専用システムへアクセスし、それぞれの独立したAIポータルを管理・確認できます。
+      </p>
+    </header>
+
+    <!-- 管理施設一覧 -->
+    <section>
+      <h2 style="font-size: 1.4rem; color: var(--accent-color); margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+        🏢 独立管理対象施設一覧
+      </h2>
+
+      <div class="facility-grid">
+        <!-- 1. 赤沢温泉旅館 -->
+        <div class="facility-card">
+          <div>
+            <span class="facility-badge" style="background: rgba(106, 210, 255, 0.15); color: #6ad2ff; border: 1px solid #6ad2ff;">♨️ 温泉旅館（ウェルネス・静養）</span>
+            <h3 class="facility-title">赤沢温泉旅館</h3>
+            <div class="facility-url">https://akasawa.netlify.app/</div>
+            <p class="facility-desc">猫とぬる湯と渓流にほどける、静養型ウェルネスの小宿。他施設が一切混ざらない100%赤沢温泉旅館専用の独立AIシステムポータルです。</p>
+          </div>
+          <a href="https://akasawa.netlify.app/" target="_blank" class="btn-launch">赤沢温泉旅館のAIポータルを開く ➔</a>
+        </div>
+
+        <!-- 2. 那須ユートピア美野沢 -->
+        <div class="facility-card">
+          <div>
+            <span class="facility-badge" style="background: rgba(255, 157, 66, 0.15); color: #ff9d42; border: 1px solid #ff9d42;">🏕️ リゾート・ヴィラ＆キャンプ</span>
+            <h3 class="facility-title">那須ユートピア美野沢</h3>
+            <div class="facility-url" style="color: #ff9d42;">https://nasu-utopia-ai.netlify.app/</div>
+            <p class="facility-desc">アート×サウナ×大自然で五感を解き放つ、廃校リノベーションリゾート。赤沢温泉とは完全に分離された那須ユートピア専用の独立AIシステムポータルです。</p>
+          </div>
+          <a href="https://nasu-utopia-ai.netlify.app/" target="_blank" class="btn-launch" style="background: linear-gradient(135deg, #ff9d42 0%, #c46914 100%); color: #fff; box-shadow: 0 4px 15px rgba(255, 157, 66, 0.3);">那須ユートピアのAIポータルを開く ➔</a>
+        </div>
+
+        <!-- 3. 新規施設追加カード -->
+        <div class="facility-card" style="border-style: dashed; border-color: rgba(255,255,255,0.2); opacity: 0.7; align-items: center; justify-content: center; text-align: center; cursor: pointer;" onclick="alert('新規施設（3施設目・4施設目）の専用システム登録は、専用リポジトリ・設定ファイルを新規生成することで即時拡張できます。')">
+          <div style="font-size: 3rem; margin-bottom: 1rem; color: var(--accent-color);">➕</div>
+          <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">新規施設を追加</h3>
+          <p style="font-size: 0.85rem; color: var(--text-sub);">新しいホテルや旅館のAIシステムをわずか数分でグループに追加登録できます。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- グループ横断AI成果サマリー -->
+    <section style="background: rgba(13, 31, 23, 0.5); border: 1px solid var(--border-color); border-radius: 16px; padding: 2rem; margin-top: 2rem;">
+      <h3 style="color: var(--accent-color); font-size: 1.2rem; margin-bottom: 1rem;">📊 全施設 統合成果管理サマリー</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; text-align: center;">
+        <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+          <div style="font-size: 0.85rem; color: var(--text-sub);">管理施設数</div>
+          <div style="font-size: 1.8rem; font-weight: bold; color: var(--accent-color);">2 施設</div>
+        </div>
+        <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+          <div style="font-size: 0.85rem; color: var(--text-sub);">月間AI自動回答数</div>
+          <div style="font-size: 1.8rem; font-weight: bold; color: #52c41a;">1,420 件</div>
+        </div>
+        <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+          <div style="font-size: 0.85rem; color: var(--text-sub);">メール・LINE追跡売上</div>
+          <div style="font-size: 1.8rem; font-weight: bold; color: #6ad2ff;">¥3,850,000</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p>Executive Master Dashboard &copy; 2026</p>
+  </footer>
+</body>
+</html>
