@@ -154,12 +154,18 @@ async function generatePlan() {
   el.statusBadge.classList.remove('active');
 
   try {
-    const response = await fetch('/api/generate-plan', {
+    function getActiveTenantId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('tenant') || localStorage.getItem('active_tenant_id') || 'akazawa-onsen';
+    }
+    const tenantId = getActiveTenantId();
+
+    const response = await fetch('/.netlify/functions/generate-plan', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ direction, customNotes })
+      body: JSON.stringify({ direction, customNotes, tenantId })
     });
 
     const data = await response.json();

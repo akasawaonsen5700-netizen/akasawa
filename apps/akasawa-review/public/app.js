@@ -19,11 +19,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒でタイムアウト
 
+    function getActiveTenantId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('tenant') || localStorage.getItem('active_tenant_id') || 'akazawa-onsen';
+    }
+
     try {
+      const tenantId = getActiveTenantId();
       const response = await fetch('/.netlify/functions/generate-reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reviewText: text }),
+        body: JSON.stringify({ reviewText: text, tenantId }),
         signal: controller.signal
       });
 

@@ -451,21 +451,59 @@
       'akazawa-onsen': {
         brand: 'Akasawa Onsen Ryokan',
         title: '赤沢温泉旅館 統合AIシステムポータル',
-        subtitle: '宿のこだわり（哲学）とお客様のリアルな声（一次情報）がすべてのAIエージェント間でリアルタイムに連動。<br>バラバラに動くのではなく、お互いにデータを共有しバトンを渡すことで、赤沢温泉旅館のブランド価値と集客・売上を最大化します。'
+        subtitle: '宿のこだわり（哲学）とお客様のリアルな声（一次情報）がすべてのAIエージェント間でリアルタイムに連動。<br>バラバラに動くのではなく、お互いにデータを共有しバトンを渡すことで、赤沢温泉旅館のブランド価値と集客・売上を最大化します。',
+        cards: {
+          chat: { desc: '館内設備・貸切風呂状況・のびのび過ごす猫たちとの接し方など、ぬる湯と静養をテーマに自動回答するAIコンシェルジュ。' },
+          plan: { desc: '「ぬる湯」「創作会席」「静養」など赤沢温泉旅館の強みを最大限に活かした売上最大化プランを自律作成。' },
+          review: { desc: '遠藤正俊オーナーのトーン＆マナーで、ぬる湯や静養への感謝を込めたユーモア溢れる返信を3パターン自動作成。' }
+        }
       },
       'nasu-utopia': {
         brand: 'Nasu Utopia Minosawa',
         title: '那須ユートピア美野沢 統合AIシステムポータル',
-        subtitle: 'アート、サウナ、BBQ。五感を解放する那須の隠れ家。<br>AIエージェントがすべての顧客体験をシームレスに繋ぎ、忘れられない滞在を創り出します。'
+        subtitle: 'アート、サウナ、BBQ、ペット同伴ヴィラ。五感を解放する那須の隠れ家リゾート。<br>すべてのAIエージェントが那須ユートピアの魅力を最大限に引き出し、集客と予約獲得を自動化します。',
+        cards: {
+          chat: { desc: '貸切バレルサウナ予約・手ぶらBBQ・ドッグランヴィラ利用規約・廃校アート体験など、那須ユートピアのFAQを自動回答する多言語AI。' },
+          plan: { desc: '「貸切バレルサウナ付きプラン」「愛犬と泊まるプライベートヴィラ」「手ぶらBBQファミリー体験」など魅力的なプランを自律作成。' },
+          review: { desc: '那須ユートピア美野沢支配人のトーンで、アートや整い体験への感謝と再訪を促す温かい返信を自動作成。' }
+        }
       }
     };
 
-    document.getElementById('globalTenantSelect').addEventListener('change', (e) => {
-      const data = tenantData[e.target.value];
+    function updateTenantState(tenantId) {
+      const data = tenantData[tenantId] || tenantData['akazawa-onsen'];
       document.getElementById('tenantBrandTitle').textContent = data.brand;
       document.getElementById('tenantMainTitle').textContent = data.title;
       document.getElementById('tenantSubtitle').innerHTML = data.subtitle;
-    });
+      
+      // localStorageへの保持
+      localStorage.setItem('active_tenant_id', tenantId);
+
+      // ポータル上の全ツールカードへの href パラメータ（?tenant=...）動的連動更新
+      const cards = document.querySelectorAll('a.card');
+      cards.forEach(card => {
+        let rawHref = card.getAttribute('data-raw-href') || card.getAttribute('href');
+        if (!card.getAttribute('data-raw-href')) {
+          card.setAttribute('data-raw-href', rawHref);
+        }
+        // 古いクエリを取り除く
+        const cleanHref = rawHref.split('?')[0];
+        card.setAttribute('href', `${cleanHref}?tenant=${tenantId}`);
+      });
+    }
+
+    const selectEl = document.getElementById('globalTenantSelect');
+    
+    // 初期状態の復元
+    const savedTenant = localStorage.getItem('active_tenant_id') || 'akazawa-onsen';
+    if (selectEl) {
+      selectEl.value = savedTenant;
+      updateTenantState(savedTenant);
+
+      selectEl.addEventListener('change', (e) => {
+        updateTenantState(e.target.value);
+      });
+    }
   </script>
 
   <main class="container">
