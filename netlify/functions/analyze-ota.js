@@ -26,7 +26,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { type, payload, imageData } = JSON.parse(event.body || '{}');
+    const { type, payload, imageData, tenantId = 'akazawa-onsen' } = JSON.parse(event.body || '{}');
 
     if (!type || !payload) {
       return json(400, { error: 'type and payload are required.' });
@@ -37,9 +37,12 @@ exports.handler = async (event) => {
 
     let systemPrompt = '';
 
-    // 赤沢温泉旅館の強み（RAG）を共有フォルダから読み込む
+    // 施設ブランド強み・動的テナントRAGを共有フォルダから読み込む
     const ryokanRagPath = path.join(__dirname, '_shared', 'ryokan_rag.md');
-    const reasonToBuyPath = path.join(__dirname, '_shared', 'reason_to_buy_rag.md');
+    let reasonToBuyPath = path.join(__dirname, '_shared', 'tenants', tenantId, 'reason_to_buy_rag.md');
+    if (!fs.existsSync(reasonToBuyPath)) {
+      reasonToBuyPath = path.join(__dirname, '_shared', 'reason_to_buy_rag.md');
+    }
     
     let ryokanRag = '';
     let reasonToBuyRag = '';

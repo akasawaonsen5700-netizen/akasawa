@@ -26,7 +26,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { review, theme, length, tone, target } = JSON.parse(event.body || '{}');
+    const { review, theme, length, tone, target, tenantId = 'akazawa-onsen' } = JSON.parse(event.body || '{}');
 
     if (!review) {
       return json(400, { error: 'クチコミの入力（元データ）は必須です。' });
@@ -35,9 +35,12 @@ exports.handler = async (event) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    // 赤沢温泉旅館の強み（RAG）を共有フォルダから読み込む
+    // 施設ブランド強み・動的テナントRAGを共有フォルダから読み込む
     const philosophyPath = path.join(__dirname, '_shared', 'ryokan_rag.md');
-    const reasonToBuyPath = path.join(__dirname, '_shared', 'reason_to_buy_rag.md');
+    let reasonToBuyPath = path.join(__dirname, '_shared', 'tenants', tenantId, 'reason_to_buy_rag.md');
+    if (!fs.existsSync(reasonToBuyPath)) {
+      reasonToBuyPath = path.join(__dirname, '_shared', 'reason_to_buy_rag.md');
+    }
     
     let philosophyContext = '';
     let reasonToBuyContext = '';

@@ -14,7 +14,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { reviewText } = JSON.parse(event.body);
+    const { reviewText, tenantId = 'akazawa-onsen' } = JSON.parse(event.body);
     if (!reviewText) {
       return { statusCode: 400, body: JSON.stringify({ error: 'reviewText is required' }) };
     }
@@ -22,7 +22,12 @@ exports.handler = async (event, context) => {
     // Read RAG data
     const philosophyPath = path.join(__dirname, '_shared', 'owner-philosophy.md');
     const pastReviewsPath = path.join(__dirname, '_shared', 'past_reviews.md');
-    const reasonToBuyPath = path.join(__dirname, '_shared', 'reason_to_buy_rag.md');
+    
+    // 動的テナントRAGのパス解決
+    let reasonToBuyPath = path.join(__dirname, '_shared', 'tenants', tenantId, 'reason_to_buy_rag.md');
+    if (!fs.existsSync(reasonToBuyPath)) {
+      reasonToBuyPath = path.join(__dirname, '_shared', 'reason_to_buy_rag.md');
+    }
     
     const philosophyText = fs.readFileSync(philosophyPath, 'utf8');
     const pastReviewsText = fs.readFileSync(pastReviewsPath, 'utf8');

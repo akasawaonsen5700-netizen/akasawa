@@ -228,19 +228,245 @@
       color: var(--text-sub);
       border-top: 1px solid rgba(255, 255, 255, 0.05);
       font-size: 0.85rem;
+      overflow-x: hidden;
+      background-image: radial-gradient(circle at 50% -20%, #173625 0%, var(--bg-color) 75%);
+    }
+
+    header {
+      text-align: center;
+      padding: 5rem 1rem 3rem;
+    }
+
+    .brand-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.6rem;
+      letter-spacing: 0.35em;
+      color: var(--accent-color);
+      margin-bottom: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    .main-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--text-sub);
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.9;
+      font-weight: 300;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      width: 100%;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4rem;
+    }
+
+    /* Integration Benefits Section */
+    .benefit-section {
+      background: rgba(13, 31, 23, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 3rem;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    .section-title {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--accent-color);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid var(--border-color);
+      letter-spacing: 0.05em;
+    }
+
+    .benefit-lead {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      margin-bottom: 2rem;
+      font-weight: 400;
+    }
+
+    .benefit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+    }
+
+    .benefit-item h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .benefit-item p {
+      font-size: 0.95rem;
+      color: var(--text-sub);
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    /* App Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 2.5rem;
+      width: 100%;
+      margin-bottom: 4rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 3rem 2.2rem;
+      text-decoration: none;
+      color: var(--text-main);
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.65s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-10px);
+      border-color: rgba(212, 175, 55, 0.7);
+      box-shadow: 0 25px 50px rgba(212, 175, 55, 0.2);
+    }
+
+    .card:hover::before {
+      transform: translateX(100%);
+    }
+
+    .card-icon {
+      font-size: 2.8rem;
+      margin-bottom: 1.8rem;
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+    }
+
+    .card-desc {
+      font-size: 0.95rem;
+      color: var(--text-sub);
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+      font-weight: 300;
+    }
+
+    .card-benefit {
+      background: rgba(212, 175, 55, 0.08);
+      border-left: 3px solid var(--accent-color);
+      padding: 0.8rem 1rem;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      font-weight: 400;
+    }
+
+    .card-action {
+      margin-top: auto;
+      font-size: 0.9rem;
+      color: var(--accent-color);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: gap 0.3s ease;
+      letter-spacing: 0.1em;
+    }
+
+    .card:hover .card-action {
+      gap: 0.9rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--text-sub);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.85rem;
       letter-spacing: 0.05em;
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="brand-title">Akasawa Onsen Ryokan</div>
-    <h1 class="main-title">統合AIシステムポータル</h1>
-    <p class="subtitle">
+    <!-- 施設切り替えマルチテナントコンポーネント -->
+    <div style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 1.5rem;">
+      <span style="font-size: 0.9rem; color: var(--accent-color); font-weight: 600;">対象施設・ブランド選択:</span>
+      <select id="globalTenantSelect" style="background: rgba(13, 31, 23, 0.9); color: var(--accent-color); border: 1.5px solid var(--accent-color); padding: 8px 16px; border-radius: 25px; font-size: 1rem; font-weight: bold; cursor: pointer; font-family: 'Noto Serif JP', serif; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+        <option value="akazawa-onsen">♨️ 赤沢温泉旅館 (ぬる湯・猫・静養)</option>
+        <option value="nasu-utopia">🏕️ 那須ユートピア美野沢ヴィラ＆キャンプ (アート・サウナ・BBQ)</option>
+      </select>
+    </div>
+
+    <div class="brand-title" id="tenantBrandTitle">Akasawa Onsen Ryokan</div>
+    <h1 class="main-title" id="tenantMainTitle">赤沢温泉旅館 統合AIシステムポータル</h1>
+    <p class="subtitle" id="tenantSubtitle">
       宿のこだわり（哲学）とお客様のリアルな声（一次情報）がすべてのAIエージェント間でリアルタイムに連動。<br>
       バラバラに動くのではなく、お互いにデータを共有しバトンを渡すことで、赤沢温泉旅館のブランド価値と集客・売上を最大化します。
     </p>
   </header>
+
+  <script>
+    const tenantData = {
+      'akazawa-onsen': {
+        brand: 'Akasawa Onsen Ryokan',
+        title: '赤沢温泉旅館 統合AIシステムポータル',
+        subtitle: '宿のこだわり（哲学）とお客様のリアルな声（一次情報）がすべてのAIエージェント間でリアルタイムに連動。<br>バラバラに動くのではなく、お互いにデータを共有しバトンを渡すことで、赤沢温泉旅館のブランド価値と集客・売上を最大化します。'
+      },
+      'nasu-utopia': {
+        brand: 'Nasu Utopia Minosawa',
+        title: '那須ユートピア美野沢 統合AIシステムポータル',
+        subtitle: 'アート、サウナ、BBQ。五感を解放する那須の隠れ家。<br>AIエージェントがすべての顧客体験をシームレスに繋ぎ、忘れられない滞在を創り出します。'
+      }
+    };
+
+    document.getElementById('globalTenantSelect').addEventListener('change', (e) => {
+      const data = tenantData[e.target.value];
+      document.getElementById('tenantBrandTitle').textContent = data.brand;
+      document.getElementById('tenantMainTitle').textContent = data.title;
+      document.getElementById('tenantSubtitle').innerHTML = data.subtitle;
+    });
+  </script>
 
   <main class="container">
     <!-- システム連携ベネフィット -->
