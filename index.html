@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>グループ全施設 AI統括管理ダッシュボード</title>
+  <title>ホテル・旅館 AIグループ統括マスターダッシュボード</title>
   <!-- Google Fonts: Cinzel & Noto Serif JP -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,7 +11,7 @@
   <style>
     :root {
       --bg-color: #030a07;
-      --card-bg: rgba(13, 31, 23, 0.8);
+      --card-bg: rgba(13, 31, 23, 0.85);
       --border-color: rgba(212, 175, 55, 0.35);
       --accent-color: #d4af37; /* Gold */
       --text-main: #f5f2eb;
@@ -38,7 +38,7 @@
 
     header {
       text-align: center;
-      padding: 4rem 1rem 2rem;
+      padding: 4.5rem 1rem 2.5rem;
     }
 
     .brand-title {
@@ -51,7 +51,7 @@
     }
 
     .main-title {
-      font-size: 2.4rem;
+      font-size: 2.5rem;
       font-weight: 700;
       letter-spacing: 0.1em;
       margin-bottom: 1.2rem;
@@ -75,23 +75,7 @@
       flex-grow: 1;
       display: flex;
       flex-direction: column;
-      gap: 3rem;
-    }
-
-    /* 俺の管理画面 View */
-    .master-view {
-      display: block;
-    }
-    .master-view.hidden {
-      display: none;
-    }
-
-    /* 各施設の個別のAIポータル View */
-    .tenant-view {
-      display: none;
-    }
-    .tenant-view.active {
-      display: block;
+      gap: 3.5rem;
     }
 
     .facility-grid {
@@ -103,7 +87,7 @@
 
     .facility-card {
       background: var(--card-bg);
-      border: 1.5.px solid var(--border-color);
+      border: 1.5px solid var(--border-color);
       border-radius: 20px;
       padding: 2.5rem;
       text-decoration: none;
@@ -116,7 +100,6 @@
       overflow: hidden;
       backdrop-filter: blur(12px);
       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-      cursor: pointer;
     }
 
     .facility-card:hover {
@@ -141,6 +124,17 @@
       margin-bottom: 0.8rem;
     }
 
+    .facility-url {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--accent-color);
+      margin-bottom: 1rem;
+      background: rgba(0,0,0,0.4);
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+
     .facility-desc {
       font-size: 0.95rem;
       color: var(--text-sub);
@@ -159,70 +153,18 @@
       letter-spacing: 0.05em;
       transition: all 0.3s ease;
       display: block;
+      text-decoration: none;
       box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
     }
 
-    .back-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(13, 31, 23, 0.9);
-      border: 1.5px solid var(--border-color);
-      padding: 14px 24px;
-      border-radius: 14px;
-      margin-bottom: 2rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    .btn-launch:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
     }
-
-    .back-btn {
-      background: transparent;
-      border: 1px solid var(--accent-color);
-      color: var(--accent-color);
-      padding: 8px 20px;
-      border-radius: 20px;
-      font-size: 0.9rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .back-btn:hover {
-      background: var(--accent-color);
-      color: #05120c;
-    }
-
-    /* 各AI機能カード */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-      gap: 2rem;
-      width: 100%;
-      margin-bottom: 3rem;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 18px;
-      padding: 2.2rem;
-      text-decoration: none;
-      color: var(--text-main);
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .card:hover {
-      transform: translateY(-6px);
-      border-color: var(--accent-color);
-    }
-    .card-icon { font-size: 2.5rem; margin-bottom: 1rem; }
-    .card-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 0.8rem; }
-    .card-desc { font-size: 0.9rem; color: var(--text-sub); line-height: 1.6; margin-bottom: 1rem; }
-    .card-action { color: var(--accent-color); font-weight: bold; font-size: 0.85rem; }
 
     footer {
       text-align: center;
-      padding: 3rem 1rem;
+      padding: 4rem 1rem;
       color: var(--text-sub);
       border-top: 1px solid rgba(255, 255, 255, 0.05);
       font-size: 0.85rem;
@@ -231,62 +173,47 @@
 </head>
 <body>
 
-  <!-- ================= 1. 俺の管理画面 (最上位トップページ) ================= -->
-  <div id="masterDashboard" class="container master-view" style="padding-top: 3rem; padding-bottom: 4rem;">
+  <div class="container" style="padding-top: 2rem; padding-bottom: 5rem;">
     <header>
       <div class="brand-title">Executive Master Dashboard</div>
       <h1 class="main-title">俺の全施設 統括管理ダッシュボード</h1>
       <p class="subtitle">
-        あなたが統括管理するホテル・旅館の一覧です。<br>
-        ここから【赤沢温泉旅館】や【那須ユートピア美野沢】をクリックすると、それぞれの施設専用のAIシステムポータルが起動します。
+        あなたが統括管理するすべてのホテル・旅館の独立AIシステム一覧です。<br>
+        各カードをクリックすると、対象の専用AIポータル（URL）へ直球で移動します。
       </p>
     </header>
 
     <!-- 管理施設一覧 -->
     <section>
       <h2 style="font-size: 1.4rem; color: var(--accent-color); margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-        🏢 管理対象施設一覧（2件運用中）
+        🏢 管理対象施設一覧
       </h2>
 
       <div class="facility-grid">
         <!-- 1. 赤沢温泉旅館 -->
-        <div class="facility-card" onclick="openTenantPortal('akazawa-onsen')">
+        <a href="https://akasawa.netlify.app/" class="facility-card">
           <div>
             <span class="facility-badge" style="background: rgba(106, 210, 255, 0.15); color: #6ad2ff; border: 1px solid #6ad2ff;">♨️ 温泉旅館（ウェルネス・静養）</span>
             <h3 class="facility-title">赤沢温泉旅館</h3>
-            <p class="facility-desc">猫とぬる湯と渓流にほどける、静養型ウェルネスの小宿。</p>
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1rem; margin-bottom: 1.8rem; font-size: 0.85rem;">
-              <strong style="color: var(--accent-color);">搭載AIナレッジ:</strong>
-              <ul style="margin-left: 1.2rem; margin-top: 0.4rem; color: var(--text-sub); line-height: 1.6;">
-                <li>源泉かけ流しぬる湯 / 箒川の自然音</li>
-                <li>看板猫たちの自由な存在 / できたて食事</li>
-                <li>オーナー遠藤氏のユーモアと感謝のトーン</li>
-              </ul>
-            </div>
+            <div class="facility-url">https://akasawa.netlify.app/</div>
+            <p class="facility-desc">猫とぬる湯と渓流にほどける静養型ウェルネスの小宿。クリックすると赤沢温泉旅館の専用サイト（https://akasawa.netlify.app/）へ移動します。</p>
           </div>
-          <div class="btn-launch">赤沢温泉旅館のAIシステムを開く ➔</div>
-        </div>
+          <div class="btn-launch">https://akasawa.netlify.app/ を開く ➔</div>
+        </a>
 
         <!-- 2. 那須ユートピア美野沢 -->
-        <div class="facility-card" onclick="openTenantPortal('nasu-utopia')">
+        <a href="https://nasu-utopia-ai.netlify.app/" class="facility-card">
           <div>
             <span class="facility-badge" style="background: rgba(255, 157, 66, 0.15); color: #ff9d42; border: 1px solid #ff9d42;">🏕️ リゾート・ヴィラ＆キャンプ</span>
             <h3 class="facility-title">那須ユートピア美野沢</h3>
-            <p class="facility-desc">アート×サウナ×大自然で五感を解き放つ、廃校リノベーションリゾート。</p>
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1rem; margin-bottom: 1.8rem; font-size: 0.85rem;">
-              <strong style="color: #ff9d42;">搭載AIナレッジ:</strong>
-              <ul style="margin-left: 1.2rem; margin-top: 0.4rem; color: var(--text-sub); line-height: 1.6;">
-                <li>フィンランド式バレルサウナ / 天然水風呂</li>
-                <li>旧美野沢小学校の現代アート作品</li>
-                <li>プライベートドッグランヴィラ / 手ぶらBBQ</li>
-              </ul>
-            </div>
+            <div class="facility-url" style="color: #ff9d42;">https://nasu-utopia-ai.netlify.app/</div>
+            <p class="facility-desc">アート×サウナ×大自然で五感を解き放つ廃校リノベーションリゾート。クリックすると那須ユートピア専用サイトへ移動します。</p>
           </div>
-          <div class="btn-launch" style="background: linear-gradient(135deg, #ff9d42 0%, #c46914 100%); color: #fff; box-shadow: 0 4px 15px rgba(255, 157, 66, 0.3);">那須ユートピアのAIシステムを開く ➔</div>
-        </div>
+          <div class="btn-launch" style="background: linear-gradient(135deg, #ff9d42 0%, #c46914 100%); color: #fff; box-shadow: 0 4px 15px rgba(255, 157, 66, 0.3);">https://nasu-utopia-ai.netlify.app/ を開く ➔</div>
+        </a>
 
         <!-- 3. 新規施設追加カード -->
-        <div class="facility-card" style="border-style: dashed; border-color: rgba(255,255,255,0.2); opacity: 0.7; align-items: center; justify-content: center; text-align: center; cursor: pointer;" onclick="alert('新規施設（3施設目・4施設目）の専用システム登録は、設定ファイルに1行追記するだけで即時追加できます。')">
+        <div class="facility-card" style="border-style: dashed; border-color: rgba(255,255,255,0.2); opacity: 0.7; align-items: center; justify-content: center; text-align: center; cursor: pointer;" onclick="alert('新規施設の追加登録は、新しい専用サイトURLを割り当てることで即時追加拡張できます。')">
           <div style="font-size: 3rem; margin-bottom: 1rem; color: var(--accent-color);">➕</div>
           <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">新規施設を追加</h3>
           <p style="font-size: 0.85rem; color: var(--text-sub);">新しいホテルや旅館のAIシステムをグループに追加登録できます。</p>
@@ -296,14 +223,14 @@
 
     <!-- グループ横断AI成果サマリー -->
     <section style="background: rgba(13, 31, 23, 0.5); border: 1px solid var(--border-color); border-radius: 16px; padding: 2rem; margin-top: 2rem;">
-      <h3 style="color: var(--accent-color); font-size: 1.2rem; margin-bottom: 1rem;">📊 俺の全施設 AI統合成果サマリー</h3>
+      <h3 style="color: var(--accent-color); font-size: 1.2rem; margin-bottom: 1rem;">📊 全施設 統合成果管理サマリー</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; text-align: center;">
         <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
           <div style="font-size: 0.85rem; color: var(--text-sub);">管理施設数</div>
           <div style="font-size: 1.8rem; font-weight: bold; color: var(--accent-color);">2 施設</div>
         </div>
         <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-          <div style="font-size: 0.85rem; color: var(--text-sub);">月間AI自動応答数</div>
+          <div style="font-size: 0.85rem; color: var(--text-sub);">月間AI自動回答数</div>
           <div style="font-size: 1.8rem; font-weight: bold; color: #52c41a;">1,420 件</div>
         </div>
         <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
@@ -314,171 +241,8 @@
     </section>
   </div>
 
-  <!-- ================= 2. 各施設の個別AIシステム画面 (クリックで表示) ================= -->
-  <div id="tenantPortalView" class="container tenant-view" style="padding-top: 2rem; padding-bottom: 4rem;">
-    <!-- 俺の管理画面に戻るバー -->
-    <div class="back-bar">
-      <button class="back-btn" onclick="closeTenantPortal()">⬅️ 俺の管理画面に戻る</button>
-      <span id="activeTenantNameBadge" style="font-weight: bold; font-size: 1.05rem; color: var(--accent-color);">♨️ 赤沢温泉旅館 AIシステム</span>
-    </div>
-
-    <header style="padding: 1rem 1rem 2rem;">
-      <div class="brand-title" id="tenantBrandTitle">Akasawa Onsen Ryokan</div>
-      <h1 class="main-title" id="tenantMainTitle">赤沢温泉旅館 統合AIシステムポータル</h1>
-      <p class="subtitle" id="tenantSubtitle">
-        宿のこだわり（哲学）とお客様のリアルな声がすべてのAIエージェント間でリアルタイムに連動。
-      </p>
-    </header>
-
-    <!-- 各AI機能グリッド -->
-    <div class="grid">
-      <!-- 1. AI チャットコンシェルジュ -->
-      <a id="linkChat" href="/akasawa-chat/" class="card">
-        <div>
-          <div class="card-icon">💬</div>
-          <h2 class="card-title">AI チャットコンシェルジュ</h2>
-          <p class="card-desc" id="descChat">館内設備・貸切風呂状況・のびのび過ごす猫たちとの接し方などを多言語AIが自動回答。</p>
-        </div>
-        <div class="card-action">AIチャットを起動 ➔</div>
-      </a>
-
-      <!-- 2. メール・LINE自動連携配信 -->
-      <a id="linkMl" href="/akasawa-ml/index.html" class="card">
-        <div>
-          <div class="card-icon">✉️</div>
-          <h2 class="card-title">メール・LINE自動連携配信</h2>
-          <p class="card-desc">追跡URL・プラン自動認識成果レポート連動のCRM自動配信システム。</p>
-        </div>
-        <div class="card-action">配信システムを起動 ➔</div>
-      </a>
-
-      <!-- 3. クチコミ返信エージェント -->
-      <a id="linkReview" href="/akasawa-review/index.html" class="card">
-        <div>
-          <div class="card-icon">✍️</div>
-          <h2 class="card-title">クチコミ返信エージェント</h2>
-          <p class="card-desc">お客様からの投稿に対し、施設ブランドの思想・トーンに沿った温かい返信を自動生成。</p>
-        </div>
-        <div class="card-action">クチコミ返信を起動 ➔</div>
-      </a>
-
-      <!-- 4. 宿泊プラン作成エージェント -->
-      <a id="linkPlan" href="/akasawa-plan/index.html" class="card">
-        <div>
-          <div class="card-icon">📋</div>
-          <h2 class="card-title">宿泊プラン作成エージェント</h2>
-          <p class="card-desc">施設の強みとターゲットニーズを分析し、高単価で選ばれるプランを自律設計。</p>
-        </div>
-        <div class="card-action">プラン作成を起動 ➔</div>
-      </a>
-
-      <!-- 5. 公式ブログ自動生成システム -->
-      <a id="linkBlog" href="/akasawa-blog/index.html" class="card">
-        <div>
-          <div class="card-icon">📖</div>
-          <h2 class="card-title">公式ブログ自動生成システム</h2>
-          <p class="card-desc">一次情報とRAGを融合し、SEO・LLMO（AI検索）に特化したブログ記事を自動生成。</p>
-        </div>
-        <div class="card-action">ブログ生成を起動 ➔</div>
-      </a>
-
-      <!-- 6. AI OTA最適化エンジン -->
-      <a id="linkOta" href="/akasawa-ota/index.html" class="card">
-        <div>
-          <div class="card-icon">⚡</div>
-          <h2 class="card-title">AI OTA最適化エンジン</h2>
-          <p class="card-desc">楽天・じゃらん・Booking.com等の掲載テキスト・写真を体験価値へリライト提案。</p>
-        </div>
-        <div class="card-action">OTA最適化を起動 ➔</div>
-      </a>
-
-      <!-- 7. オーナー投稿管理（SNS） -->
-      <a id="linkEndoSns" href="/endo-sns/index.html" class="card">
-        <div>
-          <div class="card-icon">📲</div>
-          <h2 class="card-title">オーナー投稿管理（SNS）</h2>
-          <p class="card-desc">クローン音声合成とRemotionショート動画レンダリングによるSNS投稿システム。</p>
-        </div>
-        <div class="card-action">SNS管理を起動 ➔</div>
-      </a>
-
-      <!-- 8. ダイナミックプライシング統合監視 -->
-      <a id="linkDp" href="/akasawa-dp/" class="card">
-        <div>
-          <div class="card-icon">📊</div>
-          <h2 class="card-title">ダイナミックプライシング統合監視</h2>
-          <p class="card-desc">RevPAR最大化に向けた競合価格と需要予測分析ダッシュボード。</p>
-        </div>
-        <div class="card-action">分析ダッシュボードを開く ➔</div>
-      </a>
-    </div>
-  </div>
-
   <footer>
-    <p>Executive Master Dashboard Platform &copy; 2026</p>
+    <p>Executive Master Dashboard &copy; 2026</p>
   </footer>
-
-  <script>
-    const tenantMaster = {
-      'akazawa-onsen': {
-        name: '♨️ 赤沢温泉旅館',
-        brand: 'Akasawa Onsen Ryokan',
-        title: '赤沢温泉旅館 統合AIシステム',
-        subtitle: '猫とぬる湯と渓流にほどける静養の小宿。<br>宿のこだわり（哲学）と一次情報がすべてのAIエージェント間で連動して動作します。',
-        descChat: '館内設備・貸切風呂状況・のびのび過ごす猫たちとの接し方など、ぬる湯と静養をテーマに自動回答するAIコンシェルジュ。'
-      },
-      'nasu-utopia': {
-        name: '🏕️ 那須ユートピア美野沢ヴィラ＆キャンプ',
-        brand: 'Nasu Utopia Minosawa Village',
-        title: '那須ユートピア美野沢 統合AIシステム',
-        subtitle: 'アート×サウナ×手ぶらBBQ。五感を解き放つ那須の廃校リノベーションリゾート。<br>すべてのAIが那須ユートピアの特別な体験価値前提で動きます。',
-        descChat: '貸切バレルサウナ予約・手ぶらBBQ・ドッグランヴィラ規約・廃校アート体験などを自動回答するAIコンシェルジュ。'
-      }
-    };
-
-    function openTenantPortal(tenantId) {
-      const info = tenantMaster[tenantId] || tenantMaster['akazawa-onsen'];
-      
-      document.getElementById('activeTenantNameBadge').textContent = info.name + ' AIシステム';
-      document.getElementById('tenantBrandTitle').textContent = info.brand;
-      document.getElementById('tenantMainTitle').textContent = info.title;
-      document.getElementById('tenantSubtitle').innerHTML = info.subtitle;
-      document.getElementById('descChat').textContent = info.descChat;
-
-      // 各カードリンクの遷移先へ ?tenant=... を動的付与
-      const toolLinks = ['linkChat', 'linkMl', 'linkReview', 'linkPlan', 'linkBlog', 'linkOta', 'linkEndoSns', 'linkDp'];
-      toolLinks.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-          const raw = el.getAttribute('data-raw-href') || el.getAttribute('href');
-          if (!el.getAttribute('data-raw-href')) el.setAttribute('data-raw-href', raw);
-          const clean = raw.split('?')[0];
-          el.setAttribute('href', `${clean}?tenant=${tenantId}`);
-        }
-      });
-
-      localStorage.setItem('active_tenant_id', tenantId);
-
-      // 表示切替 (俺の管理画面を隠し、選択した宿のAIシステムを表示)
-      document.getElementById('masterDashboard').classList.add('hidden');
-      document.getElementById('tenantPortalView').classList.add('active');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function closeTenantPortal() {
-      document.getElementById('tenantPortalView').classList.remove('active');
-      document.getElementById('masterDashboard').classList.remove('hidden');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // URLのパラメータクエリ（?tenant=akazawa-onsen）での開き対応
-    window.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const tenantParam = urlParams.get('tenant');
-      if (tenantParam) {
-        openTenantPortal(tenantParam);
-      }
-    });
-  </script>
 </body>
 </html>
