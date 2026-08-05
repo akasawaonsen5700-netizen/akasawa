@@ -34,11 +34,8 @@ function copyFolderSync(from, to) {
 }
 
 // 2. ルートの index.html コピー
-console.log('Copying portal index.html and master_dashboard.html...');
+console.log('Copying portal index.html...');
 fs.copyFileSync(path.join(__dirname, 'index.html'), path.join(distDir, 'index.html'));
-if (fs.existsSync(path.join(__dirname, 'master_dashboard.html'))) {
-  fs.copyFileSync(path.join(__dirname, 'master_dashboard.html'), path.join(distDir, 'master_dashboard.html'));
-}
 
 // 2.5. 共通データ基盤(shared)のコピー
 console.log('Copying shared data...');
